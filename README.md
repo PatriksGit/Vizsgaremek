@@ -25,3 +25,11 @@ A **RuneEmpire** egy webalkalmazás, amely a hozzá tartozó Minecraft szerverh�
 - Coin vásárlás
 - Coinból rang (rank) vásárlása
 - Vásárlási előzmények
+
+
+###  Technológiák
+
+- **React** – felhasználói felület
+- **Vite** – build eszköz és fejlesztői szerver
+- **Tailwind CSS** – stílusok
+- **Node.js** – backend
