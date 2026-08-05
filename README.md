@@ -38,3 +38,13 @@ A **RuneEmpire** egy webalkalmazás, amely a hozzá tartozó Minecraft szerverh�
 - **Bőhm Boglárka** - Frontend
 - **Téwald Patrik** - Backend
 - **Szabotin Hunor** - Adatbázis
+
+### Jövőbeli tervek
+
+- Admin dashboard :
+
+- Csak Oauth Github login
+- Árak szerkesztése
+- Akciók megadott dolgokra
+- Statisztikák pl : fizetések, átlagos játékosszám
+- Játékosok kezelésre pl : unregister, email megváltoztatás
