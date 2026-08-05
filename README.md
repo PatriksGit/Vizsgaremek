@@ -13,7 +13,6 @@ A **RuneEmpire** egy webalkalmazás, amely a hozzá tartozó Minecraft szerverh�
 - Regisztráció és bejelentkezés, e-mail cím megerősítéssel
 - Jelszóváltoztatás és jelszó-visszaállítás
 - Kétfaktoros hitelesítés (2FA) be- és kikapcsolása
-- Aktív munkamenetek megtekintése
 
 ####  Statisztikák
 
