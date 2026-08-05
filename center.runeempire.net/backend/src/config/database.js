@@ -1,4 +1,5 @@
 import mysql2 from 'mysql2/promise'
+import 'dotenv/config'
 
 function createPool(prefix) {
   return mysql2.createPool({
@@ -13,3 +14,4 @@ function createPool(prefix) {
 }
 
 export const WebPool = createPool('DB_WEB')
+export const AuthPool = createPool('DB_AUTH')
