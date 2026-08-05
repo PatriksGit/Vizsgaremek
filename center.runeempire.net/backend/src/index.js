@@ -6,7 +6,7 @@ import { log } from './utils/logger.js'
 const PORT = process.env.PORT || 3000
 
 if (!await testConnections()) {
-  log.error('Adatbázis nem elérhető.')
+  log.critical('Adatbázis nem elérhető.')
   process.exit(1)
 }
 

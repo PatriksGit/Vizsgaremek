@@ -23,24 +23,12 @@ const pools = {
 }
 
 export async function testConnections() {
-  const total = Object.keys(pools).length
-  let failed = 0
-
   for (const [name, pool] of Object.entries(pools)) {
     try {
       await pool.query('SELECT 1')
       log.ok(`${name}: sikeres kapcsolat`)
     } catch (error) {
-      log.error(`${name}: sikertelen kapcsolat: ${error.message}`)
-      failed++
+      log.error(`${name} : sikertelen kapcsolat : ${error.message}`)
     }
   }
-
-  if (failed > 0) {
-    log.warn(`${total} adatbázisból ${total - failed} érhető el`)
-  } else {
-    log.ok(`Mind a ${total} adatbázis elérhető`)
-  }
-
-  return failed === 0
 }
