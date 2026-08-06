@@ -2,12 +2,12 @@ import { centerPool } from '../config/database.js'
 
 const TABLE = 'pending_registrations'
 
-export async function findByUsername(username) {
+export async function findPendingByUsername(username) {
   const [rows] = await centerPool.query(`SELECT id FROM ${TABLE} WHERE username = ?` , [username])
   return rows[0] ?? null
 }
 
-export async function findByEmail(email) {
+export async function findPendingByEmail(email) {
   const [rows] = await centerPool.query(`SELECT id FROM ${TABLE} WHERE email = ?` , [email])
   return rows[0] ?? null
 }
