@@ -31,7 +31,7 @@ A **RuneEmpire** egy webalkalmazás, amely a hozzá tartozó Minecraft szerverh�
 - **React** – felhasználói felület
 - **Vite** – build eszköz és fejlesztői szerver
 - **Tailwind CSS** – stílusok
-- **Node.js** – backend
+- **Laravel Php** – backend
 
 ### Ki mit csinál
 
