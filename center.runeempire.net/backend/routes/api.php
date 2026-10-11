@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MeController;
@@ -25,5 +26,9 @@ Route::prefix('auth')->name('auth.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', MeController::class)->name('me');
         Route::post('/logout', LogoutController::class)->name('logout');
+
+        Route::put('/password', ChangePasswordController::class)
+            ->middleware('throttle:password-change')
+            ->name('password.update');
     });
 });

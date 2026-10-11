@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Account;
+use App\Rules\PlayablePassword;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -18,12 +19,6 @@ class RegisterRequest extends FormRequest
      * addresses that would only bounce (localhost, IP literals, spaces).
      */
     private const EMAIL_PATTERN = '/\A[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+\z/';
-
-    /**
-     * PAxAuth's /login splits its argument on spaces, and § cannot be typed in
-     * Minecraft chat, so such passwords could never be used in game.
-     */
-    private const UNTYPEABLE_PASSWORD_PATTERN = '/[\s§]/u';
 
     protected function prepareForValidation(): void
     {
@@ -60,14 +55,7 @@ class RegisterRequest extends FormRequest
         return [
             'display_name' => ['bail', 'required', 'string', 'regex:'.Account::NAME_PATTERN, self::nameIsFree()],
             'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.self::EMAIL_PATTERN, 'email', Rule::unique(Account::class, 'email')],
-            'password' => [
-                'required',
-                'string',
-                'confirmed',
-                'not_regex:'.self::UNTYPEABLE_PASSWORD_PATTERN,
-                Password::min(config('auth.password_length.min')),
-                self::fitsPluginLength(),
-            ],
+            'password' => ['required', 'string', 'confirmed', Password::min(config('auth.password_length.min')), new PlayablePassword],
         ];
     }
 
@@ -79,21 +67,6 @@ class RegisterRequest extends FormRequest
         return function (string $attribute, string $value, Closure $fail): void {
             if (Account::query()->where('username', Account::usernameFor($value))->exists()) {
                 $fail('validation.unique')->translate();
-            }
-        };
-    }
-
-    /**
-     * PAxAuth measures password length in Java chars (UTF-16 units), where an
-     * emoji counts twice; a longer password could never log in.
-     */
-    private static function fitsPluginLength(): Closure
-    {
-        return function (string $attribute, mixed $value, Closure $fail): void {
-            $max = config('auth.password_length.max');
-
-            if (is_string($value) && strlen(mb_convert_encoding($value, 'UTF-16LE', 'UTF-8')) / 2 > $max) {
-                $fail('validation.max.string')->translate(['max' => $max]);
             }
         };
     }

@@ -94,6 +94,8 @@ rate-limits:
   login:                # POST /api/auth/login
     per-minute: 5       # per username + IP
     per-minute-per-ip: 20
+  password-change:      # PUT /api/auth/password, per account
+    per-minute: 5
 
 cors:
   # Origins of the React frontend allowed to call the API.

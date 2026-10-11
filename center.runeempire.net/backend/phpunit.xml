@@ -43,6 +43,7 @@
         <env name="RATE_LIMITS_REGISTRATION_MAIL_COOLDOWN_SECONDS" value="60"/>
         <env name="RATE_LIMITS_LOGIN_PER_MINUTE" value="5"/>
         <env name="RATE_LIMITS_LOGIN_PER_MINUTE_PER_IP" value="20"/>
+        <env name="RATE_LIMITS_PASSWORD_CHANGE_PER_MINUTE" value="5"/>
         <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost:5173"/>
         <env name="TRUSTED_PROXIES" value="127.0.0.1"/>
         <env name="MAIL_MAILER" value="array"/>

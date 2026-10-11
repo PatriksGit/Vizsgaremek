@@ -51,13 +51,15 @@ class SessionTest extends TestCase
 
     /**
      * Like a browser: each request carries the session cookie, and the guards
-     * start fresh (tests share one app, which would otherwise keep the user cached).
+     * start fresh: tests share one app, which would otherwise keep the user and
+     * the previous session data in memory.
      */
     private function asBrowserWithSession(string $sessionId): static
     {
         $this->app['auth']->forgetGuards();
+        $this->app['session']->driver()->flush();
 
-        return $this->withCookie(config('session.cookie'), $sessionId);
+        return $this->withCredentials()->withCookie(config('session.cookie'), $sessionId);
     }
 
     public function test_logout_ends_the_session(): void

@@ -32,6 +32,14 @@ return [
     ],
 
     /*
+     * PUT /api/auth/password, per account: stops guessing the current password
+     * through a hijacked session.
+     */
+    'password_change' => [
+        'per_minute' => (int) env('RATE_LIMITS_PASSWORD_CHANGE_PER_MINUTE', 5),
+    ],
+
+    /*
      * At most one registration code is mailed to an address within this window.
      */
     'registration_mail' => [

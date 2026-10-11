@@ -51,6 +51,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
                 Limit::perMinute(config('rate_limits.login.per_minute_per_ip'))->by('ip:'.$request->ip()),
             ];
         });
+
+        RateLimiter::for('password-change', fn (Request $request) => Limit::perMinute(config('rate_limits.password_change.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier()));
     })
     ->create();
 
