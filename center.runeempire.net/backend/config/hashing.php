@@ -16,4 +16,10 @@ return [
         'verify' => true,
     ],
 
+    /*
+     * Never rewrite a hash on login: the accounts table belongs to PAxAuth,
+     * and logging in must not write to it.
+     */
+    'rehash_on_login' => false,
+
 ];

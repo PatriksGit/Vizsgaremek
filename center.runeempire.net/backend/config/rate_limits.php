@@ -22,6 +22,16 @@ return [
     ],
 
     /*
+     * POST /api/auth/login: per username + IP (stops guessing one player's
+     * password) and per IP overall. Never per username alone: Minecraft names
+     * are public, so that would let anyone lock a player out.
+     */
+    'login' => [
+        'per_minute' => (int) env('RATE_LIMITS_LOGIN_PER_MINUTE', 5),
+        'per_minute_per_ip' => (int) env('RATE_LIMITS_LOGIN_PER_MINUTE_PER_IP', 20),
+    ],
+
+    /*
      * At most one registration code is mailed to an address within this window.
      */
     'registration_mail' => [

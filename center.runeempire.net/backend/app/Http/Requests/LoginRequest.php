@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Http\Controllers\Auth\LoginController;
+use App\Models\Account;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+
+class LoginRequest extends FormRequest
+{
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * bail + the name pattern run before any query: PAxAuth's username column
+     * is ascii, and non-ASCII input would make MySQL fail. The password cap
+     * keeps oversized input away from argon2.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'username' => ['bail', 'required', 'string', 'regex:'.Account::NAME_PATTERN],
+            'password' => ['required', 'string', 'max:128'],
+        ];
+    }
+
+    /**
+     * A malformed name gets the same answer as wrong credentials.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'username.regex' => LoginController::INVALID_CREDENTIALS,
+        ];
+    }
+}

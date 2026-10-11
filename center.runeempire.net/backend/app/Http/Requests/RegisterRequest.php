@@ -13,11 +13,6 @@ use Illuminate\Validation\Rules\Password;
 class RegisterRequest extends FormRequest
 {
     /**
-     * Minecraft name rules: 3-16 ASCII letters, digits or underscores.
-     */
-    private const DISPLAY_NAME_PATTERN = '/\A[A-Za-z0-9_]{3,16}\z/';
-
-    /**
      * ASCII-only address with a dotted domain. ASCII keeps lowercasing an exact
      * match under MySQL's accent-insensitive collations, and rules out
      * addresses that would only bounce (localhost, IP literals, spaces).
@@ -63,7 +58,7 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'display_name' => ['bail', 'required', 'string', 'regex:'.self::DISPLAY_NAME_PATTERN, self::nameIsFree()],
+            'display_name' => ['bail', 'required', 'string', 'regex:'.Account::NAME_PATTERN, self::nameIsFree()],
             'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.self::EMAIL_PATTERN, 'email', Rule::unique(Account::class, 'email')],
             'password' => [
                 'required',

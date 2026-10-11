@@ -37,7 +37,7 @@ class RegisterTest extends TestCase
      */
     private function register(array $overrides = []): TestResponse
     {
-        return $this->postJson('/api/register', [
+        return $this->postJson('/api/auth/register', [
             'display_name' => 'PatrikT',
             'email' => 'patrik@example.com',
             'password' => 'titkos-jelszo',
@@ -302,12 +302,12 @@ class RegisterTest extends TestCase
 
     public function test_frontend_origin_passes_cors_preflight(): void
     {
-        $this->options('/api/register', [], [
+        $this->options('/api/auth/register', [], [
             'Origin' => 'http://localhost:5173',
             'Access-Control-Request-Method' => 'POST',
         ])->assertNoContent()->assertHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
 
-        $foreignOrigin = $this->options('/api/register', [], [
+        $foreignOrigin = $this->options('/api/auth/register', [], [
             'Origin' => 'https://evil.example',
             'Access-Control-Request-Method' => 'POST',
         ]);
@@ -318,10 +318,10 @@ class RegisterTest extends TestCase
     public function test_registration_is_rate_limited_per_minute(): void
     {
         foreach (range(1, 5) as $attempt) {
-            $this->postJson('/api/register', ['display_name' => 'ab'])->assertUnprocessable();
+            $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertUnprocessable();
         }
 
-        $this->postJson('/api/register', ['display_name' => 'ab'])->assertTooManyRequests();
+        $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertTooManyRequests();
     }
 
     public function test_per_minute_limit_comes_from_config(): void
@@ -329,10 +329,10 @@ class RegisterTest extends TestCase
         config(['rate_limits.register.per_minute' => 2]);
 
         foreach (range(1, 2) as $attempt) {
-            $this->postJson('/api/register', ['display_name' => 'ab'])->assertUnprocessable();
+            $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertUnprocessable();
         }
 
-        $this->postJson('/api/register', ['display_name' => 'ab'])->assertTooManyRequests();
+        $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertTooManyRequests();
     }
 
     public function test_per_hour_limit_comes_from_config(): void
@@ -340,11 +340,11 @@ class RegisterTest extends TestCase
         config(['rate_limits.register.per_hour' => 3]);
 
         foreach (range(1, 3) as $attempt) {
-            $this->postJson('/api/register', ['display_name' => 'ab'])->assertUnprocessable();
+            $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertUnprocessable();
         }
 
         $this->travel(61)->seconds();
-        $this->postJson('/api/register', ['display_name' => 'ab'])->assertTooManyRequests();
+        $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertTooManyRequests();
     }
 
     public function test_mail_cooldown_comes_from_config(): void
@@ -362,13 +362,13 @@ class RegisterTest extends TestCase
     public function test_registration_is_rate_limited_per_hour(): void
     {
         foreach (range(1, 20) as $attempt) {
-            $this->postJson('/api/register', ['display_name' => 'ab'])->assertUnprocessable();
+            $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertUnprocessable();
 
             if ($attempt % 5 === 0) {
                 $this->travel(61)->seconds();
             }
         }
 
-        $this->postJson('/api/register', ['display_name' => 'ab'])->assertTooManyRequests();
+        $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertTooManyRequests();
     }
 }

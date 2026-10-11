@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\AccountFactory;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Attributes\Connection;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -22,10 +24,15 @@ use Illuminate\Database\Eloquent\Model;
 #[WithoutTimestamps]
 #[Fillable(['uuid', 'username', 'display_name', 'password_hash', 'email'])]
 #[Hidden(['password_hash', 'twofa_secret'])]
-class Account extends Model
+class Account extends Model implements AuthenticatableContract
 {
     /** @use HasFactory<AccountFactory> */
-    use HasFactory;
+    use Authenticatable, HasFactory;
+
+    /**
+     * Minecraft name rules: 3-16 ASCII letters, digits or underscores.
+     */
+    public const NAME_PATTERN = '/\A[A-Za-z0-9_]{3,16}\z/';
 
     /**
      * The lowercase name PAxAuth looks accounts up by.
@@ -55,6 +62,22 @@ class Account extends Model
         $hash[8] = chr(ord($hash[8]) & 0x3F | 0x80);
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($hash), 4));
+    }
+
+    /**
+     * The password lives in PAxAuth's password_hash column.
+     */
+    public function getAuthPasswordName(): string
+    {
+        return 'password_hash';
+    }
+
+    /**
+     * PAxAuth's accounts table has no remember token column, and "remember me" is not offered.
+     */
+    public function getRememberTokenName(): string
+    {
+        return '';
     }
 
     /**

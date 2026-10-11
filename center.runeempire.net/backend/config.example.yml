@@ -13,6 +13,33 @@ app:
   # Generate with: php artisan key:generate --show
   key: ""
 
+redis:
+  host: 127.0.0.1
+  port: 6379
+  password: ""
+  # Only sessions use this index. The Redis instance is shared (Pterodactyl,
+  # LuckPerms, ...): pick an index nothing else uses, and never share it with
+  # a cache store (cache:clear flushes the whole index).
+  db: 3
+
+session:
+  driver: redis
+  lifetime: 120         # minutes of inactivity before the login expires
+  # Leave unset: cookies are then Secure automatically on HTTPS (through the
+  # trusted proxy). true forces Secure, false would disable it on HTTPS too.
+  # secure-cookie: true
+
+sanctum:
+  # Website origins that get session login and CSRF protection.
+  stateful-domains:
+    - localhost:5173
+    # production: center.runeempire.net
+
+# Proxies whose X-Forwarded-For / -Proto is trusted (Cloudflare Tunnel's cloudflared).
+# If the backend runs in Docker, this is the bridge gateway (e.g. 172.18.0.1), not 127.0.0.1.
+trusted-proxies:
+  - 127.0.0.1
+
 db:
   # Laravel's own tables (cache, API tokens) until the web database exists.
   connection: sqlite
@@ -57,13 +84,16 @@ registration:
     max-attempts: 5     # 1-255
 
 rate-limits:
-  register:             # POST /api/register, per IP
+  register:             # POST /api/auth/register, per IP
     per-minute: 5
     per-hour: 20
-  register-verify:      # POST /api/register/verify, per IP
+  register-verify:      # POST /api/auth/register/verify, per IP
     per-minute: 10
   registration-mail:    # one code per email address within this window
     cooldown-seconds: 60
+  login:                # POST /api/auth/login
+    per-minute: 5       # per username + IP
+    per-minute-per-ip: 20
 
 cors:
   # Origins of the React frontend allowed to call the API.

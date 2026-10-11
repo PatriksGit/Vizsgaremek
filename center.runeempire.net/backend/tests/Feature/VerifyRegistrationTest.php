@@ -27,7 +27,7 @@ class VerifyRegistrationTest extends TestCase
 
     private function verify(mixed $code, string $email = 'patrik@example.com'): TestResponse
     {
-        return $this->postJson('/api/register/verify', ['email' => $email, 'code' => $code]);
+        return $this->postJson('/api/auth/register/verify', ['email' => $email, 'code' => $code]);
     }
 
     private function pending(string $code = '123456'): PendingRegistration
@@ -57,6 +57,26 @@ class VerifyRegistrationTest extends TestCase
         $this->assertSame($pending->password_hash, $account->password_hash, 'The pending argon2id hash moves over unchanged.');
         $this->assertTrue(Hash::check('titkos-jelszo', $account->password_hash));
         $this->assertSame(0, PendingRegistration::query()->count());
+    }
+
+    public function test_verifying_from_the_website_logs_the_player_in(): void
+    {
+        $this->pending();
+
+        $this->postJson('/api/auth/register/verify', ['email' => 'patrik@example.com', 'code' => '123456'], ['Origin' => 'http://localhost:5173'])
+            ->assertCreated();
+
+        $this->assertAuthenticatedAs(Account::query()->sole(), 'web');
+    }
+
+    public function test_verifying_from_outside_the_website_creates_the_account_without_login(): void
+    {
+        $this->pending();
+
+        $this->verify('123456')->assertCreated();
+
+        $this->assertSame(1, Account::query()->count());
+        $this->assertGuest('web');
     }
 
     public function test_code_with_leading_zero_is_accepted(): void
@@ -194,9 +214,9 @@ class VerifyRegistrationTest extends TestCase
             'password_confirmation' => 'titkos-jelszo',
         ];
 
-        $this->postJson('/api/register', $payload)->assertAccepted();
+        $this->postJson('/api/auth/register', $payload)->assertAccepted();
         $this->travel(61)->seconds();
-        $this->postJson('/api/register', $payload)->assertAccepted();
+        $this->postJson('/api/auth/register', $payload)->assertAccepted();
 
         $codes = [];
         Notification::assertSentOnDemand(RegistrationCodeNotification::class, function (RegistrationCodeNotification $notification) use (&$codes): bool {
