@@ -24,22 +24,27 @@ class RegisterRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $this->merge(Arr::only(self::withUsername($this->all()), 'username'));
+        $this->merge(Arr::only(self::normalize($this->all()), ['username', 'email']));
     }
 
     /**
-     * Add the derived username to raw registration input, so callers outside
-     * HTTP (the user:register command) validate exactly like the endpoint.
+     * Normalize raw registration input (derived username, trimmed lowercase
+     * email), so callers outside HTTP (the user:register command) validate
+     * exactly like the endpoint.
      *
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
-    public static function withUsername(array $input): array
+    public static function normalize(array $input): array
     {
         $displayName = $input['display_name'] ?? null;
 
         if (is_string($displayName) && preg_match(self::DISPLAY_NAME_PATTERN, $displayName)) {
             $input['username'] = Account::usernameFor($displayName);
+        }
+
+        if (is_string($input['email'] ?? null)) {
+            $input['email'] = Account::normalizeEmail($input['email']);
         }
 
         return $input;
@@ -55,6 +60,7 @@ class RegisterRequest extends FormRequest
         return [
             'display_name' => ['required', 'string', 'regex:'.self::DISPLAY_NAME_PATTERN],
             'username' => [Rule::unique(Account::class, 'username')],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(Account::class, 'email')],
             'password' => [
                 'required',
                 'string',

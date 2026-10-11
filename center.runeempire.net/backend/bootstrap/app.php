@@ -1,10 +1,12 @@
 <?php
 
 use App\Support\YamlEnv;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,7 +20,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
-    })->create();
+    })
+    ->booted(function (): void {
+        // Each limit needs its own key, or they would share one counter.
+        RateLimiter::for('register', fn (Request $request) => [
+            Limit::perMinute(5)->by('minute:'.$request->ip()),
+            Limit::perHour(20)->by('hour:'.$request->ip()),
+        ]);
+    })
+    ->create();
 
 $app->afterLoadingEnvironment(
     fn () => YamlEnv::load($app->basePath('config.yml'), YamlEnv::repository()),

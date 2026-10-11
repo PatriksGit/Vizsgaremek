@@ -24,4 +24,13 @@ return [
         'max' => (int) env('PASSWORD_MAX_LENGTH', 64),
     ],
 
+    /*
+     * The emailed code that confirms a registration before the account is created.
+     */
+    'registration_code' => [
+        'length' => (int) env('REGISTRATION_CODE_LENGTH', 6),
+        'expires_minutes' => (int) env('REGISTRATION_CODE_EXPIRES_MINUTES', 15),
+        'max_attempts' => (int) env('REGISTRATION_CODE_MAX_ATTEMPTS', 5),
+    ],
+
 ];

@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Connection('global')]
 #[Table('accounts')]
 #[WithoutTimestamps]
-#[Fillable(['uuid', 'username', 'display_name', 'password_hash'])]
+#[Fillable(['uuid', 'username', 'display_name', 'password_hash', 'email'])]
 #[Hidden(['password_hash', 'twofa_secret'])]
 class Account extends Model
 {
@@ -33,6 +33,15 @@ class Account extends Model
     public static function usernameFor(string $displayName): string
     {
         return strtolower($displayName);
+    }
+
+    /**
+     * Emails are stored and compared trimmed and lowercased, so one address
+     * cannot back two accounts through different casing.
+     */
+    public static function normalizeEmail(string $email): string
+    {
+        return mb_strtolower(trim($email));
     }
 
     /**

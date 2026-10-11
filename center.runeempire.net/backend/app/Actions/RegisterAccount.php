@@ -12,10 +12,12 @@ class RegisterAccount
      * Create a player account in the PAxAuth accounts table from already validated input.
      *
      * registered_ip is left to the plugin, which records it on the first join.
+     * $password may be a plain password or the argon2id hash of a pending
+     * registration: the model's hashed cast keeps an existing hash as is.
      *
      * @throws ValidationException when the name was taken between validation and insert
      */
-    public function handle(string $displayName, string $password): Account
+    public function handle(string $displayName, string $email, string $password): Account
     {
         try {
             return Account::create([
@@ -23,6 +25,7 @@ class RegisterAccount
                 'username' => Account::usernameFor($displayName),
                 'display_name' => $displayName,
                 'password_hash' => $password,
+                'email' => $email,
             ]);
         } catch (UniqueConstraintViolationException) {
             throw ValidationException::withMessages([

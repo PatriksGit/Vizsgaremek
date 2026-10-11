@@ -11,16 +11,19 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
-#[Signature('user:register {username?} {--password=}')]
+#[Signature('user:register {username?} {email?} {--password=}')]
 #[Description('Register a new user')]
 class RegisterUser extends Command
 {
     /**
      * Execute the console command.
+     *
+     * Admin tool: the account is created immediately, without an email code.
      */
     public function handle(RegisterAccount $registerAccount): int
     {
         $username = $this->argument('username') ?? $this->ask('Username');
+        $email = $this->argument('email') ?? $this->ask('Email');
         $password = $this->option('password');
         $confirmation = $password;
 
@@ -30,8 +33,9 @@ class RegisterUser extends Command
         }
 
         $validator = Validator::make(
-            RegisterRequest::withUsername([
+            RegisterRequest::normalize([
                 'display_name' => $username,
+                'email' => $email,
                 'password' => $password,
                 'password_confirmation' => $confirmation,
             ]),
@@ -41,7 +45,7 @@ class RegisterUser extends Command
 
         try {
             $validated = $validator->validate();
-            $account = $registerAccount->handle($validated['display_name'], $validated['password']);
+            $account = $registerAccount->handle($validated['display_name'], $validated['email'], $validated['password']);
         } catch (ValidationException $exception) {
             foreach (Arr::flatten($exception->errors()) as $message) {
                 $this->components->error($message);

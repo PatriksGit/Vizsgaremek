@@ -28,6 +28,7 @@ class AccountFactory extends Factory
             'username' => fn (array $attributes) => strtolower($attributes['display_name']),
             'display_name' => fake()->unique()->regexify('[A-Za-z][A-Za-z0-9_]{2,15}'),
             'password_hash' => static::$passwordHash ??= Hash::make('password'),
+            'email' => fake()->unique()->safeEmail(),
         ];
     }
 }

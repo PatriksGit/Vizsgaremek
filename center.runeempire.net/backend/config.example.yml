@@ -40,6 +40,22 @@ password:
   # Must not exceed PAxAuth's password.max-length, or the player cannot log in in-game.
   max-length: 64
 
+mail:
+  mailer: smtp
+  host: smtp-relay.brevo.com
+  port: 587
+  username: ""          # Brevo SMTP login (Resend: "resend")
+  password: ""          # Brevo SMTP key (Resend: API key; host smtp.resend.com)
+  from:
+    address: no-reply@runeempire.net
+    name: RuneEmpire
+
+registration:
+  code:
+    length: 6           # digits
+    expires-minutes: 15
+    max-attempts: 5
+
 cors:
   # Origins of the React frontend allowed to call the API.
   allowed-origins:

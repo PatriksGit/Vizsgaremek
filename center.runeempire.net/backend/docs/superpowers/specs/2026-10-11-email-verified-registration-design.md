@@ -1,6 +1,6 @@
 # E-mailben megerősített regisztráció — terv
 
-Dátum: 2026-10-11 · Állapot: jóváhagyásra vár
+Dátum: 2026-10-11 · Állapot: jóváhagyva (advisor-review után módosítva)
 
 ## Cél
 
@@ -40,15 +40,23 @@ Validáció:
   kisbetűsítve és levágott szóközökkel tároljuk és hasonlítjuk;
 - `password`: a mostani szabályok (min/max hossz configból, megerősítés).
 
-Lépések, egy tranzakcióban a `global` kapcsolaton:
+Az e-mail címet és a `username`-et egyetlen közös helper normalizálja (trim + kisbetű),
+a validáció előtt; ugyanezt használja a kérés, a `user:register` parancs és a beváltás.
 
-1. a lejárt függő sorok törlése;
-2. a függő sorok törlése, amelyeknek ugyanez a `username` vagy `email` értéke (felülírás);
-3. új függő sor beszúrása (jelszó argon2id hash-sel, kód HMAC-kal);
-4. a kódot tartalmazó e-mail elküldése, szinkron módon.
+Lépések:
 
-Ha a levélküldés kivételt dob, a tranzakció visszagörgetődik (nem marad függő sor),
-a hiba a logba kerül, a válasz **503**.
+1. **Levél-cooldown:** ha erre az e-mail címre az elmúlt 60 másodpercben már ment kód,
+   **429** (lásd Rate limit). Ez a validáció után, írás előtt fut.
+2. Egy tranzakcióban a `global` kapcsolaton, majd commit:
+   - a lejárt függő sorok törlése;
+   - a függő sorok törlése, amelyeknek ugyanez a `username` vagy `email` értéke (felülírás);
+   - új függő sor beszúrása (jelszó argon2id hash-sel, kód HMAC-kal).
+3. **A tranzakción kívül** a kódot tartalmazó e-mail elküldése, szinkron módon. Így egy
+   lassú vagy nem válaszoló SMTP szerver nem tart zárolásokat az auth DB-ben.
+
+Ha a levélküldés kivételt dob, az imént beszúrt függő sor id alapján törlődik (nem marad
+függő sor), a hiba a logba kerül, a válasz **503**. Az SMTP kapcsolat időkorlátja 10 mp
+(a Laravel alapból nem állít be időkorlátot).
 
 Sikeres válasz: **202 Accepted**
 
@@ -56,13 +64,20 @@ Sikeres válasz: **202 Accepted**
 { "data": { "email": "player@example.com", "expires_at": "2026-10-11T12:15:00Z" } }
 ```
 
-Rate limit: a mostani `throttle:5,1` marad.
+Rate limit (egy nevesített `register` limiter, egyedi kulcsokkal):
+
+- 5 kérés / perc / IP (a mostani érték);
+- 20 kérés / óra / IP, hogy egy IP ne küldhessen napi több ezer levelet tetszőleges
+  címekre, és ne égesse el a Brevo kvótáját és a domain hírnevét;
+- 1 kiküldött kód / 60 mp / e-mail cím (a fenti cooldown, csak sikeres validáció után
+  számít, így egy elgépelt jelszó nem zárja ki a felhasználót).
 
 ### `POST /api/register/verify` — kód beváltása
 
-Kérés: `email`, `code`.
+Kérés: `email`, `code`. A `code` stringként érkezik, és pontosan a configban megadott
+számú számjegyből kell állnia (a vezető nullák miatt nem lehet szám típusú).
 
-1. A függő sor keresése a (kisbetűsített) e-mail alapján.
+1. A függő sor keresése a normalizált e-mail alapján.
 2. Nincs sor, vagy lejárt → **422**, `code` mező: „A kód érvénytelen vagy lejárt.”
 3. Rossz kód (`hash_equals` a HMAC-okon) → az `attempts` atomikus növelése; ha elérte a
    `max-attempts` értéket, a sor törlődik. Válasz: ugyanaz a **422**, ugyanazzal az
@@ -70,8 +85,9 @@ Kérés: `email`, `code`.
 4. Jó kód → tranzakció a `global` kapcsolaton:
    - a függő sor zárolása (`lockForUpdate`);
    - a `username` és az `email` újraellenőrzése az `accounts`-ban; ha időközben foglalt
-     lett (pl. a `user:register` paranccsal), a függő sor törlődik, a válasz **422** a
-     `display_name` vagy az `email` mezőnél;
+     lett (pl. a `user:register` paranccsal), a függő sor törlődik, a válasz **422** az
+     `email` mezőnél (a beváltó űrlapon nincs `display_name` mező), pl. „Ez a név vagy
+     e-mail cím időközben foglalt lett, regisztrálj újra.”;
    - a fiók létrehozása az `accounts`-ban (`uuid`, `username`, `display_name`,
      `password_hash`, `email`); a `registered_ip` a plugin alapértékén marad;
    - a függő sor törlése.
@@ -106,15 +122,27 @@ levél: a fiók azonnal létrejön, e-maillel együtt.
 | `expires_at` | datetime, index | |
 | `created_at` | datetime | |
 
-A migráció `protected $connection = 'global'`. Figyelem: a `php artisan migrate:fresh`
-csak az alapértelmezett DB-t üríti, a `global`-ban lévő táblát nem; ezt a parancsot éles
-auth DB mellett nem szabad használni.
+A migráció `protected $connection = 'global'`, és az `up()` csak akkor hozza létre a
+táblát, ha még nem létezik (`hasTable`). Ok: a `migrations` nyilvántartás az
+alapértelmezett (web) DB-ben van, a tábla viszont a `global`-ban. Ha a web DB később
+SQLite-ról MySQL-re költözik, a `migrate` újra lefuttatná ezt a migrációt, és a guard
+nélkül „table exists” hibával elszállna.
+
+- A `global` DB felhasználójának kell `CREATE` jog (a migrációhoz).
+- A `php artisan migrate:fresh` csak a web DB-t üríti, a `global`-ban lévő táblát nem;
+  éles auth DB mellett nem szabad használni.
 
 ### `accounts` (PAxAuth, változatlan séma)
 
 Az `Account` modell `email` mezővel bővül (fillable). Az `accounts.email`-en a plugin
 sémájában nincs unique index, az egyediséget a backend validációja és a beváltáskori
 újraellenőrzés biztosítja.
+
+A függő sor `password_hash`-e változatlanul kerül át az `accounts`-ba. A modell `hashed`
+castja egy már hash-elt értéket csak akkor fogad el, ha a paraméterei (memória, idő,
+szálak) nem nagyobbak a configban lévőknél; ha a beváltás előtt a config csökkenne,
+a beváltás hibára futna. Ezt teszt rögzíti (a tárolt hash azonos a függő sorban lévővel,
+és `Hash::check` átmegy).
 
 ## A kód
 
@@ -150,6 +178,8 @@ registration:
   `MAIL_FROM_NAME`), ezért nem kell `config/mail.php`.
 - A `registration.code.*` a `config/auth.php`-ba kerül `registration_code` kulcs alá,
   a meglévő `password_length` mellé.
+- A 10 mp-es SMTP időkorlát egy `config/mail.php` felülírásban van (csak a `smtp`
+  mailer, `timeout => 10`), mert erre a Laravelnek nincs env változója.
 - Resendre váltás: `host: smtp.resend.com`, `username: resend`, `password:` az API key.
 
 ## A levél
@@ -159,7 +189,7 @@ Laravel Notification (`MailMessage`), view fájlok nélkül, névtelen címzettn
 
 > Tárgy: RuneEmpire regisztrációs kód
 >
-> A regisztrációs kódod: **482913**. A kód 15 percig érvényes.
+> A(z) **PatrikT** fiók regisztrációs kódja: **482913**. A kód 15 percig érvényes.
 > Ha nem te regisztráltál, hagyd figyelmen kívül ezt a levelet.
 
 ## Tesztek
@@ -169,9 +199,16 @@ Laravel Notification (`MailMessage`), view fájlok nélkül, névtelen címzettn
   (hiányzik, érvénytelen, foglalt az `accounts`-ban).
 - Felülírás: második regisztráció ugyanarra a névre/e-mailre → egy függő sor marad,
   a régi kód már nem váltható be.
+- E-mail normalizálás: `Player@X.hu` foglaltnak számít, ha van `player@x.hu` fiók.
 - Levélküldési hiba → 503, nem marad függő sor.
+- Rate limit: ugyanarra az e-mailre 60 mp-en belül második kód → 429; az óránkénti
+  IP-limit.
+- A levél valóban renderelhető (egy teszt a `MailMessage`-t ténylegesen rendereli, mert
+  a `Notification::fake()` ezt nem teszi meg, és `resources/` mappa nincs).
 - Új `VerifyRegistrationTest`:
   - jó kód → 201, fiók létrejön (uuid, argon2id hash, e-mail), függő sor törlődik;
+  - nullával kezdődő kód is beváltható;
+  - a fiókba került hash azonos a függő sorban lévővel;
   - rossz kód → 422, `attempts` nő; a maximum elérésekor a függő sor törlődik;
   - lejárt kód és nem létező e-mail → ugyanaz a 422;
   - időközben foglalt név vagy e-mail → 422, függő sor törlődik;
