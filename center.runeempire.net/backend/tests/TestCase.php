@@ -10,7 +10,13 @@ use Illuminate\Support\Facades\Schema;
 abstract class TestCase extends BaseTestCase
 {
     /**
-     * Connections RefreshDatabase wraps in a transaction. Both in-memory
+     * Headers of a request from the website (a Sanctum stateful origin), which
+     * gets a session and CSRF protection.
+     */
+    protected const FROM_WEBSITE = ['Origin' => 'http://localhost:5173'];
+
+    /**
+     * Connections (Lazily)RefreshDatabase wraps in a transaction. Both in-memory
      * databases are migrated once and kept between tests; without "global"
      * here every test after the first would get an empty auth database.
      *
@@ -35,6 +41,27 @@ abstract class TestCase extends BaseTestCase
             $table->string('registered_ip', 45)->default('0.0.0.0');
             $table->dateTime('created_at')->useCurrent();
         });
+    }
+
+    /**
+     * Like a browser: the next request carries this session cookie, and the
+     * guards and the session store start fresh. Tests share one app, which
+     * would otherwise keep the user and the previous session data in memory.
+     */
+    protected function asBrowserWithSession(string $sessionId): static
+    {
+        $this->app['auth']->forgetGuards();
+        $this->app['session']->driver()->flush();
+
+        return $this->withCredentials()->withCookie(config('session.cookie'), $sessionId);
+    }
+
+    /**
+     * The id of the session the last request saved.
+     */
+    protected function lastSessionId(): string
+    {
+        return $this->app['session']->driver()->getId();
     }
 
     /**

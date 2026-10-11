@@ -12,8 +12,6 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    public const INVALID_CREDENTIALS = 'Hibás felhasználónév vagy jelszó.';
-
     /**
      * Log a player in with a Redis-backed session.
      *
@@ -30,7 +28,7 @@ class LoginController extends Controller
         ];
 
         if (! Auth::guard('web')->attempt($credentials)) {
-            throw ValidationException::withMessages(['username' => self::INVALID_CREDENTIALS]);
+            throw ValidationException::withMessages(['username' => LoginRequest::INVALID_CREDENTIALS]);
         }
 
         $request->session()->regenerate();

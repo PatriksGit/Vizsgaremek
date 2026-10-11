@@ -31,4 +31,14 @@ class AccountFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
         ];
     }
+
+    /**
+     * Indicate the account's password.
+     */
+    public function withPassword(string $password): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'password_hash' => Hash::make($password),
+        ]);
+    }
 }

@@ -35,6 +35,12 @@ class Account extends Model implements AuthenticatableContract
     public const NAME_PATTERN = '/\A[A-Za-z0-9_]{3,16}\z/';
 
     /**
+     * Cap on a typed password before it is checked against a hash, so oversized
+     * input never reaches argon2 (well above the 64-unit policy maximum).
+     */
+    public const PASSWORD_INPUT_MAX_LENGTH = 128;
+
+    /**
      * The lowercase name PAxAuth looks accounts up by.
      */
     public static function usernameFor(string $displayName): string

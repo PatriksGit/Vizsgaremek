@@ -4,14 +4,12 @@ use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MeController;
-use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\StartRegistrationController;
 use App\Http\Controllers\Auth\VerifyRegistrationController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/ping', fn () => ['status' => 'ok']);
-
 Route::prefix('auth')->name('auth.')->group(function () {
-    Route::post('/register', RegisterController::class)
+    Route::post('/register', StartRegistrationController::class)
         ->middleware('throttle:register')
         ->name('register');
 

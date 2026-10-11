@@ -8,7 +8,7 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\PendingRegistrationResource;
 use Illuminate\Http\JsonResponse;
 
-class RegisterController extends Controller
+class StartRegistrationController extends Controller
 {
     /**
      * Start a registration: park it and email the code that creates the account.

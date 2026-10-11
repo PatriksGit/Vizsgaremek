@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\PendingRegistration;
 use App\Notifications\RegistrationCodeNotification;
 use App\Support\RegistrationCode;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -47,7 +48,7 @@ class StartRegistration
         $expiresInMinutes = config('auth.registration_code.expires_minutes');
 
         try {
-            $pending = $this->park($username, $displayName, $email, Hash::make($password), $code, $expiresInMinutes);
+            $pending = $this->replacePendingRegistration($username, $displayName, $email, Hash::make($password), $code, $expiresInMinutes);
         } catch (Throwable $exception) {
             RateLimiter::clear($cooldownKey);
 
@@ -70,37 +71,48 @@ class StartRegistration
     /**
      * Replace the pending registration of this email, sweeping expired ones.
      * A name still pending under another email is refused, so nobody can
-     * cancel another player's registration. Retried on deadlock: two
-     * registrations at the same moment can deadlock on InnoDB gap locks.
+     * cancel another player's registration; a registration that takes the
+     * name at the same moment hits the unique index and gets the same answer.
+     * Retried on deadlock: two registrations at the same moment can deadlock
+     * on InnoDB gap locks.
      *
      * @throws ValidationException when another email holds the name
      */
-    private function park(string $username, string $displayName, string $email, string $passwordHash, string $code, int $expiresInMinutes): PendingRegistration
+    private function replacePendingRegistration(string $username, string $displayName, string $email, string $passwordHash, string $code, int $expiresInMinutes): PendingRegistration
     {
-        return DB::connection('global')->transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes): PendingRegistration {
-            PendingRegistration::query()->where('expires_at', '<=', now())->delete();
+        try {
+            return DB::connection('global')->transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes): PendingRegistration {
+                PendingRegistration::query()->where('expires_at', '<=', now())->delete();
 
-            $nameHeldByAnotherEmail = PendingRegistration::query()
-                ->where('username', $username)
-                ->where('email', '!=', $email)
-                ->exists();
+                $nameHeldByAnotherEmail = PendingRegistration::query()
+                    ->where('username', $username)
+                    ->where('email', '!=', $email)
+                    ->exists();
 
-            if ($nameHeldByAnotherEmail) {
-                throw ValidationException::withMessages([
-                    'display_name' => 'Ez a név már regisztráció alatt áll.',
+                if ($nameHeldByAnotherEmail) {
+                    throw self::nameHeld();
+                }
+
+                PendingRegistration::query()->where('email', $email)->delete();
+
+                return PendingRegistration::create([
+                    'username' => $username,
+                    'display_name' => $displayName,
+                    'email' => $email,
+                    'password_hash' => $passwordHash,
+                    'code_hash' => RegistrationCode::hash($code),
+                    'expires_at' => now()->addMinutes($expiresInMinutes),
                 ]);
-            }
+            }, attempts: 3);
+        } catch (UniqueConstraintViolationException) {
+            throw self::nameHeld();
+        }
+    }
 
-            PendingRegistration::query()->where('email', $email)->delete();
-
-            return PendingRegistration::create([
-                'username' => $username,
-                'display_name' => $displayName,
-                'email' => $email,
-                'password_hash' => $passwordHash,
-                'code_hash' => RegistrationCode::hash($code),
-                'expires_at' => now()->addMinutes($expiresInMinutes),
-            ]);
-        }, attempts: 3);
+    private static function nameHeld(): ValidationException
+    {
+        return ValidationException::withMessages([
+            'display_name' => 'Ez a név már regisztráció alatt áll.',
+        ]);
     }
 }

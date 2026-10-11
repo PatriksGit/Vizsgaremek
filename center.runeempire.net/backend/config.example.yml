@@ -25,8 +25,10 @@ redis:
 session:
   driver: redis
   lifetime: 120         # minutes of inactivity before the login expires
-  # Leave unset: cookies are then Secure automatically on HTTPS (through the
-  # trusted proxy). true forces Secure, false would disable it on HTTPS too.
+  # Production: set true. Unset (as in dev) means automatic, which marks the
+  # cookie Secure only when the request is seen as HTTPS through a correctly
+  # trusted proxy; a wrong trusted-proxies value would silently drop it.
+  # Never false in production.
   # secure-cookie: true
 
 sanctum:

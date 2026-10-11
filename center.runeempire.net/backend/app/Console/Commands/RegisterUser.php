@@ -8,6 +8,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -45,7 +46,7 @@ class RegisterUser extends Command
 
         try {
             $validated = $validator->validate();
-            $account = $registerAccount->handle($validated['display_name'], $validated['email'], $validated['password']);
+            $account = $registerAccount->handle($validated['display_name'], $validated['email'], Hash::make($validated['password']));
         } catch (ValidationException $exception) {
             foreach (Arr::flatten($exception->errors()) as $message) {
                 $this->components->error($message);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\Support;
 
 use App\Support\YamlEnv;
 use Dotenv\Repository\Adapter\ArrayAdapter;

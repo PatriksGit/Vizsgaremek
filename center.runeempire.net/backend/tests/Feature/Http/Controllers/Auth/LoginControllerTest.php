@@ -1,21 +1,18 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Http\Controllers\Auth;
 
-use App\Http\Controllers\Auth\LoginController;
+use App\Http\Requests\LoginRequest;
 use App\Models\Account;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
-class LoginTest extends TestCase
+class LoginControllerTest extends TestCase
 {
-    use RefreshDatabase;
-
-    private const FRONTEND = 'http://localhost:5173';
+    use LazilyRefreshDatabase;
 
     /**
      * Made by PAxAuth's own hasher (argon2-jvm 2.12, iterations 3, 128 MiB, 4 lanes)
@@ -32,19 +29,16 @@ class LoginTest extends TestCase
 
     private function account(string $displayName = 'PatrikT'): Account
     {
-        return Account::factory()->create([
-            'display_name' => $displayName,
-            'password_hash' => Hash::make('titkos-jelszo'),
-        ]);
+        return Account::factory()->withPassword('titkos-jelszo')->create(['display_name' => $displayName]);
     }
 
     /**
      * Insert an account with a hash the plugin made, past the model's hashed
      * cast (which only accepts hashes within the test's argon2 settings).
      */
-    private function pluginAccount(): int
+    private function pluginAccount(): void
     {
-        return DB::connection('global')->table('accounts')->insertGetId([
+        DB::connection('global')->table('accounts')->insert([
             'uuid' => Account::offlineUuid('PatrikT'),
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
@@ -54,23 +48,20 @@ class LoginTest extends TestCase
 
     private function login(mixed $username = 'PatrikT', mixed $password = 'titkos-jelszo', bool $fromWebsite = true): TestResponse
     {
-        $headers = $fromWebsite ? ['Origin' => self::FRONTEND] : [];
-
-        return $this->postJson('/api/auth/login', ['username' => $username, 'password' => $password], $headers);
+        return $this->postJson('/api/auth/login', ['username' => $username, 'password' => $password], $fromWebsite ? self::FROM_WEBSITE : []);
     }
 
-    public function test_valid_credentials_log_in_and_return_the_account(): void
+    public function test_returns_200_with_the_account_and_logs_in(): void
     {
         $account = $this->account();
 
-        $this->login()
-            ->assertOk()
-            ->assertExactJson(['data' => [
-                'uuid' => '70404374-69da-35c1-82bc-fcf925aa903a',
-                'username' => 'patrikt',
-                'display_name' => 'PatrikT',
-            ]]);
+        $response = $this->login();
 
+        $response->assertOk()->assertExactJson(['data' => [
+            'uuid' => '70404374-69da-35c1-82bc-fcf925aa903a',
+            'username' => 'patrikt',
+            'display_name' => 'PatrikT',
+        ]]);
         $this->assertAuthenticatedAs($account, 'web');
     }
 
@@ -82,9 +73,9 @@ class LoginTest extends TestCase
         $oldId = $session->getId();
         $session->save();
 
-        $this->withCookie(config('session.cookie'), $oldId)->login()->assertOk();
+        $this->asBrowserWithSession($oldId)->login()->assertOk();
 
-        $this->assertNotSame($oldId, $this->app['session']->driver()->getId());
+        $this->assertNotSame($oldId, $this->lastSessionId());
     }
 
     public function test_username_is_case_insensitive_and_trimmed(): void
@@ -100,8 +91,8 @@ class LoginTest extends TestCase
     {
         $this->account();
         $other = $this->account('Masvalaki');
-
         $this->login()->assertOk();
+
         $this->login('Masvalaki')->assertOk();
 
         $this->assertAuthenticatedAs($other, 'web');
@@ -111,13 +102,13 @@ class LoginTest extends TestCase
      * @param  array{string, string}  $credentials
      */
     #[DataProvider('wrongCredentials')]
-    public function test_wrong_password_and_unknown_user_get_the_same_error(array $credentials): void
+    public function test_returns_the_same_422_for_a_wrong_password_and_an_unknown_user(array $credentials): void
     {
         $this->account();
 
         $this->login(...$credentials)
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => LoginController::INVALID_CREDENTIALS]);
+            ->assertJsonValidationErrors(['username' => LoginRequest::INVALID_CREDENTIALS]);
 
         $this->assertGuest('web');
     }
@@ -134,40 +125,41 @@ class LoginTest extends TestCase
     }
 
     #[DataProvider('malformedUsernames')]
-    public function test_malformed_username_never_reaches_the_username_column(mixed $username): void
+    public function test_returns_422_for_a_malformed_username_without_querying_the_username_column(mixed $username, string $message): void
     {
         DB::connection('global')->enableQueryLog();
 
-        $this->login($username)->assertUnprocessable()->assertJsonValidationErrors('username');
+        $this->login($username)->assertUnprocessable()->assertJsonValidationErrors(['username' => $message]);
 
         $this->assertNoQueryMentions('global', 'username', 'Non-ASCII input would make MySQL fail on the ascii username column.');
         $this->assertGuest('web');
     }
 
     /**
-     * @return array<string, array{mixed}>
+     * A name breaking the pattern gets the same message as wrong credentials.
+     *
+     * @return array<string, array{mixed, string}>
      */
     public static function malformedUsernames(): array
     {
         return [
-            'accented' => ['őrült'],
-            'too short' => ['ab'],
-            'space inside' => ['Patrik T'],
-            'array' => [['PatrikT']],
-            'missing' => [null],
+            'missing' => [null, 'The username field is required.'],
+            'array' => [['PatrikT'], 'The username field must be a string.'],
+            'accented' => ['őrült', LoginRequest::INVALID_CREDENTIALS],
+            'too short' => ['ab', LoginRequest::INVALID_CREDENTIALS],
+            'space inside' => ['Patrik T', LoginRequest::INVALID_CREDENTIALS],
         ];
     }
 
-    public function test_pattern_failure_gets_the_same_message_as_wrong_credentials(): void
-    {
-        $this->login('őrült')->assertJsonValidationErrors(['username' => LoginController::INVALID_CREDENTIALS]);
-    }
-
-    public function test_overlong_password_is_rejected_before_hashing(): void
+    public function test_returns_422_for_an_overlong_password_before_hashing(): void
     {
         $this->account();
 
-        $this->login('PatrikT', str_repeat('a', 129))->assertUnprocessable()->assertJsonValidationErrors('password');
+        $this->login('PatrikT', str_repeat('a', 129))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password' => 'The password field must not be greater than 128 characters.']);
+
+        $this->assertGuest('web');
     }
 
     public function test_plugin_made_hash_logs_in(): void
@@ -181,14 +173,14 @@ class LoginTest extends TestCase
 
     public function test_login_never_rewrites_the_plugin_hash(): void
     {
-        $id = $this->pluginAccount();
+        $this->pluginAccount();
 
         $this->login()->assertOk();
 
-        $this->assertSame(self::PLUGIN_HASH, DB::connection('global')->table('accounts')->where('id', $id)->value('password_hash'));
+        $this->assertDatabaseHas('accounts', ['username' => 'patrikt', 'password_hash' => self::PLUGIN_HASH], 'global');
     }
 
-    public function test_login_from_outside_the_website_is_refused(): void
+    public function test_returns_403_from_outside_the_website(): void
     {
         $this->account();
 
@@ -199,26 +191,24 @@ class LoginTest extends TestCase
         $this->assertGuest('web');
     }
 
-    public function test_login_is_limited_per_username_and_ip_from_config(): void
+    public function test_returns_429_after_the_per_username_and_ip_limit_from_config(): void
     {
         config(['rate_limits.login.per_minute' => 2]);
         $this->account();
-
-        foreach (range(1, 2) as $attempt) {
-            $this->login('PatrikT', 'rossz-jelszo')->assertUnprocessable();
-        }
+        $this->login('PatrikT', 'rossz-jelszo')->assertUnprocessable();
+        $this->login('PatrikT', 'rossz-jelszo')->assertUnprocessable();
 
         $this->login('PatrikT', 'rossz-jelszo')->assertTooManyRequests();
+
         $this->login('Masvalaki', 'rossz-jelszo')->assertUnprocessable();
     }
 
-    public function test_login_is_limited_per_ip_from_config(): void
+    public function test_returns_429_after_the_per_ip_limit_from_config(): void
     {
         config(['rate_limits.login.per_minute_per_ip' => 3]);
-
-        foreach (['Elso', 'Masodik', 'Harmadik'] as $username) {
-            $this->login($username, 'rossz-jelszo')->assertUnprocessable();
-        }
+        $this->login('Elso', 'rossz-jelszo')->assertUnprocessable();
+        $this->login('Masodik', 'rossz-jelszo')->assertUnprocessable();
+        $this->login('Harmadik', 'rossz-jelszo')->assertUnprocessable();
 
         $this->login('Negyedik', 'rossz-jelszo')->assertTooManyRequests();
     }

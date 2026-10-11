@@ -46,6 +46,16 @@ class PendingRegistrationFactory extends Factory
     }
 
     /**
+     * Indicate the password the player registered with.
+     */
+    public function withPassword(string $password): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'password_hash' => Hash::make($password),
+        ]);
+    }
+
+    /**
      * Indicate the code that was mailed for this registration.
      */
     public function withCode(string $code): static

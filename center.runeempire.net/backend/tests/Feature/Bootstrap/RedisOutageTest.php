@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Bootstrap;
 
 use Illuminate\Support\Facades\Exceptions;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;

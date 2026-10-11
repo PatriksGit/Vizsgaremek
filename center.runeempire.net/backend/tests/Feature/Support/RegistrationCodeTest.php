@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Support;
 
 use App\Support\RegistrationCode;
 use Tests\TestCase;

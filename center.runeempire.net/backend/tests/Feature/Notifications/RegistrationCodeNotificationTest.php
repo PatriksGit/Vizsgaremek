@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Notifications;
 
 use App\Notifications\RegistrationCodeNotification;
 use Illuminate\Notifications\AnonymousNotifiable;

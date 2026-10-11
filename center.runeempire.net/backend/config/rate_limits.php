@@ -7,7 +7,7 @@
 return [
 
     /*
-     * POST /api/register, per IP.
+     * POST /api/auth/register, per IP.
      */
     'register' => [
         'per_minute' => (int) env('RATE_LIMITS_REGISTER_PER_MINUTE', 5),
@@ -15,7 +15,7 @@ return [
     ],
 
     /*
-     * POST /api/register/verify, per IP.
+     * POST /api/auth/register/verify, per IP.
      */
     'register_verify' => [
         'per_minute' => (int) env('RATE_LIMITS_REGISTER_VERIFY_PER_MINUTE', 10),

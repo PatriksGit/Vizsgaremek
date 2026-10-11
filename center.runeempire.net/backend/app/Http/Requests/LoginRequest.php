@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests;
 
-use App\Http\Controllers\Auth\LoginController;
 use App\Models\Account;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LoginRequest extends FormRequest
 {
+    public const INVALID_CREDENTIALS = 'Hibás felhasználónév vagy jelszó.';
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -22,7 +23,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'username' => ['bail', 'required', 'string', 'regex:'.Account::NAME_PATTERN],
-            'password' => ['required', 'string', 'max:128'],
+            'password' => ['required', 'string', 'max:'.Account::PASSWORD_INPUT_MAX_LENGTH],
         ];
     }
 
@@ -34,7 +35,7 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'username.regex' => LoginController::INVALID_CREDENTIALS,
+            'username.regex' => self::INVALID_CREDENTIALS,
         ];
     }
 }

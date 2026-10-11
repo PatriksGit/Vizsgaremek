@@ -9,7 +9,6 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
 {
@@ -55,7 +54,7 @@ class RegisterRequest extends FormRequest
         return [
             'display_name' => ['bail', 'required', 'string', 'regex:'.Account::NAME_PATTERN, self::nameIsFree()],
             'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.self::EMAIL_PATTERN, 'email', Rule::unique(Account::class, 'email')],
-            'password' => ['required', 'string', 'confirmed', Password::min(config('auth.password_length.min')), new PlayablePassword],
+            'password' => ['required', 'string', 'confirmed', new PlayablePassword],
         ];
     }
 

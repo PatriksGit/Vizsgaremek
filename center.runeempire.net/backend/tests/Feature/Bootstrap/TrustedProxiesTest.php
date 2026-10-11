@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Bootstrap;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,7 +18,7 @@ class TrustedProxiesTest extends TestCase
     {
         return $this->withServerVariables($server)->postJson(
             '/api/auth/login',
-            ['username' => 'Senki'.random_int(100, 999), 'password' => 'rossz-jelszo'],
+            ['username' => 'Senki', 'password' => 'rossz-jelszo'],
             ['Origin' => 'http://localhost:5173', 'X-Forwarded-For' => $forwardedFor],
         );
     }

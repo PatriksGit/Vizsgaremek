@@ -62,12 +62,15 @@ class VerifyRegistration
                 ->exists();
 
             if ($taken) {
-                return ValidationException::withMessages([
-                    'email' => 'Ez a név vagy e-mail cím időközben foglalt lett, regisztrálj újra.',
-                ]);
+                return self::takenMeanwhile();
             }
 
-            return $this->registerAccount->handle($pending->display_name, $pending->email, $pending->password_hash);
+            try {
+                return $this->registerAccount->handle($pending->display_name, $pending->email, $pending->password_hash);
+            } catch (ValidationException) {
+                // Another request took the name between the check above and the insert.
+                return self::takenMeanwhile();
+            }
         }, attempts: 3);
 
         if ($result instanceof ValidationException) {
@@ -75,6 +78,17 @@ class VerifyRegistration
         }
 
         return $result;
+    }
+
+    /**
+     * The name or email got an account while the registration was pending;
+     * the pending row is deleted, so the player has to register again.
+     */
+    private static function takenMeanwhile(): ValidationException
+    {
+        return ValidationException::withMessages([
+            'email' => 'Ez a név vagy e-mail cím időközben foglalt lett, regisztrálj újra.',
+        ]);
     }
 
     private static function invalidCode(): ValidationException

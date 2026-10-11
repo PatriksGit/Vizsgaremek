@@ -15,9 +15,10 @@ return [
     ],
 
     /*
-     * Length limits enforced at registration. The maximum must not exceed the
+     * Password length limits (registration and password change, see
+     * App\Rules\PlayablePassword). The maximum must not exceed the
      * PAxAuth plugin's password.max-length, otherwise the player could not
-     * log in on the Minecraft server with the password registered here.
+     * log in on the Minecraft server with the password set here.
      */
     'password_length' => [
         'min' => (int) env('PASSWORD_MIN_LENGTH', 8),
