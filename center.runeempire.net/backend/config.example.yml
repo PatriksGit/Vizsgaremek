@@ -47,7 +47,7 @@ mail:
   username: ""          # Brevo SMTP login (Resend: "resend")
   password: ""          # Brevo SMTP key (Resend: API key; host smtp.resend.com)
   from:
-    address: no-reply@runeempire.net
+    address: no-reply@mail.runeempire.net
     name: RuneEmpire
 
 registration:
