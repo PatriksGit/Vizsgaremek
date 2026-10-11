@@ -1,0 +1,46 @@
+# RuneEmpire Center backend configuration (replaces .env).
+#
+# Copy this file to config.yml and fill it in; config.yml is not committed.
+# Nested keys become environment variables for the config/ files:
+# db.global.host -> DB_GLOBAL_HOST, password.argon2.memory-kib -> PASSWORD_ARGON2_MEMORY_KIB.
+# A real environment variable with the same name overrides the value here.
+
+app:
+  name: RuneEmpire Center
+  env: local          # local | production
+  debug: true         # always false in production
+  url: http://localhost:8000
+  # Generate with: php artisan key:generate --show
+  key: "base64:q+fM+mWFNhSDUVwZU4Qyge+ub0yvgUo9CS2XYezuMZs="
+
+db:
+  # Laravel's own tables (cache, API tokens) until the web database exists.
+  connection: sqlite
+
+  # Shared network database; the accounts table belongs to the PAxAuth plugin.
+  global:
+    driver: mysql
+    host: 127.0.0.1
+    port: 3306
+    database: global
+    username: root
+    password: ""
+
+queue:
+  # No background jobs yet; run them inline.
+  connection: sync
+
+password:
+  # Must produce the same hashes PAxAuth verifies (argon2id).
+  argon2:
+    iterations: 3
+    memory-kib: 131072
+    parallelism: 4
+  min-length: 8
+  # Must not exceed PAxAuth's password.max-length, or the player cannot log in in-game.
+  max-length: 64
+
+cors:
+  # Origins of the React frontend allowed to call the API.
+  allowed-origins:
+    - http://localhost:5173
