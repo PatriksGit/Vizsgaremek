@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Account;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -23,11 +24,25 @@ class RegisterRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $displayName = $this->input('display_name');
+        $this->merge(Arr::only(self::withUsername($this->all()), 'username'));
+    }
+
+    /**
+     * Add the derived username to raw registration input, so callers outside
+     * HTTP (the user:register command) validate exactly like the endpoint.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public static function withUsername(array $input): array
+    {
+        $displayName = $input['display_name'] ?? null;
 
         if (is_string($displayName) && preg_match(self::DISPLAY_NAME_PATTERN, $displayName)) {
-            $this->merge(['username' => strtolower($displayName)]);
+            $input['username'] = Account::usernameFor($displayName);
         }
+
+        return $input;
     }
 
     /**

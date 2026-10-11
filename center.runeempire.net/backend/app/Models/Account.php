@@ -20,12 +20,20 @@ use Illuminate\Database\Eloquent\Model;
 #[Connection('global')]
 #[Table('accounts')]
 #[WithoutTimestamps]
-#[Fillable(['uuid', 'username', 'display_name', 'password_hash', 'registered_ip'])]
+#[Fillable(['uuid', 'username', 'display_name', 'password_hash'])]
 #[Hidden(['password_hash', 'twofa_secret'])]
 class Account extends Model
 {
     /** @use HasFactory<AccountFactory> */
     use HasFactory;
+
+    /**
+     * The lowercase name PAxAuth looks accounts up by.
+     */
+    public static function usernameFor(string $displayName): string
+    {
+        return strtolower($displayName);
+    }
 
     /**
      * The UUID an offline-mode Minecraft server assigns to this name

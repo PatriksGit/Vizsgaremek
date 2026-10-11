@@ -3,33 +3,18 @@
 namespace Tests\Feature;
 
 use App\Models\Account;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class RegisterTest extends TestCase
 {
-    /**
-     * The accounts table belongs to the PAxAuth plugin, so there is no migration
-     * for it here; the tests rebuild its relevant columns on the in-memory
-     * "global" connection.
-     */
     protected function setUp(): void
     {
         parent::setUp();
 
-        Schema::connection('global')->create('accounts', function (Blueprint $table) {
-            $table->id();
-            $table->char('uuid', 36)->unique();
-            $table->string('username', 16)->unique();
-            $table->string('display_name', 16)->default('');
-            $table->string('password_hash');
-            $table->string('registered_ip', 45)->default('0.0.0.0');
-            $table->dateTime('created_at')->useCurrent();
-        });
+        $this->createAccountsTable();
     }
 
     public function test_player_can_register(): void
@@ -50,7 +35,7 @@ class RegisterTest extends TestCase
         $account = Account::query()->where('username', 'patrikt')->sole();
         $this->assertSame('70404374-69da-35c1-82bc-fcf925aa903a', $account->uuid);
         $this->assertSame('PatrikT', $account->display_name);
-        $this->assertSame('127.0.0.1', $account->registered_ip);
+        $this->assertSame('0.0.0.0', $account->registered_ip, 'registered_ip is left for PAxAuth to record on the first join.');
         $this->assertTrue(Hash::check('titkos-jelszo', $account->password_hash));
     }
 
