@@ -38,7 +38,7 @@ class RegistrationCodeNotification extends Notification
         return (new MailMessage)
             ->subject('RuneEmpire regisztrációs kód')
             ->greeting('Szia!')
-            ->line("A(z) **{$this->displayName}** fiók regisztrációs kódja: **{$this->code}**")
+            ->line('A(z) **'.str_replace('_', '\_', $this->displayName)."** fiók regisztrációs kódja: **{$this->code}**")
             ->line("A kód {$this->expiresInMinutes} percig érvényes.")
             ->line('Ha nem te regisztráltál, hagyd figyelmen kívül ezt a levelet.')
             ->salutation('RuneEmpire');

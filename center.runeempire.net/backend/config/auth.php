@@ -26,11 +26,13 @@ return [
 
     /*
      * The emailed code that confirms a registration before the account is created.
+     * Values are clamped so a config typo cannot break registration: 4-12 digits,
+     * at least 1 minute, 1-255 attempts (the attempts column is a tinyint).
      */
     'registration_code' => [
-        'length' => (int) env('REGISTRATION_CODE_LENGTH', 6),
-        'expires_minutes' => (int) env('REGISTRATION_CODE_EXPIRES_MINUTES', 15),
-        'max_attempts' => (int) env('REGISTRATION_CODE_MAX_ATTEMPTS', 5),
+        'length' => max(4, min(12, (int) env('REGISTRATION_CODE_LENGTH', 6))),
+        'expires_minutes' => max(1, (int) env('REGISTRATION_CODE_EXPIRES_MINUTES', 15)),
+        'max_attempts' => max(1, min(255, (int) env('REGISTRATION_CODE_MAX_ATTEMPTS', 5))),
     ],
 
 ];

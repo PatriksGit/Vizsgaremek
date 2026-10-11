@@ -14,7 +14,7 @@ class AccountResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @return array{uuid: string, username: string, display_name: string}
      */
     public function toArray(Request $request): array
     {

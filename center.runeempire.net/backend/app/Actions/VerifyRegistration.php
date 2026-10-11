@@ -44,7 +44,12 @@ class VerifyRegistration
 
             if (! RegistrationCode::matches($code, $pending->code_hash)) {
                 $pending->attempts++;
-                $pending->attempts >= $maxAttempts ? $pending->delete() : $pending->save();
+
+                if ($pending->attempts >= $maxAttempts) {
+                    $pending->delete();
+                } else {
+                    $pending->save();
+                }
 
                 return self::invalidCode();
             }

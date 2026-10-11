@@ -212,6 +212,17 @@ class VerifyRegistrationTest extends TestCase
         $this->verify($newCode)->assertCreated();
     }
 
+    public function test_verification_limit_comes_from_config(): void
+    {
+        config(['rate_limits.register_verify.per_minute' => 2]);
+
+        foreach (range(1, 2) as $attempt) {
+            $this->verify('123456', 'senki@example.com')->assertUnprocessable();
+        }
+
+        $this->verify('123456', 'senki@example.com')->assertTooManyRequests();
+    }
+
     public function test_verification_is_rate_limited(): void
     {
         foreach (range(1, 10) as $attempt) {

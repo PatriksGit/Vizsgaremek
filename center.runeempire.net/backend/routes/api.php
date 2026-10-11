@@ -11,5 +11,5 @@ Route::post('/register', RegisterController::class)
     ->name('register');
 
 Route::post('/register/verify', VerifyRegistrationController::class)
-    ->middleware('throttle:10,1')
+    ->middleware('throttle:register-verify')
     ->name('register.verify');

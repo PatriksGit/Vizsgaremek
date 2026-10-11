@@ -35,4 +35,16 @@ class RegistrationCodeNotificationTest extends TestCase
 
         $this->assertStringContainsString('PatrikT', $html);
     }
+
+    /**
+     * Minecraft names may contain underscores, which Markdown would turn into emphasis.
+     */
+    public function test_underscores_in_the_name_are_shown_as_typed(): void
+    {
+        $html = (string) (new RegistrationCodeNotification('012345', 15, '_Steve_'))
+            ->toMail(new AnonymousNotifiable)
+            ->render();
+
+        $this->assertStringContainsString('_Steve_', $html);
+    }
 }

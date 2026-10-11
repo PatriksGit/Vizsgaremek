@@ -25,7 +25,7 @@ class AccountFactory extends Factory
     {
         return [
             'uuid' => fn (array $attributes) => Account::offlineUuid($attributes['display_name']),
-            'username' => fn (array $attributes) => strtolower($attributes['display_name']),
+            'username' => fn (array $attributes) => Account::usernameFor($attributes['display_name']),
             'display_name' => fake()->unique()->regexify('[A-Za-z][A-Za-z0-9_]{2,15}'),
             'password_hash' => static::$passwordHash ??= Hash::make('password'),
             'email' => fake()->unique()->safeEmail(),

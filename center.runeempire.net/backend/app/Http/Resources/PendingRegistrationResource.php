@@ -14,7 +14,7 @@ class PendingRegistrationResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @return array{email: string, expires_at: string}
      */
     public function toArray(Request $request): array
     {

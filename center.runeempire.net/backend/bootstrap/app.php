@@ -24,9 +24,11 @@ $app = Application::configure(basePath: dirname(__DIR__))
     ->booted(function (): void {
         // Each limit needs its own key, or they would share one counter.
         RateLimiter::for('register', fn (Request $request) => [
-            Limit::perMinute(5)->by('minute:'.$request->ip()),
-            Limit::perHour(20)->by('hour:'.$request->ip()),
+            Limit::perMinute(config('rate_limits.register.per_minute'))->by('minute:'.$request->ip()),
+            Limit::perHour(config('rate_limits.register.per_hour'))->by('hour:'.$request->ip()),
         ]);
+
+        RateLimiter::for('register-verify', fn (Request $request) => Limit::perMinute(config('rate_limits.register_verify.per_minute'))->by($request->ip()));
     })
     ->create();
 

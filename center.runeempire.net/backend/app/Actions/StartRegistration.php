@@ -11,24 +11,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Throwable;
 
 class StartRegistration
 {
     /**
-     * At most one code is mailed to an address within this many seconds.
-     */
-    private const MAIL_COOLDOWN_SECONDS = 60;
-
-    /**
      * Park validated registration input until its emailed code is redeemed,
-     * replacing any pending registration for the same name or email, and mail the code.
+     * replacing this email's pending registration, and mail the code.
      *
      * The mail is sent after the transaction commits, so a slow SMTP server
-     * never holds locks in the auth database.
+     * never holds locks in the auth database. At most one code is mailed to an
+     * address per rate_limits.registration_mail.cooldown_seconds.
      *
      * @throws ThrottleRequestsException when a code was mailed to this address within the cooldown
+     * @throws ValidationException when another email holds the name
      * @throws ServiceUnavailableHttpException when the mail could not be sent
      */
     public function handle(string $displayName, string $email, string $password): PendingRegistration
@@ -37,9 +35,9 @@ class StartRegistration
 
         // Claim the cooldown slot up front: a parallel request for the same
         // address must already be refused while this one waits on SMTP.
-        if (RateLimiter::hit($cooldownKey, self::MAIL_COOLDOWN_SECONDS) > 1) {
+        if (RateLimiter::hit($cooldownKey, config('rate_limits.registration_mail.cooldown_seconds')) > 1) {
             throw new ThrottleRequestsException(
-                'Erre az e-mail címre nemrég küldtünk kódot, várj egy percet.',
+                'Erre az e-mail címre nemrég küldtünk kódot, próbáld újra kicsit később.',
                 headers: ['Retry-After' => RateLimiter::availableIn($cooldownKey)],
             );
         }
@@ -70,15 +68,30 @@ class StartRegistration
     }
 
     /**
-     * Replace any pending registration for the same name or email, sweeping
-     * expired ones. Retried on deadlock: two registrations at the same moment
-     * can deadlock on InnoDB gap locks.
+     * Replace the pending registration of this email, sweeping expired ones.
+     * A name still pending under another email is refused, so nobody can
+     * cancel another player's registration. Retried on deadlock: two
+     * registrations at the same moment can deadlock on InnoDB gap locks.
+     *
+     * @throws ValidationException when another email holds the name
      */
     private function park(string $username, string $displayName, string $email, string $passwordHash, string $code, int $expiresInMinutes): PendingRegistration
     {
         return DB::connection('global')->transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes): PendingRegistration {
             PendingRegistration::query()->where('expires_at', '<=', now())->delete();
-            PendingRegistration::query()->where('username', $username)->orWhere('email', $email)->delete();
+
+            $nameHeldByAnotherEmail = PendingRegistration::query()
+                ->where('username', $username)
+                ->where('email', '!=', $email)
+                ->exists();
+
+            if ($nameHeldByAnotherEmail) {
+                throw ValidationException::withMessages([
+                    'display_name' => 'Ez a név már regisztráció alatt áll.',
+                ]);
+            }
+
+            PendingRegistration::query()->where('email', $email)->delete();
 
             return PendingRegistration::create([
                 'username' => $username,

@@ -98,10 +98,41 @@ class RegisterTest extends TestCase
 
         $this->register(['display_name' => 'PATRIKT'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('username');
+            ->assertJsonValidationErrors(['display_name' => 'The display name has already been taken.']);
 
         $this->assertSame(0, PendingRegistration::query()->count());
         Notification::assertNothingSent();
+    }
+
+    public function test_client_supplied_username_is_never_queried(): void
+    {
+        DB::connection('global')->enableQueryLog();
+
+        $this->register(['display_name' => '!!', 'username' => 'őrült'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('display_name');
+
+        $this->assertNoQueryMentions('global', 'username', 'A non-ASCII username would make MySQL fail on the ascii_bin column.');
+    }
+
+    public function test_client_supplied_username_does_not_override_the_derived_one(): void
+    {
+        $this->register(['username' => 'masvalaki'])->assertAccepted();
+
+        $this->assertSame('patrikt', PendingRegistration::query()->sole()->username);
+    }
+
+    public function test_name_held_by_another_email_is_rejected_with_422(): void
+    {
+        PendingRegistration::factory()->create(['display_name' => 'PatrikT', 'email' => 'masik@example.com']);
+
+        $this->register()
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['display_name' => 'Ez a név már regisztráció alatt áll.']);
+
+        $this->assertSame('masik@example.com', PendingRegistration::query()->sole()->email, "A stranger must not cancel another player's pending registration.");
+        Notification::assertNothingSent();
+        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
     }
 
     public function test_email_is_taken_regardless_of_case(): void
@@ -136,6 +167,10 @@ class RegisterTest extends TestCase
             'not an email' => ['nem-email'],
             'too long' => [str_repeat('a', 251).'@x.hu'],
             'array' => [['patrik@example.com']],
+            'no dot in domain' => ['patrik@localhost'],
+            'ip literal' => ['patrik@[127.0.0.1]'],
+            'quoted local part with space' => ['"patrik t"@example.com'],
+            'non-ascii' => ['josé@example.com'],
         ];
     }
 
@@ -188,15 +223,24 @@ class RegisterTest extends TestCase
             'too short' => ['1234567', '1234567'],
             'too long' => [str_repeat('a', 65), str_repeat('a', 65)],
             'confirmation mismatch' => ['titkos-jelszo', 'masik-jelszo'],
+            'space (in-game /login splits on spaces)' => ['titkos jelszo', 'titkos jelszo'],
+            'section sign (cannot be typed in Minecraft chat)' => ['titkos§jelszo', 'titkos§jelszo'],
+            'over 64 UTF-16 units like the plugin counts' => [str_repeat('😀', 33), str_repeat('😀', 33)],
         ];
     }
 
-    public function test_re_registering_the_same_name_replaces_the_pending_registration(): void
+    public function test_accented_password_within_the_plugin_limit_is_accepted(): void
     {
-        $this->register(['email' => 'regi@example.com'])->assertAccepted();
-        $this->register(['email' => 'uj@example.com'])->assertAccepted();
+        $this->register(['password' => 'árvíztűrő-tükörfúrógép', 'password_confirmation' => 'árvíztűrő-tükörfúrógép'])->assertAccepted();
+    }
 
-        $this->assertSame('uj@example.com', PendingRegistration::query()->sole()->email);
+    public function test_re_registering_the_same_name_and_email_replaces_the_pending_registration(): void
+    {
+        $this->register()->assertAccepted();
+        $this->travel(61)->seconds();
+        $this->register(['password' => 'uj-titkos-jelszo', 'password_confirmation' => 'uj-titkos-jelszo'])->assertAccepted();
+
+        $this->assertTrue(Hash::check('uj-titkos-jelszo', PendingRegistration::query()->sole()->password_hash));
     }
 
     public function test_re_registering_the_same_email_replaces_the_pending_registration(): void
@@ -278,6 +322,41 @@ class RegisterTest extends TestCase
         }
 
         $this->postJson('/api/register', ['display_name' => 'ab'])->assertTooManyRequests();
+    }
+
+    public function test_per_minute_limit_comes_from_config(): void
+    {
+        config(['rate_limits.register.per_minute' => 2]);
+
+        foreach (range(1, 2) as $attempt) {
+            $this->postJson('/api/register', ['display_name' => 'ab'])->assertUnprocessable();
+        }
+
+        $this->postJson('/api/register', ['display_name' => 'ab'])->assertTooManyRequests();
+    }
+
+    public function test_per_hour_limit_comes_from_config(): void
+    {
+        config(['rate_limits.register.per_hour' => 3]);
+
+        foreach (range(1, 3) as $attempt) {
+            $this->postJson('/api/register', ['display_name' => 'ab'])->assertUnprocessable();
+        }
+
+        $this->travel(61)->seconds();
+        $this->postJson('/api/register', ['display_name' => 'ab'])->assertTooManyRequests();
+    }
+
+    public function test_mail_cooldown_comes_from_config(): void
+    {
+        config(['rate_limits.registration_mail.cooldown_seconds' => 120]);
+
+        $this->register()->assertAccepted();
+        $this->travel(61)->seconds();
+        $this->register()->assertTooManyRequests();
+
+        $this->travel(60)->seconds();
+        $this->register()->assertAccepted();
     }
 
     public function test_registration_is_rate_limited_per_hour(): void

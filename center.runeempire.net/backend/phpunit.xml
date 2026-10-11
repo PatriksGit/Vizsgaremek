@@ -37,6 +37,10 @@
         <env name="REGISTRATION_CODE_LENGTH" value="6"/>
         <env name="REGISTRATION_CODE_EXPIRES_MINUTES" value="15"/>
         <env name="REGISTRATION_CODE_MAX_ATTEMPTS" value="5"/>
+        <env name="RATE_LIMITS_REGISTER_PER_MINUTE" value="5"/>
+        <env name="RATE_LIMITS_REGISTER_PER_HOUR" value="20"/>
+        <env name="RATE_LIMITS_REGISTER_VERIFY_PER_MINUTE" value="10"/>
+        <env name="RATE_LIMITS_REGISTRATION_MAIL_COOLDOWN_SECONDS" value="60"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

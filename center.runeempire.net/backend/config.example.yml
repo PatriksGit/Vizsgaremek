@@ -52,9 +52,18 @@ mail:
 
 registration:
   code:
-    length: 6           # digits
+    length: 6           # digits, 4-12
     expires-minutes: 15
-    max-attempts: 5
+    max-attempts: 5     # 1-255
+
+rate-limits:
+  register:             # POST /api/register, per IP
+    per-minute: 5
+    per-hour: 20
+  register-verify:      # POST /api/register/verify, per IP
+    per-minute: 10
+  registration-mail:    # one code per email address within this window
+    cooldown-seconds: 60
 
 cors:
   # Origins of the React frontend allowed to call the API.
