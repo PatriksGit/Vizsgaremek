@@ -1,8 +1,10 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Auth\RegisterController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::get('/ping', fn () => ['status' => 'ok']);
+
+Route::post('/register', RegisterController::class)
+    ->middleware('throttle:5,1')
+    ->name('register');

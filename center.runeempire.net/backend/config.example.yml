@@ -11,7 +11,7 @@ app:
   debug: true         # always false in production
   url: http://localhost:8000
   # Generate with: php artisan key:generate --show
-  key: "base64:q+fM+mWFNhSDUVwZU4Qyge+ub0yvgUo9CS2XYezuMZs="
+  key: ""
 
 db:
   # Laravel's own tables (cache, API tokens) until the web database exists.
