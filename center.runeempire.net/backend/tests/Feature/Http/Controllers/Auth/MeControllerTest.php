@@ -28,7 +28,7 @@ class MeControllerTest extends TestCase
     {
         $this->getJson('/api/auth/me', self::FROM_WEBSITE)
             ->assertUnauthorized()
-            ->assertExactJson(['message' => 'Unauthenticated.']);
+            ->assertExactJson(['message' => 'Ehhez be kell jelentkezned.']);
     }
 
     public function test_returns_401_not_500_without_an_accept_header(): void

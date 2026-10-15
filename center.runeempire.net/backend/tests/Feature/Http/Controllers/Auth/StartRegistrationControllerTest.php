@@ -25,6 +25,15 @@ class StartRegistrationControllerTest extends TestCase
 
     private const NAME_PENDING = 'Ez a név már regisztráció alatt áll.';
 
+    private const EMAIL_PENDING = 'Erre az e-mail címre már folyamatban van egy regisztráció. Használd a levélben kapott kódot, vagy próbáld újra, ha lejárt.';
+
+    private const FRONTEND = ['Origin' => 'http://localhost:5173'];
+
+    /**
+     * The session of the browser that registerFromBrowser() sends from.
+     */
+    private ?string $browserSession = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -33,9 +42,12 @@ class StartRegistrationControllerTest extends TestCase
     }
 
     /**
+     * A request from outside the website: no session, so it owns no pending registration.
+     *
      * @param  array<string, mixed>  $overrides
+     * @param  array<string, string>  $headers
      */
-    private function register(array $overrides = []): TestResponse
+    private function register(array $overrides = [], array $headers = []): TestResponse
     {
         return $this->postJson('/api/auth/register', [
             'display_name' => 'PatrikT',
@@ -44,7 +56,33 @@ class StartRegistrationControllerTest extends TestCase
             'password_confirmation' => 'titkos-jelszo',
             'terms' => true,
             ...$overrides,
-        ]);
+        ], $headers);
+    }
+
+    /**
+     * Like the website: the first call starts the browser's session, later
+     * calls carry it, until newBrowser() switches to another browser.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    private function registerFromBrowser(array $overrides = []): TestResponse
+    {
+        if ($this->browserSession !== null) {
+            $this->asBrowserWithSession($this->browserSession);
+        }
+
+        $response = $this->register($overrides, self::FRONTEND);
+        $this->browserSession = $this->lastSessionId();
+
+        return $response;
+    }
+
+    private function newBrowser(): void
+    {
+        $this->app['auth']->forgetGuards();
+        $this->app['session']->driver()->flush();
+        $this->defaultCookies = [];
+        $this->browserSession = null;
     }
 
     /**
@@ -114,7 +152,7 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->register(['display_name' => 'PATRIKT'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['display_name' => 'Ez a játékosnév már foglalt.']);
+            ->assertJsonValidationErrors(['display_name' => 'Ezt a játékosnevet már regisztrálták.']);
 
         $this->assertDatabaseCount('pending_registrations', 0, 'global');
         Notification::assertNothingSent();
@@ -182,7 +220,7 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->register(['email' => 'Patrik@EXAMPLE.com'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email' => 'Ezzel az e-mail címmel már regisztráltak.']);
+            ->assertJsonValidationErrors(['email' => 'Ez az e-mail cím már használatban van.']);
 
         $this->assertDatabaseCount('pending_registrations', 0, 'global');
         Notification::assertNothingSent();
@@ -297,10 +335,10 @@ class StartRegistrationControllerTest extends TestCase
 
     public function test_re_registering_the_same_name_and_email_replaces_the_pending_registration(): void
     {
-        $this->register()->assertAccepted();
+        $this->registerFromBrowser()->assertAccepted();
         $this->travel(61)->seconds();
 
-        $this->register(['password' => 'uj-titkos-jelszo', 'password_confirmation' => 'uj-titkos-jelszo'])->assertAccepted();
+        $this->registerFromBrowser(['password' => 'uj-titkos-jelszo', 'password_confirmation' => 'uj-titkos-jelszo'])->assertAccepted();
 
         $this->assertDatabaseCount('pending_registrations', 1, 'global');
         $this->assertTrue(Hash::check('uj-titkos-jelszo', PendingRegistration::query()->sole()->password_hash));
@@ -308,13 +346,68 @@ class StartRegistrationControllerTest extends TestCase
 
     public function test_re_registering_the_same_email_replaces_the_pending_registration(): void
     {
-        $this->register(['display_name' => 'RegiNev'])->assertAccepted();
+        $this->registerFromBrowser(['display_name' => 'RegiNev'])->assertAccepted();
         $this->travel(61)->seconds();
 
-        $this->register(['display_name' => 'UjNev'])->assertAccepted();
+        $this->registerFromBrowser(['display_name' => 'UjNev'])->assertAccepted();
 
         $this->assertDatabaseCount('pending_registrations', 1, 'global');
         $this->assertDatabaseHas('pending_registrations', ['display_name' => 'UjNev'], 'global');
+    }
+
+    public function test_the_same_browser_can_correct_a_mistyped_email(): void
+    {
+        Notification::fake();
+        $this->registerFromBrowser(['email' => 'patrik@exmaple.com'])->assertAccepted();
+
+        $this->registerFromBrowser()->assertAccepted();
+
+        $this->assertDatabaseCount('pending_registrations', 1, 'global');
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'PatrikT', 'email' => 'patrik@example.com'], 'global');
+        $this->postJson('/api/auth/register/verify', ['email' => 'patrik@example.com', 'code' => $this->mailedCode()])->assertCreated();
+    }
+
+    public function test_returns_422_and_keeps_the_registration_when_another_browser_reuses_its_email(): void
+    {
+        Notification::fake();
+        $this->registerFromBrowser(['display_name' => 'Aldozat'])->assertAccepted();
+        $this->travel(61)->seconds();
+        $this->newBrowser();
+
+        $this->registerFromBrowser(['display_name' => 'Tamado', 'password' => 'tamado-jelszo', 'password_confirmation' => 'tamado-jelszo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email' => self::EMAIL_PENDING]);
+
+        $this->assertDatabaseCount('pending_registrations', 1, 'global');
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Aldozat', 'email' => 'patrik@example.com'], 'global');
+        Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 1);
+        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
+    }
+
+    public function test_returns_422_when_a_request_without_a_session_reuses_a_pending_email(): void
+    {
+        Notification::fake();
+        $this->registerFromBrowser(['display_name' => 'Aldozat'])->assertAccepted();
+        $this->travel(61)->seconds();
+        $this->newBrowser();
+
+        $this->register(['display_name' => 'Tamado'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email' => self::EMAIL_PENDING]);
+
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Aldozat'], 'global');
+        Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 1);
+    }
+
+    public function test_the_password_does_not_reach_the_log_when_the_mail_fails(): void
+    {
+        Exceptions::fake();
+        // Thrown during the send, so its stack trace holds the registration's frames.
+        $this->mock(Dispatcher::class, fn (MockInterface $mock) => $mock->shouldReceive('send')->andReturnUsing(fn () => throw new TransportException('SMTP down')));
+
+        $this->register()->assertServiceUnavailable();
+
+        Exceptions::assertReported(fn (TransportException $exception): bool => ! str_contains($exception->getTraceAsString(), 'titkos-jelszo'));
     }
 
     public function test_expired_pending_registrations_are_cleaned_up(): void
@@ -360,27 +453,27 @@ class StartRegistrationControllerTest extends TestCase
     public function test_returns_429_for_a_second_code_to_the_same_email_within_the_cooldown(): void
     {
         Notification::fake();
-        $this->register()->assertAccepted();
+        $this->registerFromBrowser()->assertAccepted();
 
-        $this->register()
+        $this->registerFromBrowser()
             ->assertTooManyRequests()
             ->assertJson(['message' => 'Erre az e-mail címre nemrég küldtünk kódot, próbáld újra kicsit később.']);
 
         $this->travel(61)->seconds();
-        $this->register()->assertAccepted();
+        $this->registerFromBrowser()->assertAccepted();
         Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 2);
     }
 
     public function test_mail_cooldown_comes_from_config(): void
     {
         config(['rate_limits.registration_mail.cooldown_seconds' => 120]);
-        $this->register()->assertAccepted();
+        $this->registerFromBrowser()->assertAccepted();
         $this->travel(61)->seconds();
 
-        $this->register()->assertTooManyRequests();
+        $this->registerFromBrowser()->assertTooManyRequests();
 
         $this->travel(60)->seconds();
-        $this->register()->assertAccepted();
+        $this->registerFromBrowser()->assertAccepted();
     }
 
     public function test_frontend_origin_passes_cors_preflight_with_credentials(): void

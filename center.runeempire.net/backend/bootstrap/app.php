@@ -1,10 +1,12 @@
 <?php
 
 use App\Support\YamlEnv;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,6 +32,14 @@ $app = Application::configure(basePath: dirname(__DIR__))
         // Sessions live in Redis; when it is down, players get a plain message
         // (the exception is still reported to the log).
         $exceptions->render(fn (RedisException $exception) => response()->json(['message' => 'Váratlan hiba történt.'], 500));
+
+        // The framework's own 401 and 419 messages are fixed English strings.
+        $exceptions->render(fn (AuthenticationException $exception, Request $request) => $request->is('api/*')
+            ? response()->json(['message' => 'Ehhez be kell jelentkezned.'], 401)
+            : null);
+        $exceptions->render(fn (HttpException $exception, Request $request) => $exception->getStatusCode() === 419 && $request->is('api/*')
+            ? response()->json(['message' => 'A munkamenet lejárt. Frissítsd az oldalt, és próbáld újra.'], 419)
+            : null);
     })
     ->create();
 

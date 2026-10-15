@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Models\Account;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
+use SensitiveParameter;
 
 class RegisterAccount
 {
@@ -18,7 +19,7 @@ class RegisterAccount
      *
      * @throws ValidationException when the name was taken between validation and insert
      */
-    public function handle(string $displayName, string $email, string $passwordHash): Account
+    public function handle(string $displayName, string $email, #[SensitiveParameter] string $passwordHash): Account
     {
         try {
             return Account::create([

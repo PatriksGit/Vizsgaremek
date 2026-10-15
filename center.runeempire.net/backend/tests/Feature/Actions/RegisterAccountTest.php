@@ -32,7 +32,7 @@ class RegisterAccountTest extends TestCase
             app(RegisterAccount::class)->handle('PATRIKT', 'masik@example.com', Hash::make('titkos-jelszo'));
             $this->fail('The taken name was not refused.');
         } catch (ValidationException $exception) {
-            $this->assertSame(['username' => ['Ez a játékosnév már foglalt.']], $exception->errors());
+            $this->assertSame(['username' => ['Ezt a játékosnevet már regisztrálták.']], $exception->errors());
         }
 
         $this->assertDatabaseCount('accounts', 1, 'global');

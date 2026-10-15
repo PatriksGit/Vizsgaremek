@@ -27,13 +27,13 @@ return [
      */
     'custom' => [
         'display_name' => [
-            'unique' => 'Ez a játékosnév már foglalt.',
+            'unique' => 'Ezt a játékosnevet már regisztrálták.',
         ],
         'username' => [
-            'unique' => 'Ez a játékosnév már foglalt.',
+            'unique' => 'Ezt a játékosnevet már regisztrálták.',
         ],
         'email' => [
-            'unique' => 'Ezzel az e-mail címmel már regisztráltak.',
+            'unique' => 'Ez az e-mail cím már használatban van.',
         ],
         'terms' => [
             'accepted' => 'A regisztrációhoz el kell fogadnod az ÁSZF-et.',

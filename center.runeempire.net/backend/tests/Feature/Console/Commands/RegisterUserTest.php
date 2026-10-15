@@ -80,7 +80,7 @@ class RegisterUserTest extends TestCase
         Account::factory()->create(['display_name' => 'PatrikT']);
 
         $this->artisan('user:register', ['username' => 'PATRIKT', 'email' => 'patrik@example.com', '--password' => 'titkos-jelszo'])
-            ->expectsOutputToContain('Ez a játékosnév már foglalt.')
+            ->expectsOutputToContain('Ezt a játékosnevet már regisztrálták.')
             ->assertFailed();
 
         $this->assertDatabaseCount('accounts', 1, 'global');
@@ -91,7 +91,7 @@ class RegisterUserTest extends TestCase
         Account::factory()->create(['email' => 'patrik@example.com']);
 
         $this->artisan('user:register', ['username' => 'PatrikT', 'email' => 'PATRIK@example.com', '--password' => 'titkos-jelszo'])
-            ->expectsOutputToContain('Ezzel az e-mail címmel már regisztráltak.')
+            ->expectsOutputToContain('Ez az e-mail cím már használatban van.')
             ->assertFailed();
 
         $this->assertDatabaseCount('accounts', 1, 'global');

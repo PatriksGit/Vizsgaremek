@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use SensitiveParameter;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Throwable;
 
@@ -27,11 +28,18 @@ class StartRegistration
      * address per rate_limits.registration_mail.cooldown_seconds.
      *
      * @throws ThrottleRequestsException when a code was mailed to this address within the cooldown
-     * @throws ValidationException when another email holds the name
+     *                                   $ownerToken identifies the browser session that starts the registration
+     *                                   (null outside the website); only that session may replace the pending
+     *                                   registration before it expires.
+     * @throws ValidationException when another session's pending registration holds the name or the email
      * @throws ServiceUnavailableHttpException when the mail could not be sent
      */
-    public function handle(string $displayName, string $email, string $password): PendingRegistration
-    {
+    public function handle(
+        string $displayName,
+        string $email,
+        #[SensitiveParameter] string $password,
+        #[SensitiveParameter] ?string $ownerToken = null,
+    ): PendingRegistration {
         $cooldownKey = 'registration-mail:'.$email;
 
         // Claim the cooldown slot up front: a parallel request for the same
@@ -48,7 +56,8 @@ class StartRegistration
         $expiresInMinutes = config('auth.registration_code.expires_minutes');
 
         try {
-            $pending = $this->replacePendingRegistration($username, $displayName, $email, Hash::make($password), $code, $expiresInMinutes);
+            $ownerHash = $ownerToken === null ? null : hash('sha256', $ownerToken);
+            $pending = $this->replacePendingRegistration($username, $displayName, $email, Hash::make($password), $code, $expiresInMinutes, $ownerHash);
         } catch (Throwable $exception) {
             RateLimiter::clear($cooldownKey);
 
@@ -69,31 +78,43 @@ class StartRegistration
     }
 
     /**
-     * Replace the pending registration of this email, sweeping expired ones.
-     * A name still pending under another email is refused, so nobody can
-     * cancel another player's registration; a registration that takes the
-     * name at the same moment hits the unique index and gets the same answer.
-     * Retried on deadlock: two registrations at the same moment can deadlock
-     * on InnoDB gap locks.
+     * Replace this session's pending registrations of the name or the email,
+     * sweeping expired ones. A live one started by another session (or outside
+     * the website) is refused, so nobody can cancel or take over another
+     * player's registration; the same session may, e.g. to fix a mistyped
+     * email. A registration that takes the name at the same moment hits the
+     * unique index and gets the same answer. Retried on deadlock: two
+     * registrations at the same moment can deadlock on InnoDB gap locks.
      *
-     * @throws ValidationException when another email holds the name
+     * @throws ValidationException when another session's pending registration holds the name or the email
      */
-    private function replacePendingRegistration(string $username, string $displayName, string $email, string $passwordHash, string $code, int $expiresInMinutes): PendingRegistration
-    {
+    private function replacePendingRegistration(
+        string $username,
+        string $displayName,
+        string $email,
+        #[SensitiveParameter] string $passwordHash,
+        #[SensitiveParameter] string $code,
+        int $expiresInMinutes,
+        ?string $ownerHash,
+    ): PendingRegistration {
         try {
-            return DB::connection('global')->transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes): PendingRegistration {
+            return DB::connection('global')->transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes, $ownerHash): PendingRegistration {
                 PendingRegistration::query()->where('expires_at', '<=', now())->delete();
 
-                $nameHeldByAnotherEmail = PendingRegistration::query()
-                    ->where('username', $username)
-                    ->where('email', '!=', $email)
-                    ->exists();
+                $held = PendingRegistration::query()
+                    ->where(fn ($query) => $query->where('username', $username)->orWhere('email', $email))
+                    ->get();
+                $heldByOthers = $held->reject(fn (PendingRegistration $pending): bool => self::isOwnedBy($pending, $ownerHash));
 
-                if ($nameHeldByAnotherEmail) {
+                if ($heldByOthers->contains('username', $username)) {
                     throw self::nameHeld();
                 }
 
-                PendingRegistration::query()->where('email', $email)->delete();
+                if ($heldByOthers->isNotEmpty()) {
+                    throw self::emailHeld();
+                }
+
+                PendingRegistration::query()->whereKey($held->modelKeys())->delete();
 
                 return PendingRegistration::create([
                     'username' => $username,
@@ -101,12 +122,28 @@ class StartRegistration
                     'email' => $email,
                     'password_hash' => $passwordHash,
                     'code_hash' => RegistrationCode::hash($code),
+                    'owner_hash' => $ownerHash,
                     'expires_at' => now()->addMinutes($expiresInMinutes),
                 ]);
             }, attempts: 3);
         } catch (UniqueConstraintViolationException) {
             throw self::nameHeld();
         }
+    }
+
+    /**
+     * A request without a session owns nothing, not even a row without an owner.
+     */
+    private static function isOwnedBy(PendingRegistration $pending, ?string $ownerHash): bool
+    {
+        return $ownerHash !== null && $pending->owner_hash !== null && hash_equals($pending->owner_hash, $ownerHash);
+    }
+
+    private static function emailHeld(): ValidationException
+    {
+        return ValidationException::withMessages([
+            'email' => 'Erre az e-mail címre már folyamatban van egy regisztráció. Használd a levélben kapott kódot, vagy próbáld újra, ha lejárt.',
+        ]);
     }
 
     private static function nameHeld(): ValidationException

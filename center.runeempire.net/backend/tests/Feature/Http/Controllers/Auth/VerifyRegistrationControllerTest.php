@@ -234,23 +234,30 @@ class VerifyRegistrationControllerTest extends TestCase
     public function test_re_registering_replaces_the_pending_code_with_the_newly_mailed_one(): void
     {
         Notification::fake();
-        $old = $this->pending('111111');
-
-        $this->postJson('/api/auth/register', [
+        $registration = [
             'display_name' => 'PatrikT',
             'email' => 'patrik@example.com',
             'password' => 'titkos-jelszo',
             'password_confirmation' => 'titkos-jelszo',
             'terms' => true,
-        ])->assertAccepted();
+        ];
+        $fromWebsite = ['Origin' => 'http://localhost:5173'];
+        $this->postJson('/api/auth/register', $registration, $fromWebsite)->assertAccepted();
+        $old = PendingRegistration::query()->sole();
+        $browserSession = $this->lastSessionId();
+        $this->travel(61)->seconds();
+
+        $this->asBrowserWithSession($browserSession)->postJson('/api/auth/register', $registration, $fromWebsite)->assertAccepted();
 
         $this->assertModelMissing($old);
-        $newCode = null;
-        Notification::assertSentOnDemand(RegistrationCodeNotification::class, function (RegistrationCodeNotification $notification) use (&$newCode): bool {
-            $newCode = $notification->code;
+        $codes = [];
+        Notification::assertSentOnDemand(RegistrationCodeNotification::class, function (RegistrationCodeNotification $notification) use (&$codes): bool {
+            $codes[] = $notification->code;
 
             return true;
         });
+        [$oldCode, $newCode] = $codes;
+        $this->verify($oldCode)->assertUnprocessable()->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
         $this->verify($newCode)->assertCreated();
         $this->assertTrue(Hash::check('titkos-jelszo', Account::query()->sole()->password_hash));
     }

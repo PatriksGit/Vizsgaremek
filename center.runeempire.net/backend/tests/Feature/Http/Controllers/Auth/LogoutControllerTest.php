@@ -27,6 +27,6 @@ class LogoutControllerTest extends TestCase
     {
         $this->postJson('/api/auth/logout', [], self::FROM_WEBSITE)
             ->assertUnauthorized()
-            ->assertExactJson(['message' => 'Unauthenticated.']);
+            ->assertExactJson(['message' => 'Ehhez be kell jelentkezned.']);
     }
 }

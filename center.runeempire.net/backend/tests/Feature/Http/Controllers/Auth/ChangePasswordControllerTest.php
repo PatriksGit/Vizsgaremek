@@ -160,19 +160,31 @@ class ChangePasswordControllerTest extends TestCase
     {
         $this->changePassword()
             ->assertUnauthorized()
-            ->assertExactJson(['message' => 'Unauthenticated.']);
+            ->assertExactJson(['message' => 'Ehhez be kell jelentkezned.']);
     }
 
-    public function test_other_sessions_are_logged_out_but_this_one_stays(): void
+    public function test_other_sessions_are_logged_out_but_this_browser_stays_under_a_new_session_id(): void
     {
         $this->account();
         $thisSession = $this->loginAndGetSessionId();
         $otherSession = $this->loginAndGetSessionId();
 
         $this->asBrowserWithSession($thisSession)->changePassword()->assertNoContent();
+        $newSession = $this->lastSessionId();
 
+        $this->assertNotSame($thisSession, $newSession);
         $this->asBrowserWithSession($otherSession)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertUnauthorized();
-        $this->asBrowserWithSession($thisSession)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertOk();
+        $this->asBrowserWithSession($newSession)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertOk();
+    }
+
+    public function test_a_stolen_copy_of_the_old_session_id_is_logged_out_too(): void
+    {
+        $this->account();
+        $session = $this->loginAndGetSessionId();
+
+        $this->asBrowserWithSession($session)->changePassword()->assertNoContent();
+
+        $this->asBrowserWithSession($session)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertUnauthorized();
     }
 
     public function test_returns_429_after_the_per_account_limit_from_config(): void

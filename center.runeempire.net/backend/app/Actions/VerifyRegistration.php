@@ -7,6 +7,7 @@ use App\Models\PendingRegistration;
 use App\Support\RegistrationCode;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use SensitiveParameter;
 
 class VerifyRegistration
 {
@@ -25,7 +26,7 @@ class VerifyRegistration
      *
      * @throws ValidationException
      */
-    public function handle(string $email, string $code): Account
+    public function handle(string $email, #[SensitiveParameter] string $code): Account
     {
         $result = DB::connection('global')->transaction(function () use ($email, $code): Account|ValidationException {
             $pending = PendingRegistration::query()->where('email', $email)->lockForUpdate()->first();

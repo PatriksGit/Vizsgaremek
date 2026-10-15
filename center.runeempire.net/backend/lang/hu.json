@@ -1,0 +1,6 @@
+{
+    "(and :count more error)": "(és még :count hiba)",
+    "(and :count more errors)": "(és még :count hiba)",
+    "The given data was invalid.": "A megadott adatok hibásak.",
+    "All rights reserved.": "Minden jog fenntartva."
+}

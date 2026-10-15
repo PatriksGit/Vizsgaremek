@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Model;
  * It becomes an Account when the code is redeemed.
  */
 #[Connection('global')]
-#[Fillable(['username', 'display_name', 'email', 'password_hash', 'code_hash', 'expires_at'])]
-#[Hidden(['password_hash', 'code_hash'])]
+#[Fillable(['username', 'display_name', 'email', 'password_hash', 'code_hash', 'owner_hash', 'expires_at'])]
+#[Hidden(['password_hash', 'code_hash', 'owner_hash'])]
 class PendingRegistration extends Model
 {
     /** @use HasFactory<PendingRegistrationFactory> */
