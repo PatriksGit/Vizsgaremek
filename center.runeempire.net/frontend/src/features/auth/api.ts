@@ -24,10 +24,14 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** The logged-in account, or null for a guest. */
+/**
+ * The logged-in account, or null for a guest (the backend answers a guest with
+ * data: null). A 401 still means logged out: a session invalidated by a
+ * password change elsewhere is ended on this request.
+ */
 export async function fetchCurrentAccount(): Promise<Account | null> {
   try {
-    const response = await http.get<Wrapped<Account>>('/auth/me')
+    const response = await http.get<Wrapped<Account | null>>('/auth/me')
     return response.data.data
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return null

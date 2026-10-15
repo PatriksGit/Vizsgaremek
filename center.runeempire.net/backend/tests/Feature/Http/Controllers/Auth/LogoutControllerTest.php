@@ -16,11 +16,11 @@ class LogoutControllerTest extends TestCase
         Account::factory()->withPassword('titkos-jelszo')->create(['display_name' => 'PatrikT']);
         $this->postJson('/api/auth/login', ['username' => 'PatrikT', 'password' => 'titkos-jelszo'], self::FROM_WEBSITE)->assertOk();
         $sessionId = $this->lastSessionId();
-        $this->asBrowserWithSession($sessionId)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertOk();
+        $this->asBrowserWithSession($sessionId)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertJsonPath('data.username', 'patrikt');
 
         $this->asBrowserWithSession($sessionId)->postJson('/api/auth/logout', [], self::FROM_WEBSITE)->assertNoContent();
 
-        $this->asBrowserWithSession($sessionId)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertUnauthorized();
+        $this->asBrowserWithSession($sessionId)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertJsonMissingPath('data.uuid');
     }
 
     public function test_returns_401_without_login(): void

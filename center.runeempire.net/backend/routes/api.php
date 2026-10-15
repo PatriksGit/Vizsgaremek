@@ -21,8 +21,10 @@ Route::prefix('auth')->name('auth.')->group(function () {
         ->middleware('throttle:login')
         ->name('login');
 
+    // Open to guests: "not logged in" is an answer here, not an error.
+    Route::get('/me', MeController::class)->name('me');
+
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/me', MeController::class)->name('me');
         Route::post('/logout', LogoutController::class)->name('logout');
 
         Route::put('/password', ChangePasswordController::class)

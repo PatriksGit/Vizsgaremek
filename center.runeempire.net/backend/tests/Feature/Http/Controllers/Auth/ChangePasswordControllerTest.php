@@ -173,8 +173,8 @@ class ChangePasswordControllerTest extends TestCase
         $newSession = $this->lastSessionId();
 
         $this->assertNotSame($thisSession, $newSession);
-        $this->asBrowserWithSession($otherSession)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertUnauthorized();
-        $this->asBrowserWithSession($newSession)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertOk();
+        $this->asBrowserWithSession($otherSession)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertJsonMissingPath('data.uuid');
+        $this->asBrowserWithSession($newSession)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertJsonPath('data.username', 'patrikt');
     }
 
     public function test_a_stolen_copy_of_the_old_session_id_is_logged_out_too(): void
@@ -184,7 +184,7 @@ class ChangePasswordControllerTest extends TestCase
 
         $this->asBrowserWithSession($session)->changePassword()->assertNoContent();
 
-        $this->asBrowserWithSession($session)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertUnauthorized();
+        $this->asBrowserWithSession($session)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertJsonMissingPath('data.uuid');
     }
 
     public function test_returns_429_after_the_per_account_limit_from_config(): void

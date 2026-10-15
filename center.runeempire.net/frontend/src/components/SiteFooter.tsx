@@ -16,7 +16,7 @@ export function SiteFooter() {
                 <a
                   href={link.href}
                   aria-label={link.label}
-                  className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-muted-foreground outline-none transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/3 text-muted-foreground outline-none transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <FontAwesomeIcon icon={link.icon} className="size-4" aria-hidden="true" />
                 </a>

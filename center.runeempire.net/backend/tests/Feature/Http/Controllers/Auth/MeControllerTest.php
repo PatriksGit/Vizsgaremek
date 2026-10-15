@@ -24,15 +24,17 @@ class MeControllerTest extends TestCase
         ]]);
     }
 
-    public function test_returns_401_without_login(): void
+    public function test_returns_200_with_null_for_a_guest(): void
     {
         $this->getJson('/api/auth/me', self::FROM_WEBSITE)
-            ->assertUnauthorized()
-            ->assertExactJson(['message' => 'Ehhez be kell jelentkezned.']);
+            ->assertOk()
+            ->assertExactJson(['data' => null]);
     }
 
-    public function test_returns_401_not_500_without_an_accept_header(): void
+    public function test_returns_200_with_null_for_a_guest_without_an_accept_header(): void
     {
-        $this->get('/api/auth/me', self::FROM_WEBSITE)->assertUnauthorized();
+        $this->get('/api/auth/me', self::FROM_WEBSITE)
+            ->assertOk()
+            ->assertExactJson(['data' => null]);
     }
 }
