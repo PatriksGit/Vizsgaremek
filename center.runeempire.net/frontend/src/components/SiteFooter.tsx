@@ -1,27 +1,45 @@
-import { CopyAddressButton } from '@/components/CopyAddressButton'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+
 import { Logo } from '@/components/Logo'
 import { site } from '@/config/site'
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-bedrock text-sm text-muted-foreground">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_repeat(3,1fr)] lg:px-8">
-        <div className="col-span-2 flex max-w-xs flex-col gap-4 md:col-span-1">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.6fr_1fr_1fr] lg:px-8">
+        <div className="col-span-2 flex max-w-xs flex-col gap-5 md:col-span-1">
           <Logo />
           <p className="leading-relaxed">{site.tagline}</p>
-          <CopyAddressButton className="-mx-1 self-start" />
+          <ul className="flex gap-2">
+            {site.socialLinks.map((link) => (
+              <li key={link.label}>
+                <a
+                  href={link.href}
+                  aria-label={link.label}
+                  className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-muted-foreground outline-none transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <FontAwesomeIcon icon={link.icon} className="size-4" aria-hidden="true" />
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {site.footerLinks.map((column) => (
           <nav key={column.title} aria-label={column.title}>
-            <h2 className="mb-3 font-medium text-foreground">{column.title}</h2>
-            <ul className="flex flex-col gap-2">
+            <h2 className="mb-4 font-medium text-foreground">{column.title}</h2>
+            <ul className="flex flex-col gap-3">
               {column.links.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className="group inline-flex items-center gap-2.5 rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
+                    <FontAwesomeIcon
+                      icon={link.icon}
+                      className="size-3.5 text-muted-foreground/60 transition-colors group-hover:text-primary"
+                      aria-hidden="true"
+                    />
                     {link.label}
                   </a>
                 </li>

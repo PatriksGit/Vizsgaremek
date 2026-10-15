@@ -61,7 +61,7 @@ export function RegisterDetailsStep({ details, onChange, onDone }: RegisterDetai
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <FieldGroup>
+      <FieldGroup className="gap-4">
         <TextField
           label="Játékosnév"
           icon={faUser}
@@ -69,43 +69,43 @@ export function RegisterDetailsStep({ details, onChange, onDone }: RegisterDetai
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="pl. PatrikT"
+          placeholder="Játékosnév"
           description="Ezzel a névvel lépsz be a szerverre is."
           value={details.name}
           error={errors.name}
-          onChange={(event) => {
-            update({ name: event.target.value })
-          }}
+          onChange={(event) => update({ name: event.target.value })}
         />
         <TextField
           label="E-mail cím"
           icon={faEnvelope}
           name="email"
           type="email"
+          placeholder="peldaemail@gmail.com"
           autoComplete="email"
           spellCheck={false}
-          description="Ide küldjük a megerősítő kódot."
           value={details.email}
           error={errors.email}
           onChange={(event) => update({ email: event.target.value })}
         />
-        <PasswordField
-          label="Jelszó"
-          name="password"
-          autoComplete="new-password"
-          description={`Legalább ${PASSWORD_MIN_LENGTH} karakter, szóköz és § jel nélkül.`}
-          value={details.password}
-          error={errors.password}
-          onChange={(event) => update({ password: event.target.value })}
-        />
-        <PasswordField
-          label="Jelszó újra"
-          name="password_confirmation"
-          autoComplete="new-password"
-          value={details.passwordConfirmation}
-          error={errors.passwordConfirmation}
-          onChange={(event) => update({ passwordConfirmation: event.target.value })}
-        />
+        <div className="grid items-start gap-4 sm:grid-cols-2">
+          <PasswordField
+            label="Jelszó"
+            name="password"
+            autoComplete="new-password"
+            description={`Min. ${PASSWORD_MIN_LENGTH} karakter, szóköz és § nélkül.`}
+            value={details.password}
+            error={errors.password}
+            onChange={(event) => update({ password: event.target.value })}
+          />
+          <PasswordField
+            label="Jelszó újra"
+            name="password_confirmation"
+            autoComplete="new-password"
+            value={details.passwordConfirmation}
+            error={errors.passwordConfirmation}
+            onChange={(event) => update({ passwordConfirmation: event.target.value })}
+          />
+        </div>
 
         <Field orientation="horizontal" data-invalid={errors.terms ? true : undefined}>
           <Checkbox
@@ -129,7 +129,7 @@ export function RegisterDetailsStep({ details, onChange, onDone }: RegisterDetai
           </FieldContent>
         </Field>
 
-        <Button type="submit" className="mt-2 h-11 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]">
+        <Button type="submit" className="mt-1 h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]">
           <FontAwesomeIcon icon={faPaperPlane} aria-hidden="true" />
           Kód küldése
         </Button>

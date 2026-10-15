@@ -7,7 +7,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { cn } from '@/lib/utils'
 
-import { CODE_LENGTH } from './validation'
+import { CODE_EXPIRES_MINUTES, CODE_LENGTH } from './validation'
 
 type RegisterCodeStepProps = {
   email: string
@@ -33,10 +33,13 @@ export function RegisterCodeStep({ email, onBack }: RegisterCodeStepProps) {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <div>
-        <h2 className="font-heading text-3xl leading-tight text-foreground">Nézd meg az e-mailed</h2>
+        <h2 className="font-heading text-2xl leading-tight text-foreground">Nézd meg az e-mailed</h2>
         <p className="mt-2 text-muted-foreground">
           Küldtünk egy {CODE_LENGTH} jegyű kódot ide:{' '}
           <span className="font-medium wrap-anywhere text-foreground">{email}</span>
+        </p>
+        <p className="mt-1 text-sm text-pretty text-muted-foreground">
+          {CODE_EXPIRES_MINUTES} percig érvényes. Ha nem látod, nézd meg a spam mappát is.
         </p>
       </div>
 
@@ -61,7 +64,7 @@ export function RegisterCodeStep({ email, onBack }: RegisterCodeStepProps) {
                 key={index}
                 index={index}
                 className={cn(
-                  'h-14 flex-1 rounded-lg border border-white/10 bg-black/25 text-xl font-semibold text-foreground tabular-nums shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] first:rounded-lg last:rounded-lg',
+                  'h-12 flex-1 rounded-lg border border-white/10 bg-black/40 text-xl font-semibold text-foreground tabular-nums shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] first:rounded-lg last:rounded-lg',
                   error && 'border-destructive',
                 )}
               />
@@ -72,7 +75,7 @@ export function RegisterCodeStep({ email, onBack }: RegisterCodeStepProps) {
       </Field>
 
       <div className="flex flex-col gap-3">
-        <Button type="submit" className="h-11 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]">
+        <Button type="submit" className="h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]">
           <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
           Fiók létrehozása
         </Button>

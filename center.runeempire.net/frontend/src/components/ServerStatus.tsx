@@ -1,19 +1,22 @@
-import { CopyAddressButton } from '@/components/CopyAddressButton'
 import { site } from '@/config/site'
+import { useCountUp } from '@/hooks/useCountUp'
+import { cn } from '@/lib/utils'
 
-export function ServerStatus() {
+export function ServerStatus({ className }: { className?: string }) {
+  const shownCount = useCountUp(site.playersOnline)
+
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-      <span className="inline-flex items-center gap-2">
-        <span className="size-2 rounded-full bg-xp shadow-[0_0_8px_var(--xp)]" aria-hidden="true" />
-        <span>
-          <strong className="font-semibold text-foreground">{site.playersOnline}</strong> online
-        </span>
-      </span>
+    <p className={cn('inline-flex items-center gap-2 text-sm text-muted-foreground', className)}>
+      <span className="size-2 rounded-full bg-xp shadow-[0_0_8px_var(--xp)]" aria-hidden="true" />
       <span>
-        Verzió <span className="text-foreground">{site.minecraftVersion}</span>
+        Jelenleg{' '}
+        <strong className="font-semibold text-foreground tabular-nums">
+          {/* Screen readers get the final count, not every step of the spin-up. */}
+          <span aria-hidden="true">{shownCount}</span>
+          <span className="sr-only">{site.playersOnline}</span>
+        </strong>{' '}
+        játékos online
       </span>
-      <CopyAddressButton />
-    </div>
+    </p>
   )
 }

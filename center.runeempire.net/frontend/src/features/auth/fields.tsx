@@ -11,8 +11,6 @@ type TextFieldProps = Omit<ComponentProps<'input'>, 'id'> & {
   label: string
   /** Shown inside the input, at its left edge. */
   icon?: IconDefinition
-  /** Placed next to the label, at its right edge (e.g. a "forgot password" link). */
-  labelAside?: ReactNode
   description?: ReactNode
   error?: string
   /** Placed inside the input, at its right edge. */
@@ -23,7 +21,6 @@ type TextFieldProps = Omit<ComponentProps<'input'>, 'id'> & {
 export function TextField({
   label,
   icon,
-  labelAside,
   description,
   error,
   trailing,
@@ -35,12 +32,9 @@ export function TextField({
 
   return (
     <Field data-invalid={error ? true : undefined}>
-      <div className="flex items-baseline justify-between gap-4">
-        <FieldLabel htmlFor={id} className="text-foreground">
-          {label}
-        </FieldLabel>
-        {labelAside}
-      </div>
+      <FieldLabel htmlFor={id} className="text-foreground">
+        {label}
+      </FieldLabel>
       <div className="relative">
         {icon && (
           <FontAwesomeIcon
@@ -54,7 +48,7 @@ export function TextField({
           aria-invalid={error ? true : undefined}
           aria-describedby={error || description ? hintId : undefined}
           className={cn(
-            'h-11 rounded-lg border-white/10 bg-black/25 px-3.5 text-base text-foreground shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] md:text-base',
+            'h-10 rounded-lg border-white/10 bg-black/40 px-3.5 text-base text-foreground shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] md:text-base',
             icon && 'pl-10',
             trailing && 'pr-12',
             className,
@@ -79,6 +73,7 @@ export function PasswordField(props: PasswordFieldProps) {
 
   return (
     <TextField
+      placeholder="••••••••"
       {...props}
       icon={faLock}
       type={visible ? 'text' : 'password'}
@@ -88,7 +83,7 @@ export function PasswordField(props: PasswordFieldProps) {
           onClick={() => setVisible((value) => !value)}
           aria-label={visible ? 'Jelszó elrejtése' : 'Jelszó megjelenítése'}
           aria-pressed={visible}
-          className="grid size-9 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="grid size-8 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <FontAwesomeIcon icon={visible ? faEyeSlash : faEye} className="size-4" />
         </button>

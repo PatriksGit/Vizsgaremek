@@ -3,17 +3,14 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/figtree";
 @import "@fontsource/grenze/600.css";
-@import "@fontsource/noto-sans-old-hungarian/old-hungarian-400.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-sans: 'Figtree Variable', sans-serif;
     --font-heading: 'Grenze', serif;
-    --font-rovas: 'Noto Sans Old Hungarian', sans-serif;
     --color-bedrock: var(--bedrock);
     --color-xp: var(--xp);
-    --color-rune: var(--rune);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -40,37 +37,36 @@
 }
 
 /*
- * RuneEmpire palette, built from Minecraft materials. The site is dark only.
- *   deepslate #2B2B30  stone tablet (card)     deep deepslate #1F1F24  recessed inputs, page
- *   vein      #45444C  borders                  bedrock        #18181C  footer
+ * RuneEmpire palette, built from Minecraft materials. The site is dark only,
+ * close to black so the server screenshots behind the glass carry the colour.
+ *   obsidian  #16161A  dialogs, solid panels   void           #0E0E11  page
+ *   vein      #2E2D34  borders                  bedrock        #09090B  footer
  *   bone      #E9E4D8  text                     ash            #A8A39A  secondary text
  *   rune gold #F2B544  CTA, focus               xp green       #7ED957  online dot only
- *   rune blue #5CC8FF  carved runes, from the logo's glowing runes
  */
 :root {
     color-scheme: dark;
-    --background: #1f1f24;
+    --background: #0e0e11;
     --foreground: #e9e4d8;
-    --card: #2b2b30;
+    --card: #16161a;
     --card-foreground: #e9e4d8;
-    --popover: #2b2b30;
+    --popover: #16161a;
     --popover-foreground: #e9e4d8;
     --primary: #f2b544;
     --primary-foreground: #2b1d05;
-    --secondary: #36363c;
+    --secondary: #222227;
     --secondary-foreground: #e9e4d8;
-    --muted: #36363c;
+    --muted: #222227;
     --muted-foreground: #a8a39a;
-    --accent: #36363c;
+    --accent: #222227;
     --accent-foreground: #e9e4d8;
     --destructive: #f28b74;
-    --border: #45444c;
-    --input: #45444c;
+    --border: #2e2d34;
+    --input: #2e2d34;
     --ring: #f2b544;
     --radius: 0.25rem;
-    --bedrock: #18181c;
+    --bedrock: #09090b;
     --xp: #7ed957;
-    --rune: #5cc8ff;
 }
 
 @layer base {
@@ -85,28 +81,3 @@
     }
 }
 
-/* A rune lights up when it is carved, then settles into a steady glow. */
-@keyframes rune-carve {
-    from {
-        color: #fff;
-        text-shadow: 0 0 20px var(--rune), 0 0 6px var(--rune);
-        transform: translateY(-2px);
-    }
-    to {
-        color: var(--rune);
-        text-shadow: 0 0 10px color-mix(in oklab, var(--rune) 55%, transparent);
-        transform: none;
-    }
-}
-
-.rune-carved {
-    color: var(--rune);
-    text-shadow: 0 0 10px color-mix(in oklab, var(--rune) 55%, transparent);
-    animation: rune-carve 600ms ease-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .rune-carved {
-        animation: none;
-    }
-}

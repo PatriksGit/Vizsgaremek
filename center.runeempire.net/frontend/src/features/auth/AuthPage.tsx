@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
 
 import { site } from '@/config/site'
@@ -10,38 +10,43 @@ import { LoginForm } from './LoginForm'
 import { RegisterForm } from './RegisterForm'
 
 /**
- * Login and registration on one glass card: the artwork panel stays on the
+ * Login and registration on one glass card: the info panel stays on the
  * left, and the forms slide past each other on the right. Both forms stay
  * mounted, so switching back and forth keeps what was typed.
  */
 export function AuthPage() {
   const { pathname } = useLocation()
   const mode: AuthMode = pathname === '/register' ? 'register' : 'login'
-  const [names, setNames] = useState<Record<AuthMode, string>>({ login: '', register: '' })
 
   return (
     <div
       className="relative isolate flex min-h-dvh items-center justify-center bg-background bg-cover bg-center px-4 py-10 sm:px-6"
       style={site.authBackgroundUrl ? { backgroundImage: `url(${site.authBackgroundUrl})` } : undefined}
     >
-      {!site.authBackgroundUrl && (
-        // Stand-in for the shader image, so the glass has light to blur.
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(45%_40%_at_20%_25%,rgb(242_181_68/0.18),transparent_70%),radial-gradient(40%_40%_at_85%_80%,rgb(92_200_255/0.14),transparent_70%)]"
-        />
-      )}
+      <title>{`${mode === 'register' ? 'Regisztráció' : 'Belépés'} | ${site.name}`}</title>
 
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-[1.75rem] border border-white/12 bg-white/[0.05] shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-2xl md:grid-cols-2">
-        <AuthShowcase mode={mode} name={names[mode]} className="border-white/10 max-md:border-b md:border-r" />
+      <div
+        aria-hidden="true"
+        className={cn(
+          'absolute inset-0 -z-10',
+          site.authBackgroundUrl
+            ? // Dims the screenshot's bright spots and darkens the edges, so the card's text stays legible.
+              'bg-[radial-gradient(ellipse_at_center,rgb(0_0_0/0.25),rgb(0_0_0/0.65))]'
+            : // Stand-in for the shader image, so the glass has light to blur.
+              'bg-[radial-gradient(45%_40%_at_20%_25%,rgb(242_181_68/0.18),transparent_70%),radial-gradient(40%_40%_at_85%_80%,rgb(92_200_255/0.14),transparent_70%)]',
+        )}
+      />
+
+      <div className="grid w-full max-w-[56rem] overflow-hidden rounded-3xl border border-white/10 bg-black/55 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl md:grid-cols-2">
+        <AuthShowcase className="border-white/10 max-md:border-b md:border-r" />
 
         {/* Both forms share one grid cell, so the column is as tall as the taller one. */}
         <div className="grid overflow-hidden">
           <FormSlide mode={mode} active={mode === 'login'} from="left">
-            <LoginForm onNameChange={(name) => setNames((current) => ({ ...current, login: name }))} />
+            <LoginForm />
           </FormSlide>
           <FormSlide mode={mode} active={mode === 'register'} from="right">
-            <RegisterForm onNameChange={(name) => setNames((current) => ({ ...current, register: name }))} />
+            <RegisterForm />
           </FormSlide>
         </div>
       </div>
@@ -67,7 +72,7 @@ function FormSlide({ mode, active, from, children }: FormSlideProps) {
     <div
       inert={!active}
       className={cn(
-        'col-start-1 row-start-1 flex flex-col justify-center gap-8 p-6 sm:p-10',
+        'col-start-1 row-start-1 flex flex-col justify-center gap-6 p-6 sm:p-8',
         'transition-[translate,opacity] duration-600 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none',
         active
           ? 'translate-x-0 opacity-100'

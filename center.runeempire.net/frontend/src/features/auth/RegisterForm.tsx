@@ -11,7 +11,7 @@ const STEPS = ['Adatok', 'Megerősítés'] as const
  * Registration is two steps on the backend too: the details start it and
  * email a code, the code creates the account. Going back keeps the details.
  */
-export function RegisterForm({ onNameChange }: { onNameChange: (name: string) => void }) {
+export function RegisterForm() {
   const [step, setStep] = useState(0)
   const [details, setDetails] = useState<RegisterDetails>({
     name: '',
@@ -22,7 +22,7 @@ export function RegisterForm({ onNameChange }: { onNameChange: (name: string) =>
   })
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <ol className="grid grid-cols-2 gap-3 text-sm">
         {STEPS.map((label, index) => (
           <li
@@ -43,10 +43,7 @@ export function RegisterForm({ onNameChange }: { onNameChange: (name: string) =>
       </ol>
 
       {step === 0 ? (
-        <RegisterDetailsStep details={details} onChange={(next) => {
-            setDetails(next)
-            onNameChange(next.name)
-          }} onDone={() => setStep(1)} />
+        <RegisterDetailsStep details={details} onChange={setDetails} onDone={() => setStep(1)} />
       ) : (
         <RegisterCodeStep email={details.email} onBack={() => setStep(0)} />
       )}

@@ -12,7 +12,7 @@ const TABS = [
 /** Segmented switch between the two forms; the highlight slides along with them. */
 export function AuthTabs({ mode }: { mode: AuthMode }) {
   return (
-    <nav aria-label="Fiók" className="relative grid grid-cols-2 rounded-xl border border-white/10 bg-black/25 p-1">
+    <nav aria-label="Fiók" className="relative grid grid-cols-2 rounded-xl border border-white/10 bg-black/40 p-1">
       <span
         aria-hidden="true"
         className={cn(
@@ -27,7 +27,7 @@ export function AuthTabs({ mode }: { mode: AuthMode }) {
           to={tab.to}
           className={({ isActive }) =>
             cn(
-              'relative rounded-lg py-2.5 text-center font-medium outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
+              'relative rounded-lg py-2 text-center font-medium outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
               isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
             )
           }
