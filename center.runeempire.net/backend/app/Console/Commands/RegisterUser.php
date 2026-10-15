@@ -33,6 +33,8 @@ class RegisterUser extends Command
             $confirmation = $this->secret('Confirm password');
         }
 
+        // The terms are for players registering on the website; an admin
+        // creating an account here has nothing to accept.
         $validator = Validator::make(
             RegisterRequest::normalize([
                 'display_name' => $username,
@@ -40,8 +42,7 @@ class RegisterUser extends Command
                 'password' => $password,
                 'password_confirmation' => $confirmation,
             ]),
-            (new RegisterRequest)->rules(),
-            attributes: ['display_name' => 'username'],
+            Arr::except((new RegisterRequest)->rules(), 'terms'),
         );
 
         try {

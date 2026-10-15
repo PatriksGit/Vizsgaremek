@@ -143,8 +143,8 @@ class LoginControllerTest extends TestCase
     public static function malformedUsernames(): array
     {
         return [
-            'missing' => [null, 'The username field is required.'],
-            'array' => [['PatrikT'], 'The username field must be a string.'],
+            'missing' => [null, 'Játékosnév megadása kötelező.'],
+            'array' => [['PatrikT'], 'Játékosnév csak szöveg lehet.'],
             'accented' => ['őrült', LoginRequest::INVALID_CREDENTIALS],
             'too short' => ['ab', LoginRequest::INVALID_CREDENTIALS],
             'space inside' => ['Patrik T', LoginRequest::INVALID_CREDENTIALS],
@@ -157,7 +157,7 @@ class LoginControllerTest extends TestCase
 
         $this->login('PatrikT', str_repeat('a', 129))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'The password field must not be greater than 128 characters.']);
+            ->assertJsonValidationErrors(['password' => 'Jelszó legfeljebb 128 karakter lehet.']);
 
         $this->assertGuest('web');
     }
@@ -210,6 +210,34 @@ class LoginControllerTest extends TestCase
         $this->login('Masodik', 'rossz-jelszo')->assertUnprocessable();
         $this->login('Harmadik', 'rossz-jelszo')->assertUnprocessable();
 
-        $this->login('Negyedik', 'rossz-jelszo')->assertTooManyRequests();
+        $this->login('Negyedik', 'rossz-jelszo')
+            ->assertTooManyRequests()
+            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'));
+    }
+
+    public function test_returns_429_with_the_wait_in_minutes_in_hungarian(): void
+    {
+        $this->freezeTime();
+        config(['rate_limits.login.per_minute' => 1]);
+        $this->login('PatrikT', 'rossz-jelszo')->assertUnprocessable();
+
+        $response = $this->login('PatrikT', 'rossz-jelszo');
+
+        $response->assertTooManyRequests()
+            ->assertExactJson(['message' => 'Túl sok próbálkozás. Próbáld újra 1 perc múlva.'])
+            ->assertHeader('Retry-After', '60');
+    }
+
+    public function test_returns_429_with_the_wait_in_seconds_under_a_minute(): void
+    {
+        $this->freezeTime();
+        config(['rate_limits.login.per_minute' => 1]);
+        $this->login('PatrikT', 'rossz-jelszo')->assertUnprocessable();
+        $this->travel(35)->seconds();
+
+        $response = $this->login('PatrikT', 'rossz-jelszo');
+
+        $response->assertTooManyRequests()
+            ->assertExactJson(['message' => 'Túl sok próbálkozás. Próbáld újra 25 másodperc múlva.']);
     }
 }

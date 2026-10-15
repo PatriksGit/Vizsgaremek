@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class LoginRequest extends FormRequest
 {
-    public const INVALID_CREDENTIALS = 'Hibás felhasználónév vagy jelszó.';
+    public const INVALID_CREDENTIALS = 'Hibás játékosnév vagy jelszó.';
 
     /**
      * Get the validation rules that apply to the request.

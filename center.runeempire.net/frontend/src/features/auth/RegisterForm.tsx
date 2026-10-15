@@ -2,8 +2,9 @@ import { useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
-import { RegisterDetailsStep, type RegisterDetails } from './RegisterDetailsStep'
+import { startRegistration, type PendingRegistration } from './api'
 import { RegisterCodeStep } from './RegisterCodeStep'
+import { RegisterDetailsStep, type RegisterDetails } from './RegisterDetailsStep'
 
 const STEPS = ['Adatok', 'Megerősítés'] as const
 
@@ -12,7 +13,6 @@ const STEPS = ['Adatok', 'Megerősítés'] as const
  * email a code, the code creates the account. Going back keeps the details.
  */
 export function RegisterForm() {
-  const [step, setStep] = useState(0)
   const [details, setDetails] = useState<RegisterDetails>({
     name: '',
     email: '',
@@ -20,6 +20,21 @@ export function RegisterForm() {
     passwordConfirmation: '',
     termsAccepted: false,
   })
+  const [pending, setPending] = useState<PendingRegistration>()
+  const step = pending ? 1 : 0
+
+  /** Starts the registration, or restarts it with a fresh code. */
+  async function requestCode() {
+    setPending(
+      await startRegistration({
+        displayName: details.name,
+        email: details.email,
+        password: details.password,
+        passwordConfirmation: details.passwordConfirmation,
+        termsAccepted: details.termsAccepted,
+      }),
+    )
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -42,10 +57,10 @@ export function RegisterForm() {
         ))}
       </ol>
 
-      {step === 0 ? (
-        <RegisterDetailsStep details={details} onChange={setDetails} onDone={() => setStep(1)} />
+      {pending ? (
+        <RegisterCodeStep pending={pending} onResend={requestCode} onBack={() => setPending(undefined)} />
       ) : (
-        <RegisterCodeStep email={details.email} onBack={() => setStep(0)} />
+        <RegisterDetailsStep details={details} onChange={setDetails} onSubmit={requestCode} />
       )}
     </div>
   )

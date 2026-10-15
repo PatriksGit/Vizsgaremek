@@ -30,7 +30,7 @@ class RegisterAccount
             ]);
         } catch (UniqueConstraintViolationException) {
             throw ValidationException::withMessages([
-                'username' => __('validation.unique', ['attribute' => 'username']),
+                'username' => __('validation.custom.username.unique'),
             ]);
         }
     }

@@ -45,7 +45,8 @@ class RegisterRequest extends FormRequest
      *
      * The name is checked through the display name only: a client-supplied
      * username is never read, and bail keeps an invalid name away from the
-     * database, since PAxAuth's username column is ascii.
+     * database, since PAxAuth's username column is ascii. The terms (ÁSZF)
+     * must be accepted, but the acceptance is not stored.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -55,6 +56,7 @@ class RegisterRequest extends FormRequest
             'display_name' => ['bail', 'required', 'string', 'regex:'.Account::NAME_PATTERN, self::nameIsFree()],
             'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.self::EMAIL_PATTERN, 'email', Rule::unique(Account::class, 'email')],
             'password' => ['required', 'string', 'confirmed', new PlayablePassword],
+            'terms' => ['accepted'],
         ];
     }
 
@@ -65,7 +67,7 @@ class RegisterRequest extends FormRequest
     {
         return function (string $attribute, string $value, Closure $fail): void {
             if (Account::query()->where('username', Account::usernameFor($value))->exists()) {
-                $fail('validation.unique')->translate();
+                $fail('validation.custom.display_name.unique')->translate();
             }
         };
     }

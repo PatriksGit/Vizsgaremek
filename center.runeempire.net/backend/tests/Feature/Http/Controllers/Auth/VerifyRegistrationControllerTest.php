@@ -114,11 +114,11 @@ class VerifyRegistrationControllerTest extends TestCase
      */
     public static function malformedCodes(): array
     {
-        $format = 'The code field format is invalid.';
+        $format = 'Kód formátuma érvénytelen.';
 
         return [
-            'missing' => [null, 'The code field is required.'],
-            'json number (leading zero lost)' => [12345, 'The code field must be a string.'],
+            'missing' => [null, 'Kód megadása kötelező.'],
+            'json number (leading zero lost)' => [12345, 'Kód csak szöveg lehet.'],
             'too short' => ['12345', $format],
             'too long' => ['1234567', $format],
             'letter' => ['12a456', $format],
@@ -241,6 +241,7 @@ class VerifyRegistrationControllerTest extends TestCase
             'email' => 'patrik@example.com',
             'password' => 'titkos-jelszo',
             'password_confirmation' => 'titkos-jelszo',
+            'terms' => true,
         ])->assertAccepted();
 
         $this->assertModelMissing($old);
@@ -260,6 +261,8 @@ class VerifyRegistrationControllerTest extends TestCase
         $this->verify('123456', 'senki@example.com')->assertUnprocessable();
         $this->verify('123456', 'senki@example.com')->assertUnprocessable();
 
-        $this->verify('123456', 'senki@example.com')->assertTooManyRequests();
+        $this->verify('123456', 'senki@example.com')
+            ->assertTooManyRequests()
+            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'));
     }
 }

@@ -11,4 +11,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    // Same origin as production, where the proxy forwards /api to Laravel:
+    // the session and XSRF cookies stay on this origin and no CORS is involved.
+    // Open the site as localhost:5173 (not 127.0.0.1): Sanctum only gives
+    // that origin a session.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        xfwd: true,
+      },
+    },
+  },
 })

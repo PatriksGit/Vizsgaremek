@@ -6,17 +6,24 @@ import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
 
+import { login } from './api'
+import { useAuth } from './authContext'
+import { formMessage } from './errors'
 import { PasswordField, TextField } from './fields'
+import { FormAlert } from './FormAlert'
 import { hasErrors, type FieldErrors } from './validation'
 
 type LoginField = 'username' | 'password'
 
 export function LoginForm() {
+  const { setAccount } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<FieldErrors<LoginField>>({})
+  const [formError, setFormError] = useState<string>()
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     // Only emptiness is checked here: the backend answers every other mistake
@@ -26,14 +33,24 @@ export function LoginForm() {
       password: password ? undefined : 'Add meg a jelszavad.',
     }
     setErrors(nextErrors)
+    setFormError(undefined)
     if (hasErrors(nextErrors)) return
 
-    // TODO: POST /api/auth/login once the frontend is wired to the backend.
+    setSubmitting(true)
+    try {
+      // Logged in: the login page sends the player on to the home page.
+      setAccount(await login(username, password))
+    } catch (error) {
+      // Wrong credentials come back on the username field, but they are about both.
+      setFormError(formMessage(error))
+      setSubmitting(false)
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate>
       <FieldGroup>
+        <FormAlert message={formError} />
         <TextField
           label="Játékosnév"
           icon={faUser}
@@ -63,9 +80,13 @@ export function LoginForm() {
             Elfelejtetted a jelszavad?
           </Link>
         </div>
-        <Button type="submit" className="mt-2 h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]">
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="mt-2 h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]"
+        >
           <FontAwesomeIcon icon={faRightToBracket} aria-hidden="true" />
-          Belépés
+          {submitting ? 'Belépés…' : 'Belépés'}
         </Button>
       </FieldGroup>
     </form>

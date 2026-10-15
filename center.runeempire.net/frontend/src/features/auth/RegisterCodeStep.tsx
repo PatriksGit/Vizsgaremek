@@ -7,19 +7,32 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { cn } from '@/lib/utils'
 
-import { CODE_EXPIRES_MINUTES, CODE_LENGTH } from './validation'
+import { verifyRegistration, type PendingRegistration } from './api'
+import { useAuth } from './authContext'
+import { formMessage, mapApiError } from './errors'
+import { FormAlert } from './FormAlert'
+import { CODE_LENGTH } from './validation'
 
 type RegisterCodeStepProps = {
-  email: string
+  pending: PendingRegistration
+  /** Sends a fresh code to the same address. */
+  onResend: () => Promise<void>
   onBack: () => void
 }
 
-export function RegisterCodeStep({ email, onBack }: RegisterCodeStepProps) {
+export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStepProps) {
+  const { setAccount } = useAuth()
   const [code, setCode] = useState('')
   const [error, setError] = useState<string>()
+  const [formError, setFormError] = useState<string>()
+  const [notice, setNotice] = useState<string>()
+  const [submitting, setSubmitting] = useState(false)
+  const [resending, setResending] = useState(false)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setFormError(undefined)
+    setNotice(undefined)
 
     if (code.length !== CODE_LENGTH) {
       setError(`Írd be mind a ${CODE_LENGTH} számjegyet.`)
@@ -27,7 +40,32 @@ export function RegisterCodeStep({ email, onBack }: RegisterCodeStepProps) {
     }
     setError(undefined)
 
-    // TODO: POST /api/auth/register/verify once the frontend is wired to the backend.
+    setSubmitting(true)
+    try {
+      // The account exists and the player is logged in: the login page sends them on.
+      setAccount(await verifyRegistration(pending.email, code))
+    } catch (failure) {
+      const mapped = mapApiError(failure, { code: 'code' })
+      setError(mapped.fieldErrors.code)
+      setFormError(mapped.formError)
+      setSubmitting(false)
+    }
+  }
+
+  async function handleResend() {
+    setFormError(undefined)
+    setNotice(undefined)
+    setResending(true)
+    try {
+      await onResend()
+      setCode('')
+      setError(undefined)
+      setNotice('Új kódot küldtünk. A korábbi kód már nem érvényes.')
+    } catch (failure) {
+      setFormError(formMessage(failure))
+    } finally {
+      setResending(false)
+    }
   }
 
   return (
@@ -36,12 +74,19 @@ export function RegisterCodeStep({ email, onBack }: RegisterCodeStepProps) {
         <h2 className="font-heading text-2xl leading-tight text-foreground">Nézd meg az e-mailed</h2>
         <p className="mt-2 text-muted-foreground">
           Küldtünk egy {CODE_LENGTH} jegyű kódot ide:{' '}
-          <span className="font-medium wrap-anywhere text-foreground">{email}</span>
+          <span className="font-medium wrap-anywhere text-foreground">{pending.email}</span>
         </p>
         <p className="mt-1 text-sm text-pretty text-muted-foreground">
-          {CODE_EXPIRES_MINUTES} percig érvényes. Ha nem látod, nézd meg a spam mappát is.
+          {pending.expiresInMinutes} percig érvényes. Ha nem látod, nézd meg a spam mappát is.
         </p>
       </div>
+
+      <FormAlert message={formError} />
+      {notice && (
+        <p role="status" className="rounded-lg border border-xp/30 bg-xp/10 px-3.5 py-3 text-sm text-foreground">
+          {notice}
+        </p>
+      )}
 
       <Field data-invalid={error ? true : undefined}>
         <FieldLabel htmlFor="registration-code" className="text-foreground">
@@ -75,10 +120,25 @@ export function RegisterCodeStep({ email, onBack }: RegisterCodeStepProps) {
       </Field>
 
       <div className="flex flex-col gap-3">
-        <Button type="submit" className="h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]">
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]"
+        >
           <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
-          Fiók létrehozása
+          {submitting ? 'Fiók létrehozása…' : 'Fiók létrehozása'}
         </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          Nem jött meg?{' '}
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resending}
+            className="rounded-sm font-medium text-foreground underline underline-offset-4 outline-none hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60"
+          >
+            {resending ? 'Küldés…' : 'Új kódot kérek'}
+          </button>
+        </p>
         <p className="text-center text-sm text-muted-foreground">
           Rossz e-mail címet adtál meg?{' '}
           <button

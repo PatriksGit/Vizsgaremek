@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field, FieldContent, FieldError, FieldGroup } from '@/components/ui/field'
 
+import { mapApiError } from './errors'
 import { PasswordField, TextField } from './fields'
+import { FormAlert } from './FormAlert'
 import { LegalDialog } from './LegalDialog'
 import {
   emailError,
@@ -27,21 +29,34 @@ export type RegisterDetails = {
 
 type DetailsField = 'name' | 'email' | 'password' | 'passwordConfirmation' | 'terms'
 
+/** Backend error keys → fields of this form. A name taken at the last moment comes back as username. */
+const FIELD_FOR_KEY: Partial<Record<string, DetailsField>> = {
+  display_name: 'name',
+  username: 'name',
+  email: 'email',
+  password: 'password',
+  password_confirmation: 'passwordConfirmation',
+  terms: 'terms',
+}
+
 type RegisterDetailsStepProps = {
   details: RegisterDetails
   onChange: (details: RegisterDetails) => void
-  onDone: () => void
+  /** Sends the details; resolves once the code is on its way. */
+  onSubmit: () => Promise<void>
 }
 
-export function RegisterDetailsStep({ details, onChange, onDone }: RegisterDetailsStepProps) {
+export function RegisterDetailsStep({ details, onChange, onSubmit }: RegisterDetailsStepProps) {
   const [errors, setErrors] = useState<FieldErrors<DetailsField>>({})
+  const [formError, setFormError] = useState<string>()
+  const [submitting, setSubmitting] = useState(false)
   const termsId = useId()
 
   function update(changes: Partial<RegisterDetails>) {
     onChange({ ...details, ...changes })
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const nextErrors: FieldErrors<DetailsField> = {
@@ -53,15 +68,25 @@ export function RegisterDetailsStep({ details, onChange, onDone }: RegisterDetai
       terms: details.termsAccepted ? undefined : 'A regisztrációhoz el kell fogadnod az ÁSZF-et.',
     }
     setErrors(nextErrors)
+    setFormError(undefined)
     if (hasErrors(nextErrors)) return
 
-    // TODO: POST /api/auth/register once the frontend is wired to the backend.
-    onDone()
+    setSubmitting(true)
+    try {
+      // On success the parent moves on to the code step, which unmounts this form.
+      await onSubmit()
+    } catch (error) {
+      const mapped = mapApiError(error, FIELD_FOR_KEY)
+      setErrors(mapped.fieldErrors)
+      setFormError(mapped.formError)
+      setSubmitting(false)
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate>
       <FieldGroup className="gap-4">
+        <FormAlert message={formError} />
         <TextField
           label="Játékosnév"
           icon={faUser}
@@ -129,9 +154,13 @@ export function RegisterDetailsStep({ details, onChange, onDone }: RegisterDetai
           </FieldContent>
         </Field>
 
-        <Button type="submit" className="mt-1 h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]">
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="mt-1 h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]"
+        >
           <FontAwesomeIcon icon={faPaperPlane} aria-hidden="true" />
-          Kód küldése
+          {submitting ? 'Kód küldése…' : 'Kód küldése'}
         </Button>
       </FieldGroup>
     </form>

@@ -15,9 +15,8 @@ const UNTYPEABLE_PATTERN = /[\s§\x00-\x1F\x7F]/
 
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 64
-/** Backend defaults (REGISTRATION_CODE_LENGTH, REGISTRATION_CODE_EXPIRES_MINUTES); keep in sync if changed. */
+/** Backend default (REGISTRATION_CODE_LENGTH); keep in sync if changed. */
 export const CODE_LENGTH = 6
-export const CODE_EXPIRES_MINUTES = 15
 
 export type FieldErrors<Field extends string> = Partial<Record<Field, string>>
 

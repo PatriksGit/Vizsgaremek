@@ -112,7 +112,7 @@ class ChangePasswordControllerTest extends TestCase
         $this->actingAs($account, 'web')
             ->changePassword(['current_password' => ['regi-jelszo']])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['current_password' => 'The current password field must be a string.']);
+            ->assertJsonValidationErrors(['current_password' => 'Jelenlegi jelszó csak szöveg lehet.']);
 
         $this->assertPasswordUnchanged($account);
     }
@@ -124,7 +124,7 @@ class ChangePasswordControllerTest extends TestCase
         $this->actingAs($account, 'web')
             ->changePassword(['password_confirmation' => 'masik-jelszo'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'The password field confirmation does not match.']);
+            ->assertJsonValidationErrors(['password' => 'A két jelszó nem egyezik.']);
 
         $this->assertPasswordUnchanged($account);
     }
@@ -151,7 +151,7 @@ class ChangePasswordControllerTest extends TestCase
         $this->actingAs($account, 'web')
             ->changePassword(['password' => 'uj titkos jelszo', 'password_confirmation' => 'uj titkos jelszo'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'The password field format is invalid.']);
+            ->assertJsonValidationErrors(['password' => 'Jelszó formátuma érvénytelen.']);
 
         $this->assertPasswordUnchanged($account);
     }
@@ -182,7 +182,9 @@ class ChangePasswordControllerTest extends TestCase
         $this->actingAs($account, 'web')->changePassword(['current_password' => 'rossz-jelszo'])->assertUnprocessable();
         $this->actingAs($account, 'web')->changePassword(['current_password' => 'rossz-jelszo'])->assertUnprocessable();
 
-        $this->actingAs($account, 'web')->changePassword(['current_password' => 'rossz-jelszo'])->assertTooManyRequests();
+        $this->actingAs($account, 'web')->changePassword(['current_password' => 'rossz-jelszo'])
+            ->assertTooManyRequests()
+            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'));
 
         $this->assertPasswordUnchanged($account);
     }

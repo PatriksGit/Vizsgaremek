@@ -42,6 +42,7 @@ class StartRegistrationControllerTest extends TestCase
             'email' => 'patrik@example.com',
             'password' => 'titkos-jelszo',
             'password_confirmation' => 'titkos-jelszo',
+            'terms' => true,
             ...$overrides,
         ]);
     }
@@ -113,7 +114,7 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->register(['display_name' => 'PATRIKT'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['display_name' => 'The display name has already been taken.']);
+            ->assertJsonValidationErrors(['display_name' => 'Ez a játékosnév már foglalt.']);
 
         $this->assertDatabaseCount('pending_registrations', 0, 'global');
         Notification::assertNothingSent();
@@ -125,7 +126,7 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->register(['display_name' => '!!', 'username' => 'őrült'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['display_name' => 'The display name field format is invalid.']);
+            ->assertJsonValidationErrors(['display_name' => 'Játékosnév formátuma érvénytelen.']);
 
         $this->assertNoQueryMentions('global', 'username', 'A non-ASCII username would make MySQL fail on the ascii_bin column.');
     }
@@ -181,10 +182,35 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->register(['email' => 'Patrik@EXAMPLE.com'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email' => 'The email has already been taken.']);
+            ->assertJsonValidationErrors(['email' => 'Ezzel az e-mail címmel már regisztráltak.']);
 
         $this->assertDatabaseCount('pending_registrations', 0, 'global');
         Notification::assertNothingSent();
+    }
+
+    #[DataProvider('unacceptedTerms')]
+    public function test_returns_422_and_keeps_nothing_when_the_terms_are_not_accepted(mixed $terms): void
+    {
+        Notification::fake();
+
+        $this->register(['terms' => $terms])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['terms' => 'A regisztrációhoz el kell fogadnod az ÁSZF-et.']);
+
+        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        Notification::assertNothingSent();
+        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
+    }
+
+    /**
+     * @return array<string, array{mixed}>
+     */
+    public static function unacceptedTerms(): array
+    {
+        return [
+            'missing' => [null],
+            'declined' => [false],
+        ];
     }
 
     #[DataProvider('invalidEmails')]
@@ -202,12 +228,12 @@ class StartRegistrationControllerTest extends TestCase
      */
     public static function invalidEmails(): array
     {
-        $format = 'The email field format is invalid.';
+        $format = 'E-mail cím formátuma érvénytelen.';
 
         return [
-            'missing' => [null, 'The email field is required.'],
-            'array' => [['patrik@example.com'], 'The email field must be a string.'],
-            'too long' => [str_repeat('a', 251).'@x.hu', 'The email field must not be greater than 255 characters.'],
+            'missing' => [null, 'E-mail cím megadása kötelező.'],
+            'array' => [['patrik@example.com'], 'E-mail cím csak szöveg lehet.'],
+            'too long' => [str_repeat('a', 251).'@x.hu', 'E-mail cím legfeljebb 255 karakter lehet.'],
             'not an email' => ['nem-email', $format],
             'no dot in domain' => ['patrik@localhost', $format],
             'ip literal' => ['patrik@[127.0.0.1]', $format],
@@ -234,11 +260,11 @@ class StartRegistrationControllerTest extends TestCase
      */
     public static function invalidDisplayNames(): array
     {
-        $format = 'The display name field format is invalid.';
+        $format = 'Játékosnév formátuma érvénytelen.';
 
         return [
-            'missing' => [null, 'The display name field is required.'],
-            'array' => [['PatrikT'], 'The display name field must be a string.'],
+            'missing' => [null, 'Játékosnév megadása kötelező.'],
+            'array' => [['PatrikT'], 'Játékosnév csak szöveg lehet.'],
             'too short' => ['ab', $format],
             'too long' => ['abcdefghijklmnopq', $format],
             'space' => ['Patrik T', $format],
@@ -255,7 +281,7 @@ class StartRegistrationControllerTest extends TestCase
     {
         $this->register(['password' => 'titkos jelszo', 'password_confirmation' => 'titkos jelszo'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'The password field format is invalid.']);
+            ->assertJsonValidationErrors(['password' => 'Jelszó formátuma érvénytelen.']);
 
         $this->assertDatabaseCount('pending_registrations', 0, 'global');
     }
@@ -264,7 +290,7 @@ class StartRegistrationControllerTest extends TestCase
     {
         $this->register(['password_confirmation' => 'masik-jelszo'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'The password field confirmation does not match.']);
+            ->assertJsonValidationErrors(['password' => 'A két jelszó nem egyezik.']);
 
         $this->assertDatabaseCount('pending_registrations', 0, 'global');
     }
@@ -384,7 +410,9 @@ class StartRegistrationControllerTest extends TestCase
         $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertUnprocessable();
         $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertUnprocessable();
 
-        $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertTooManyRequests();
+        $this->postJson('/api/auth/register', ['display_name' => 'ab'])
+            ->assertTooManyRequests()
+            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'));
     }
 
     public function test_returns_429_after_the_per_hour_limit_from_config(): void
@@ -395,6 +423,8 @@ class StartRegistrationControllerTest extends TestCase
         }
         $this->travel(61)->seconds();
 
-        $this->postJson('/api/auth/register', ['display_name' => 'ab'])->assertTooManyRequests();
+        $this->postJson('/api/auth/register', ['display_name' => 'ab'])
+            ->assertTooManyRequests()
+            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'));
     }
 }

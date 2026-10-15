@@ -69,7 +69,7 @@ class RegisterUserTest extends TestCase
         $this->artisan('user:register', ['username' => 'PatrikT', 'email' => 'patrik@example.com'])
             ->expectsQuestion('Password', 'titkos-jelszo')
             ->expectsQuestion('Confirm password', 'masik-jelszo')
-            ->expectsOutputToContain('The password field confirmation does not match.')
+            ->expectsOutputToContain('A két jelszó nem egyezik.')
             ->assertFailed();
 
         $this->assertDatabaseCount('accounts', 0, 'global');
@@ -80,7 +80,7 @@ class RegisterUserTest extends TestCase
         Account::factory()->create(['display_name' => 'PatrikT']);
 
         $this->artisan('user:register', ['username' => 'PATRIKT', 'email' => 'patrik@example.com', '--password' => 'titkos-jelszo'])
-            ->expectsOutputToContain('The username has already been taken.')
+            ->expectsOutputToContain('Ez a játékosnév már foglalt.')
             ->assertFailed();
 
         $this->assertDatabaseCount('accounts', 1, 'global');
@@ -91,7 +91,7 @@ class RegisterUserTest extends TestCase
         Account::factory()->create(['email' => 'patrik@example.com']);
 
         $this->artisan('user:register', ['username' => 'PatrikT', 'email' => 'PATRIK@example.com', '--password' => 'titkos-jelszo'])
-            ->expectsOutputToContain('The email has already been taken.')
+            ->expectsOutputToContain('Ezzel az e-mail címmel már regisztráltak.')
             ->assertFailed();
 
         $this->assertDatabaseCount('accounts', 1, 'global');
@@ -102,7 +102,7 @@ class RegisterUserTest extends TestCase
         DB::connection('global')->enableQueryLog();
 
         $this->artisan('user:register', ['username' => 'Patrík', 'email' => 'patrik@example.com', '--password' => 'titkos-jelszo'])
-            ->expectsOutputToContain('The username field format is invalid.')
+            ->expectsOutputToContain('Játékosnév formátuma érvénytelen.')
             ->assertFailed();
 
         $this->assertNoQueryMentions('global', 'username', 'Invalid names must not reach the ascii username column.');

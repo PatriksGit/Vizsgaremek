@@ -50,10 +50,10 @@ class PlayablePasswordTest extends TestCase
      */
     public static function unplayablePasswords(): array
     {
-        $format = 'The password field format is invalid.';
+        $format = 'Jelszó formátuma érvénytelen.';
 
         return [
-            'too short' => ['1234567', 'The password field must be at least 8 characters.'],
+            'too short' => ['1234567', 'Jelszó legalább 8 karakter legyen.'],
             'space (in-game /login splits on spaces)' => ['titkos jelszo', $format],
             'tab' => ["titkos\tjelszo", $format],
             'newline' => ["titkos\njelszo", $format],
@@ -61,7 +61,7 @@ class PlayablePasswordTest extends TestCase
             'control character' => ["titkos\x01jelszo", $format],
             'delete character' => ["titkos\x7Fjelszo", $format],
             'invalid UTF-8' => ["titkos\xA7jelszo", $format],
-            'over 64 UTF-16 units like the plugin counts' => [str_repeat('😀', 33), 'The password field must not be greater than 64 characters.'],
+            'over 64 UTF-16 units like the plugin counts' => [str_repeat('😀', 33), 'Jelszó legfeljebb 64 karakter lehet.'],
         ];
     }
 }
