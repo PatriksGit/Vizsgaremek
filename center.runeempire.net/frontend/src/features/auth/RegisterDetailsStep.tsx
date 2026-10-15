@@ -1,6 +1,6 @@
 import { faEnvelope, faPaperPlane, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
@@ -22,7 +22,6 @@ type RegisterDetailsStepProps = {
 export function RegisterDetailsStep({ onSubmit }: RegisterDetailsStepProps) {
   const form = useFormContext<RegisterValues>()
   const { errors, isSubmitting } = form.formState
-  const termsId = useId()
 
   const submit = form.handleSubmit(async (values) => {
     try {
@@ -74,34 +73,19 @@ export function RegisterDetailsStep({ onSubmit }: RegisterDetailsStepProps) {
           />
         </div>
 
-        <Controller
-          control={form.control}
-          name="termsAccepted"
-          render={({ field, fieldState }) => (
-            <Field orientation="horizontal" data-invalid={fieldState.error ? true : undefined}>
-              <Checkbox
-                id={termsId}
-                checked={field.value}
-                onCheckedChange={field.onChange}
-                inputRef={field.ref}
-                aria-labelledby={`${termsId}-text`}
-                aria-describedby={fieldState.error ? `${termsId}-error` : undefined}
-                aria-invalid={fieldState.error ? true : undefined}
-                className="mt-0.5 size-5"
-              />
-              <FieldContent>
-                <p id={`${termsId}-text`} className="text-sm leading-snug text-foreground">
-                  <label htmlFor={termsId} className="cursor-pointer">
-                    Elfogadom
-                  </label>{' '}
-                  az <LegalDialog title="Általános Szerződési Feltételek">ÁSZF-et</LegalDialog> és az{' '}
-                  <LegalDialog title="Adatkezelési tájékoztató">Adatkezelési tájékoztatót</LegalDialog>.
-                </p>
-                <FieldError id={`${termsId}-error`}>{fieldState.error?.message}</FieldError>
-              </FieldContent>
-            </Field>
-          )}
-        />
+        <div className="flex flex-col gap-3">
+          <ConsentField name="termsAccepted">
+            {(label) => (
+              <>
+                {label('Elfogadom')} az <LegalDialog title="Általános Szerződési Feltételek">ÁSZF-et</LegalDialog> és az{' '}
+                <LegalDialog title="Adatkezelési tájékoztató">Adatkezelési tájékoztatót</LegalDialog>.
+              </>
+            )}
+          </ConsentField>
+          <ConsentField name="ageConfirmed">
+            {(label) => label('Elmúltam 16 éves, vagy a szülőm hozzájárult a regisztrációhoz.')}
+          </ConsentField>
+        </div>
 
         <Button
           type="submit"
@@ -113,5 +97,52 @@ export function RegisterDetailsStep({ onSubmit }: RegisterDetailsStepProps) {
         </Button>
       </FieldGroup>
     </form>
+  )
+}
+
+type ConsentFieldProps = {
+  name: 'termsAccepted' | 'ageConfirmed'
+  /**
+   * The sentence beside the box. `label` wraps the part that toggles the box;
+   * the rest may hold links, which a <label> must not contain.
+   */
+  children: (label: (text: string) => ReactNode) => ReactNode
+}
+
+/** A required checkbox with its sentence; only validated, never stored. */
+function ConsentField({ name, children }: ConsentFieldProps) {
+  const form = useFormContext<RegisterValues>()
+  const id = useId()
+
+  return (
+    <Controller
+      control={form.control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <Field orientation="horizontal" data-invalid={fieldState.error ? true : undefined}>
+          <Checkbox
+            id={id}
+            checked={field.value}
+            onCheckedChange={field.onChange}
+            inputRef={field.ref}
+            aria-labelledby={`${id}-text`}
+            aria-describedby={fieldState.error ? `${id}-error` : undefined}
+            aria-invalid={fieldState.error ? true : undefined}
+            // The default border disappears on the dark glass.
+            className="mt-0.5 size-5 border-white/40 bg-black/30 hover:border-white/60"
+          />
+          <FieldContent>
+            <p id={`${id}-text`} className="text-sm leading-snug text-foreground">
+              {children((text) => (
+                <label htmlFor={id} className="cursor-pointer">
+                  {text}
+                </label>
+              ))}
+            </p>
+            <FieldError id={`${id}-error`}>{fieldState.error?.message}</FieldError>
+          </FieldContent>
+        </Field>
+      )}
+    />
   )
 }

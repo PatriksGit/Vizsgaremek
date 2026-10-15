@@ -38,9 +38,13 @@ return [
         'terms' => [
             'accepted' => 'A regisztrációhoz el kell fogadnod az ÁSZF-et.',
         ],
+        'age_confirmed' => [
+            'accepted' => 'A regisztrációhoz 16 évesnek kell lenned, vagy a szülőd hozzájárulása kell.',
+        ],
     ],
 
     'attributes' => [
+        'age_confirmed' => 'életkor',
         'code' => 'kód',
         'current_password' => 'jelenlegi jelszó',
         'display_name' => 'játékosnév',

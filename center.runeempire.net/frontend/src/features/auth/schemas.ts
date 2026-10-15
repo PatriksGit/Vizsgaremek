@@ -51,6 +51,9 @@ export const registerSchema = z
     password,
     passwordConfirmation: z.string(),
     termsAccepted: z.boolean().refine((accepted) => accepted, { error: 'A regisztrációhoz el kell fogadnod az ÁSZF-et.' }),
+    ageConfirmed: z.boolean().refine((confirmed) => confirmed, {
+      error: 'A regisztrációhoz 16 évesnek kell lenned, vagy a szülőd hozzájárulása kell.',
+    }),
   })
   .refine((values) => values.password === values.passwordConfirmation, {
     error: 'A két jelszó nem egyezik.',
@@ -65,6 +68,7 @@ export const registerFieldForKey: Partial<Record<string, keyof RegisterValues>> 
   email: 'email',
   password: 'password',
   terms: 'termsAccepted',
+  age_confirmed: 'ageConfirmed',
 }
 
 export const codeSchema = z.object({

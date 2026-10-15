@@ -35,8 +35,8 @@ class RegisterUser extends Command
         }
 
         // Validated exactly like the endpoint, email normalized the same way. The
-        // terms are for players registering on the website; an admin creating
-        // an account here has nothing to accept.
+        // terms and the age check are for players registering on the website;
+        // an admin creating an account here has nothing to accept.
         $validator = Validator::make(
             [
                 'display_name' => $username,
@@ -44,7 +44,7 @@ class RegisterUser extends Command
                 'password' => $password,
                 'password_confirmation' => $confirmation,
             ],
-            Arr::except((new RegisterRequest)->rules(), 'terms'),
+            Arr::except((new RegisterRequest)->rules(), ['terms', 'age_confirmed']),
         );
 
         try {

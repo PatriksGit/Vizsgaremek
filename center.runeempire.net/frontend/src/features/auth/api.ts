@@ -45,6 +45,7 @@ export type RegistrationRequest = {
   password: string
   passwordConfirmation: string
   termsAccepted: boolean
+  ageConfirmed: boolean
 }
 
 export type PendingRegistration = {
@@ -61,6 +62,7 @@ export async function startRegistration(request: RegistrationRequest): Promise<P
     password: request.password,
     password_confirmation: request.passwordConfirmation,
     terms: request.termsAccepted,
+    age_confirmed: request.ageConfirmed,
   })
   const millisecondsLeft = Date.parse(response.data.data.expires_at) - Date.now()
   return { email: response.data.data.email, expiresInMinutes: Math.max(1, Math.round(millisecondsLeft / 60_000)) }

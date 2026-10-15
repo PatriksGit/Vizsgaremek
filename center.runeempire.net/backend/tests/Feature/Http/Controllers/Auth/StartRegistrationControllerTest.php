@@ -55,6 +55,7 @@ class StartRegistrationControllerTest extends TestCase
             'password' => 'titkos-jelszo',
             'password_confirmation' => 'titkos-jelszo',
             'terms' => true,
+            'age_confirmed' => true,
             ...$overrides,
         ], $headers);
     }
@@ -248,7 +249,7 @@ class StartRegistrationControllerTest extends TestCase
         Notification::assertNothingSent();
     }
 
-    #[DataProvider('unacceptedTerms')]
+    #[DataProvider('uncheckedBoxes')]
     public function test_returns_422_and_keeps_nothing_when_the_terms_are_not_accepted(mixed $terms): void
     {
         Notification::fake();
@@ -262,10 +263,23 @@ class StartRegistrationControllerTest extends TestCase
         $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
     }
 
+    #[DataProvider('uncheckedBoxes')]
+    public function test_returns_422_and_keeps_nothing_when_the_age_is_not_confirmed(mixed $confirmed): void
+    {
+        Notification::fake();
+
+        $this->register(['age_confirmed' => $confirmed])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['age_confirmed' => 'A regisztrációhoz 16 évesnek kell lenned, vagy a szülőd hozzájárulása kell.']);
+
+        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        Notification::assertNothingSent();
+    }
+
     /**
      * @return array<string, array{mixed}>
      */
-    public static function unacceptedTerms(): array
+    public static function uncheckedBoxes(): array
     {
         return [
             'missing' => [null],

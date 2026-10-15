@@ -22,7 +22,7 @@ const STEPS = ['Adatok', 'Megerősítés'] as const
 export function RegisterForm() {
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', email: '', password: '', passwordConfirmation: '', termsAccepted: false },
+    defaultValues: { name: '', email: '', password: '', passwordConfirmation: '', termsAccepted: false, ageConfirmed: false },
   })
   const startRegistration = useStartRegistration()
   const [pending, setPending] = useState<PendingRegistration>()
@@ -36,6 +36,7 @@ export function RegisterForm() {
         password: values.password,
         passwordConfirmation: values.passwordConfirmation,
         termsAccepted: values.termsAccepted,
+        ageConfirmed: values.ageConfirmed,
       }),
     )
   }

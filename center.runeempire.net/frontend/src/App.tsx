@@ -8,6 +8,7 @@ import { AuthPage } from '@/features/auth/AuthPage'
 import { GuestOnly, RequireAccount } from '@/features/auth/guards'
 import { useAccount } from '@/features/auth/queries'
 import { HomePage } from '@/features/home/HomePage'
+import { HomeMockup } from '@/features/mockup/HomeMockup'
 import { queryClient } from '@/queryClient'
 
 function RootLayout() {
@@ -48,6 +49,8 @@ const router = createBrowserRouter([
           { path: 'register', element: null },
         ],
       },
+      // THROWAWAY: the home page mockup, open without login. Delete with src/features/mockup.
+      { path: 'mockup', element: <HomeMockup /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },

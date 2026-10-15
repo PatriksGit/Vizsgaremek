@@ -240,6 +240,7 @@ class VerifyRegistrationControllerTest extends TestCase
             'password' => 'titkos-jelszo',
             'password_confirmation' => 'titkos-jelszo',
             'terms' => true,
+            'age_confirmed' => true,
         ];
         $fromWebsite = ['Origin' => 'http://localhost:5173'];
         $this->postJson('/api/auth/register', $registration, $fromWebsite)->assertAccepted();
