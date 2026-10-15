@@ -53,8 +53,8 @@ type FormSlideProps = {
 /**
  * One form with its tabs, centred in the slider. The inactive one waits off
  * to its side, faded and inert (no focus, hidden from screen readers). Phones
- * skip the slide and show only the active form, so the card is not as tall
- * as the longer one.
+ * show only the active form, so the card is not as tall as the longer one,
+ * and the form arriving there glides in from its side instead of sliding.
  */
 function FormSlide({ mode, active, from, children }: FormSlideProps) {
   return (
@@ -64,7 +64,11 @@ function FormSlide({ mode, active, from, children }: FormSlideProps) {
         'col-start-1 row-start-1 flex flex-col justify-center gap-6 p-6 sm:p-8',
         'transition-[translate,opacity] duration-600 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none',
         active
-          ? 'translate-x-0 opacity-100'
+          ? cn(
+              'translate-x-0 opacity-100',
+              'max-md:animate-in max-md:fade-in max-md:duration-500 max-md:ease-out motion-reduce:animate-none',
+              from === 'left' ? 'max-md:slide-in-from-left-8' : 'max-md:slide-in-from-right-8',
+            )
           : cn('opacity-0 max-md:hidden', from === 'left' ? '-translate-x-full' : 'translate-x-full'),
       )}
     >
