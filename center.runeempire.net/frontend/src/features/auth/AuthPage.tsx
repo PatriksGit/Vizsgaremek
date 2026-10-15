@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
 
+import { ServerBackdrop } from '@/components/ServerBackdrop'
 import { site } from '@/config/site'
+import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 import { AuthShowcase, type AuthMode } from './AuthShowcase'
@@ -19,29 +21,16 @@ export function AuthPage() {
   const mode: AuthMode = pathname === '/register' ? 'register' : 'login'
 
   return (
-    <div
-      className="relative isolate flex min-h-dvh items-center justify-center bg-background bg-cover bg-center px-4 py-10 sm:px-6"
-      style={site.authBackgroundUrl ? { backgroundImage: `url(${site.authBackgroundUrl})` } : undefined}
-    >
+    <div className="relative isolate flex min-h-dvh items-center justify-center bg-background px-4 py-10 sm:px-6">
       <title>{`${mode === 'register' ? 'Regisztráció' : 'Belépés'} | ${site.name}`}</title>
+      <ServerBackdrop />
 
-      <div
-        aria-hidden="true"
-        className={cn(
-          'absolute inset-0 -z-10',
-          site.authBackgroundUrl
-            ? // Dims the screenshot's bright spots and darkens the edges, so the card's text stays legible.
-              'bg-[radial-gradient(ellipse_at_center,rgb(0_0_0/0.25),rgb(0_0_0/0.65))]'
-            : // Stand-in for the shader image, so the glass has light to blur.
-              'bg-[radial-gradient(45%_40%_at_20%_25%,rgb(242_181_68/0.18),transparent_70%),radial-gradient(40%_40%_at_85%_80%,rgb(92_200_255/0.14),transparent_70%)]',
-        )}
-      />
-
-      <div className="grid w-full max-w-[56rem] overflow-hidden rounded-3xl border border-white/10 bg-black/55 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl md:grid-cols-2">
+      <div className="card-rise grid w-full max-w-[56rem] overflow-hidden rounded-3xl border border-white/10 bg-black/55 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl md:grid-cols-2">
         <AuthShowcase className="border-white/10 max-md:border-b md:border-r" />
 
-        {/* Both forms share one grid cell, so the column is as tall as the taller one. */}
-        <div className="grid overflow-hidden">
+        {/* Both forms share one grid cell, so the column is as tall as the taller one.
+            The entrance plays on this wrapper: the slides' own opacity drives the slide. */}
+        <div className="content-in grid overflow-hidden" style={enterAfter(500)}>
           <FormSlide mode={mode} active={mode === 'login'} from="left">
             <LoginForm />
           </FormSlide>

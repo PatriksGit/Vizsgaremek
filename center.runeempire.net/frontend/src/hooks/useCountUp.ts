@@ -6,9 +6,10 @@ function prefersReducedMotion() {
 
 /**
  * Counts from 0 up to target once, easing out, so a number "spins up" when
- * the page loads. With reduced motion it starts at the target instead.
+ * the page loads; delayMs holds it at 0 until its element has appeared.
+ * With reduced motion it starts at the target instead.
  */
-export function useCountUp(target: number, durationMs = 1200) {
+export function useCountUp(target: number, { durationMs = 1200, delayMs = 0 } = {}) {
   const [value, setValue] = useState(() => (prefersReducedMotion() ? target : 0))
 
   useEffect(() => {
@@ -26,9 +27,15 @@ export function useCountUp(target: number, durationMs = 1200) {
       if (progress < 1) frame = requestAnimationFrame(tick)
     }
 
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
-  }, [target, durationMs])
+    const timer = setTimeout(() => {
+      frame = requestAnimationFrame(tick)
+    }, delayMs)
+
+    return () => {
+      clearTimeout(timer)
+      cancelAnimationFrame(frame)
+    }
+  }, [target, durationMs, delayMs])
 
   return value
 }

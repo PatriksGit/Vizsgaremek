@@ -2,6 +2,7 @@ import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { toast } from 'sonner'
 
+import { ServerBackdrop } from '@/components/ServerBackdrop'
 import { Button } from '@/components/ui/button'
 import { site } from '@/config/site'
 import { formMessage } from '@/features/auth/errors'
@@ -13,17 +14,11 @@ export function HomePage() {
   const logout = useLogout()
 
   return (
-    <main
-      className="relative isolate flex min-h-dvh items-center justify-center bg-background bg-cover bg-center px-4 py-10"
-      style={site.authBackgroundUrl ? { backgroundImage: `url(${site.authBackgroundUrl})` } : undefined}
-    >
+    <main className="relative isolate flex min-h-dvh items-center justify-center bg-background px-4 py-10">
       <title>{`Fiókom | ${site.name}`}</title>
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgb(0_0_0/0.25),rgb(0_0_0/0.65))]"
-      />
+      <ServerBackdrop />
 
-      <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-3xl border border-white/10 bg-black/55 p-8 text-center shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8)] backdrop-blur-xl">
+      <div className="card-rise flex w-full max-w-md flex-col items-center gap-6 rounded-3xl border border-white/10 bg-black/55 p-8 text-center shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8)] backdrop-blur-xl">
         <img src={site.logoUrl} alt="" width={64} height={64} className="size-16" />
         <div>
           <h1 className="font-heading text-3xl text-foreground">Szia, {account?.display_name}!</h1>

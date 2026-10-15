@@ -2,8 +2,14 @@ import { site } from '@/config/site'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
-export function ServerStatus({ className }: { className?: string }) {
-  const shownCount = useCountUp(site.playersOnline)
+type ServerStatusProps = {
+  className?: string
+  /** Milliseconds before the count starts spinning up, so it starts once the line is visible. */
+  countAfter?: number
+}
+
+export function ServerStatus({ className, countAfter = 0 }: ServerStatusProps) {
+  const shownCount = useCountUp(site.playersOnline, { delayMs: countAfter })
 
   return (
     <p className={cn('inline-flex items-center gap-2 text-sm text-muted-foreground', className)}>

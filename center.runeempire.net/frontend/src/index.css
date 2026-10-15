@@ -81,3 +81,50 @@
     }
 }
 
+
+/*
+ * Page-load choreography, played once when a page mounts: the background
+ * surfaces first, then the glass card rises, then its contents arrive in
+ * order. Set --delay (milliseconds) on a .content-in element to place it.
+ */
+@keyframes backdrop-reveal {
+    from {
+        opacity: 0;
+        transform: scale(1.06);
+    }
+}
+
+@keyframes card-rise {
+    from {
+        opacity: 0;
+        transform: translateY(28px) scale(0.985);
+    }
+}
+
+@keyframes content-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+.backdrop-reveal {
+    animation: backdrop-reveal 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.card-rise {
+    animation: card-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 200ms both;
+}
+
+.content-in {
+    animation: content-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--delay, 0) * 1ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .backdrop-reveal,
+    .card-rise,
+    .content-in {
+        animation: none;
+    }
+}
