@@ -4,6 +4,12 @@
 @import "@fontsource-variable/figtree";
 @import "@fontsource/grenze/600.css";
 
+/*
+ * Deliberately inactive: no element has .dark. The site is dark through its own
+ * tokens, and shadcn's dark: styles (e.g. dark:bg-input/30) would override the
+ * glass styles the components get here. Without this line, dark: would follow
+ * the OS setting instead.
+ */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

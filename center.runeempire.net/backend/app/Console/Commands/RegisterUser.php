@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Actions\RegisterAccount;
 use App\Http\Requests\RegisterRequest;
+use App\Models\Account;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -33,15 +34,16 @@ class RegisterUser extends Command
             $confirmation = $this->secret('Confirm password');
         }
 
-        // The terms are for players registering on the website; an admin
-        // creating an account here has nothing to accept.
+        // Validated exactly like the endpoint, email normalized the same way. The
+        // terms are for players registering on the website; an admin creating
+        // an account here has nothing to accept.
         $validator = Validator::make(
-            RegisterRequest::normalize([
+            [
                 'display_name' => $username,
-                'email' => $email,
+                'email' => is_string($email) ? Account::normalizeEmail($email) : $email,
                 'password' => $password,
                 'password_confirmation' => $confirmation,
-            ]),
+            ],
             Arr::except((new RegisterRequest)->rules(), 'terms'),
         );
 

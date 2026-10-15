@@ -7,7 +7,6 @@ use App\Rules\PlayablePassword;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
@@ -19,25 +18,14 @@ class RegisterRequest extends FormRequest
      */
     private const EMAIL_PATTERN = '/\A[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+\z/';
 
+    /**
+     * The email is validated and stored trimmed and lowercased.
+     */
     protected function prepareForValidation(): void
     {
-        $this->merge(Arr::only(self::normalize($this->all()), 'email'));
-    }
-
-    /**
-     * Normalize raw registration input (trimmed lowercase email), so callers
-     * outside HTTP (the user:register command) validate exactly like the endpoint.
-     *
-     * @param  array<string, mixed>  $input
-     * @return array<string, mixed>
-     */
-    public static function normalize(array $input): array
-    {
-        if (is_string($input['email'] ?? null)) {
-            $input['email'] = Account::normalizeEmail($input['email']);
+        if (is_string($this->input('email'))) {
+            $this->merge(['email' => Account::normalizeEmail($this->input('email'))]);
         }
-
-        return $input;
     }
 
     /**

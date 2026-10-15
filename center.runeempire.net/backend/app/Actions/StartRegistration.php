@@ -27,10 +27,11 @@ class StartRegistration
      * never holds locks in the auth database. At most one code is mailed to an
      * address per rate_limits.registration_mail.cooldown_seconds.
      *
+     * $ownerToken identifies the browser session that starts the registration
+     * (null outside the website); only that session may replace the pending
+     * registration before it expires.
+     *
      * @throws ThrottleRequestsException when a code was mailed to this address within the cooldown
-     *                                   $ownerToken identifies the browser session that starts the registration
-     *                                   (null outside the website); only that session may replace the pending
-     *                                   registration before it expires.
      * @throws ValidationException when another session's pending registration holds the name or the email
      * @throws ServiceUnavailableHttpException when the mail could not be sent
      */
@@ -82,9 +83,10 @@ class StartRegistration
      * sweeping expired ones. A live one started by another session (or outside
      * the website) is refused, so nobody can cancel or take over another
      * player's registration; the same session may, e.g. to fix a mistyped
-     * email. A registration that takes the name at the same moment hits the
-     * unique index and gets the same answer. Retried on deadlock: two
-     * registrations at the same moment can deadlock on InnoDB gap locks.
+     * email. A registration that takes the name or the email at the same
+     * moment hits a unique index and gets the matching answer. Retried on
+     * deadlock: two registrations at the same moment can deadlock on InnoDB
+     * gap locks.
      *
      * @throws ValidationException when another session's pending registration holds the name or the email
      */
@@ -126,9 +128,21 @@ class StartRegistration
                     'expires_at' => now()->addMinutes($expiresInMinutes),
                 ]);
             }, attempts: 3);
-        } catch (UniqueConstraintViolationException) {
-            throw self::nameHeld();
+        } catch (UniqueConstraintViolationException $exception) {
+            throw self::hitEmailIndex($exception) ? self::emailHeld() : self::nameHeld();
         }
+    }
+
+    /**
+     * Whether the violated index is the email one: MySQL names the key
+     * (pending_registrations_email_unique), SQLite the column
+     * (pending_registrations.email). Names cannot contain dots or "@", so a
+     * duplicate value never looks like either.
+     */
+    private static function hitEmailIndex(UniqueConstraintViolationException $exception): bool
+    {
+        return str_contains($exception->getMessage(), 'pending_registrations_email_unique')
+            || str_contains($exception->getMessage(), 'pending_registrations.email');
     }
 
     /**

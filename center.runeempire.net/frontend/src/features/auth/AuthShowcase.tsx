@@ -5,8 +5,6 @@ import { site } from '@/config/site'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-export type AuthMode = 'login' | 'register'
-
 /** When the intro blocks start arriving, and the gap between them (ms). */
 const STAGGER_START = 520
 const STAGGER_STEP = 70
@@ -19,16 +17,8 @@ const statusEntersAt = STAGGER_START + site.centerIntro.length * STAGGER_STEP
 export function AuthShowcase({ className }: { className?: string }) {
   return (
     <aside
-      className={cn('relative isolate flex flex-col gap-7 overflow-hidden bg-black/30 bg-cover bg-center p-6 sm:p-8', className)}
-      style={site.authPanelImageUrl ? { backgroundImage: `url(${site.authPanelImageUrl})` } : undefined}
+      className={cn('flex flex-col gap-7 overflow-hidden bg-black/30 p-6 sm:p-8', className)}
     >
-      {site.authPanelImageUrl && (
-        // Darkens the artwork so the text on it stays legible.
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-linear-to-t from-black/85 via-black/50 to-black/30"
-        />
-      )}
 
       {/* Not a link: leaving the auth page would lose what was typed in the forms. */}
       <div className="content-in flex items-center gap-4 self-center" style={enterAfter(450)}>

@@ -6,8 +6,8 @@ import { site } from '@/config/site'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-import { AuthShowcase, type AuthMode } from './AuthShowcase'
-import { AuthTabs } from './AuthTabs'
+import { AuthShowcase } from './AuthShowcase'
+import { AuthTabs, type AuthMode } from './AuthTabs'
 import { LoginForm } from './LoginForm'
 import { RegisterForm } from './RegisterForm'
 

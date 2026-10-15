@@ -213,6 +213,28 @@ class StartRegistrationControllerTest extends TestCase
         $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'));
     }
 
+    public function test_returns_422_on_email_when_a_simultaneous_registration_takes_the_email(): void
+    {
+        PendingRegistration::creating(function (PendingRegistration $pending): void {
+            if ($pending->display_name === 'PatrikT') {
+                DB::connection('global')->table('pending_registrations')->insert([
+                    'username' => 'masvalaki',
+                    'display_name' => 'Masvalaki',
+                    'email' => 'patrik@example.com',
+                    'password_hash' => 'x',
+                    'code_hash' => str_repeat('0', 64),
+                    'expires_at' => now()->addMinutes(15),
+                ]);
+            }
+        });
+
+        $this->register()
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email' => self::EMAIL_PENDING]);
+
+        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'));
+    }
+
     public function test_returns_422_when_the_email_has_an_account_regardless_of_case(): void
     {
         Notification::fake();

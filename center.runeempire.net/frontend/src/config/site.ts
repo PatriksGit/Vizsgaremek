@@ -26,10 +26,8 @@ export const site = {
 
   logoUrl: '/RuneLogo.webp',
 
-  /** Shader screenshot from the server behind the login card; empty shows a plain glow. */
-  authBackgroundUrl: '/backgrounds/bg.webp',
-  /** Artwork behind the left panel of the login card; empty shows a plain glow. */
-  authPanelImageUrl: '',
+  /** Shader screenshot from the server, behind the glass cards. */
+  backgroundUrl: '/backgrounds/bg.webp',
 
   /** What the login card's left panel tells a visitor about the server and the Center. */
   centerIntro: [

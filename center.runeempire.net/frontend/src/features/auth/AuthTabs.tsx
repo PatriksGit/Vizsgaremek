@@ -2,7 +2,7 @@ import { NavLink } from 'react-router'
 
 import { cn } from '@/lib/utils'
 
-import type { AuthMode } from './AuthShowcase'
+export type AuthMode = 'login' | 'register'
 
 const TABS = [
   { to: '/login', label: 'Belépés' },
