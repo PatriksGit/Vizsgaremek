@@ -1,17 +1,20 @@
 import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState, type FormEvent } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { cn } from '@/lib/utils'
 
-import { verifyRegistration, type PendingRegistration } from './api'
-import { useAuth } from './authContext'
-import { formMessage, mapApiError } from './errors'
+import type { PendingRegistration } from './api'
+import { applyApiError, formMessage } from './errors'
 import { FormAlert } from './FormAlert'
-import { CODE_LENGTH } from './validation'
+import { useVerifyRegistration } from './queries'
+import { CODE_LENGTH, codeSchema, type CodeValues } from './schemas'
 
 type RegisterCodeStepProps = {
   pending: PendingRegistration
@@ -20,56 +23,43 @@ type RegisterCodeStepProps = {
   onBack: () => void
 }
 
+const linkButtonClass =
+  'rounded-sm font-medium text-foreground underline underline-offset-4 outline-none hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60'
+
 export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStepProps) {
-  const { setAccount } = useAuth()
-  const [code, setCode] = useState('')
-  const [error, setError] = useState<string>()
-  const [formError, setFormError] = useState<string>()
-  const [notice, setNotice] = useState<string>()
-  const [submitting, setSubmitting] = useState(false)
+  const verify = useVerifyRegistration()
+  const form = useForm<CodeValues>({ resolver: zodResolver(codeSchema), defaultValues: { code: '' } })
   const [resending, setResending] = useState(false)
+  const { errors, isSubmitting } = form.formState
+  // One action at a time: a resend invalidates the code being verified, and
+  // going back mid-request would land its answer on the wrong step.
+  const busy = isSubmitting || resending
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setFormError(undefined)
-    setNotice(undefined)
-
-    if (code.length !== CODE_LENGTH) {
-      setError(`Írd be mind a ${CODE_LENGTH} számjegyet.`)
-      return
-    }
-    setError(undefined)
-
-    setSubmitting(true)
+  const submit = form.handleSubmit(async ({ code }) => {
     try {
       // The account exists and the player is logged in: the login page sends them on.
-      setAccount(await verifyRegistration(pending.email, code))
-    } catch (failure) {
-      const mapped = mapApiError(failure, { code: 'code' })
-      setError(mapped.fieldErrors.code)
-      setFormError(mapped.formError)
-      setSubmitting(false)
+      await verify.mutateAsync({ email: pending.email, code })
+    } catch (error) {
+      applyApiError(error, form.setError, { code: 'code' })
     }
-  }
+  })
 
-  async function handleResend() {
-    setFormError(undefined)
-    setNotice(undefined)
+  async function resend() {
+    form.clearErrors()
     setResending(true)
     try {
       await onResend()
-      setCode('')
-      setError(undefined)
-      setNotice('Új kódot küldtünk. A korábbi kód már nem érvényes.')
-    } catch (failure) {
-      setFormError(formMessage(failure))
+      form.reset({ code: '' })
+      toast.success('Új kódot küldtünk. A korábbi kód már nem érvényes.')
+    } catch (error) {
+      form.setError('root.server', { message: formMessage(error) })
     } finally {
       setResending(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-6">
       <div>
         <h2 className="font-heading text-2xl leading-tight text-foreground">Nézd meg az e-mailed</h2>
         <p className="mt-2 text-muted-foreground">
@@ -81,71 +71,67 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
         </p>
       </div>
 
-      <FormAlert message={formError} />
-      {notice && (
-        <p role="status" className="rounded-lg border border-xp/30 bg-xp/10 px-3.5 py-3 text-sm text-foreground">
-          {notice}
-        </p>
-      )}
+      <FormAlert message={errors.root?.server?.message} />
 
-      <Field data-invalid={error ? true : undefined}>
-        <FieldLabel htmlFor="registration-code" className="text-foreground">
-          Megerősítő kód
-        </FieldLabel>
-        <InputOTP
-          id="registration-code"
-          maxLength={CODE_LENGTH}
-          inputMode="numeric"
-          pattern="^[0-9]*$"
-          autoComplete="one-time-code"
-          value={code}
-          onChange={setCode}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? 'registration-code-error' : undefined}
-        >
-          <InputOTPGroup className="w-full gap-2">
-            {Array.from({ length: CODE_LENGTH }, (_, index) => (
-              <InputOTPSlot
-                key={index}
-                index={index}
-                className={cn(
-                  'h-12 flex-1 rounded-lg border border-white/10 bg-black/40 text-xl font-semibold text-foreground tabular-nums shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] first:rounded-lg last:rounded-lg',
-                  error && 'border-destructive',
-                )}
-              />
-            ))}
-          </InputOTPGroup>
-        </InputOTP>
-        <FieldError id="registration-code-error">{error}</FieldError>
-      </Field>
+      <Controller
+        control={form.control}
+        name="code"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.error ? true : undefined}>
+            <FieldLabel htmlFor="registration-code" className="text-foreground">
+              Megerősítő kód
+            </FieldLabel>
+            <InputOTP
+              id="registration-code"
+              ref={field.ref}
+              maxLength={CODE_LENGTH}
+              inputMode="numeric"
+              pattern="^[0-9]*$"
+              // A pasted "123 456" or " 123456" keeps only its digits.
+              pasteTransformer={(pasted) => pasted.replace(/\D/g, '')}
+              autoComplete="one-time-code"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              aria-invalid={fieldState.error ? true : undefined}
+              aria-describedby={fieldState.error ? 'registration-code-error' : undefined}
+            >
+              <InputOTPGroup className="w-full gap-2">
+                {Array.from({ length: CODE_LENGTH }, (_, index) => (
+                  <InputOTPSlot
+                    key={index}
+                    index={index}
+                    className={cn(
+                      'h-12 flex-1 rounded-lg border border-white/10 bg-black/40 text-xl font-semibold text-foreground tabular-nums shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] first:rounded-lg last:rounded-lg',
+                      fieldState.error && 'border-destructive',
+                    )}
+                  />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+            <FieldError id="registration-code-error">{fieldState.error?.message}</FieldError>
+          </Field>
+        )}
+      />
 
       <div className="flex flex-col gap-3">
         <Button
           type="submit"
-          disabled={submitting}
+          disabled={busy}
           className="h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]"
         >
           <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
-          {submitting ? 'Fiók létrehozása…' : 'Fiók létrehozása'}
+          {isSubmitting ? 'Fiók létrehozása…' : 'Fiók létrehozása'}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
           Nem jött meg?{' '}
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={resending}
-            className="rounded-sm font-medium text-foreground underline underline-offset-4 outline-none hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60"
-          >
+          <button type="button" onClick={resend} disabled={busy} className={linkButtonClass}>
             {resending ? 'Küldés…' : 'Új kódot kérek'}
           </button>
         </p>
         <p className="text-center text-sm text-muted-foreground">
           Rossz e-mail címet adtál meg?{' '}
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-sm font-medium text-foreground underline underline-offset-4 outline-none hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
+          <button type="button" onClick={onBack} disabled={busy} className={linkButtonClass}>
             Javítsd ki
           </button>
         </p>

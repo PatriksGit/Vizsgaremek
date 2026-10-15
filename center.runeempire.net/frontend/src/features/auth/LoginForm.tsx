@@ -1,92 +1,73 @@
 import { faRightToBracket, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
 
-import { login } from './api'
-import { useAuth } from './authContext'
 import { formMessage } from './errors'
 import { PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
-import { hasErrors, type FieldErrors } from './validation'
-
-type LoginField = 'username' | 'password'
+import { useLogin } from './queries'
+import { loginSchema, type LoginValues } from './schemas'
 
 export function LoginForm() {
-  const { setAccount } = useAuth()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState<FieldErrors<LoginField>>({})
-  const [formError, setFormError] = useState<string>()
-  const [submitting, setSubmitting] = useState(false)
+  const login = useLogin()
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { username: '', password: '' },
+  })
+  const { errors, isSubmitting } = form.formState
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    // Only emptiness is checked here: the backend answers every other mistake
-    // with the same "wrong name or password" message.
-    const nextErrors: FieldErrors<LoginField> = {
-      username: username ? undefined : 'Add meg a játékosneved.',
-      password: password ? undefined : 'Add meg a jelszavad.',
-    }
-    setErrors(nextErrors)
-    setFormError(undefined)
-    if (hasErrors(nextErrors)) return
-
-    setSubmitting(true)
+  const onSubmit = form.handleSubmit(async (values) => {
     try {
       // Logged in: the login page sends the player on to the home page.
-      setAccount(await login(username, password))
+      await login.mutateAsync(values)
     } catch (error) {
       // Wrong credentials come back on the username field, but they are about both.
-      setFormError(formMessage(error))
-      setSubmitting(false)
+      form.setError('root.server', { message: formMessage(error) })
     }
-  }
+  })
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={onSubmit} noValidate>
       <FieldGroup>
-        <FormAlert message={formError} />
+        <FormAlert message={errors.root?.server?.message} />
         <TextField
           label="Játékosnév"
           icon={faUser}
-          name="username"
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
           placeholder="Játékosnév"
-          value={username}
-          error={errors.username}
-          onChange={(event) => setUsername(event.target.value)}
+          error={errors.username?.message}
+          {...form.register('username')}
         />
         <div className="flex flex-col gap-2">
           <PasswordField
             label="Jelszó"
-            name="password"
             autoComplete="current-password"
-            value={password}
-            error={errors.password}
-            onChange={(event) => setPassword(event.target.value)}
+            error={errors.password?.message}
+            {...form.register('password')}
           />
-          {/* TODO: the password reset page does not exist yet. */}
-          <Link
-            to="/forgot-password"
+          {/* A link would leave the page and lose what was typed; the reset page does not exist yet. */}
+          <button
+            type="button"
+            onClick={() => toast.info('A jelszó-visszaállítás hamarosan érkezik.')}
             className="self-end rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             Elfelejtetted a jelszavad?
-          </Link>
+          </button>
         </div>
         <Button
           type="submit"
-          disabled={submitting}
+          disabled={isSubmitting}
           className="mt-2 h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]"
         >
           <FontAwesomeIcon icon={faRightToBracket} aria-hidden="true" />
-          {submitting ? 'Belépés…' : 'Belépés'}
+          {isSubmitting ? 'Belépés…' : 'Belépés'}
         </Button>
       </FieldGroup>
     </form>

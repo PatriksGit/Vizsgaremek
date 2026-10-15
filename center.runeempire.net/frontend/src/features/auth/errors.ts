@@ -1,34 +1,34 @@
-import { ApiError } from '@/lib/api'
+import type { FieldValues, Path, UseFormSetError } from 'react-hook-form'
+
+import { ApiError, GENERIC_ERROR } from '@/lib/api'
 
 /** The message for the form as a whole; the backend's messages are already in Hungarian. */
 export function formMessage(error: unknown): string {
-  return error instanceof ApiError ? error.message : 'Váratlan hiba történt, próbáld újra később.'
+  return error instanceof ApiError ? error.message : GENERIC_ERROR
 }
 
 /**
- * Splits a failed request into per-field messages (backend key → form field)
- * and one message for the form. Nothing is dropped: a field error without a
- * matching form field lands in the form message.
+ * Puts a failed request's messages on the form: each backend key on its form
+ * field, everything else (a key without a field, or no field errors at all)
+ * on the form as a whole, as root.server.
  */
-export function mapApiError<Field extends string>(
+export function applyApiError<Values extends FieldValues>(
   error: unknown,
-  fieldFor: Partial<Record<string, Field>>,
-): { fieldErrors: Partial<Record<Field, string>>; formError?: string } {
-  if (!(error instanceof ApiError) || Object.keys(error.fieldErrors).length === 0) {
-    return { fieldErrors: {}, formError: formMessage(error) }
-  }
-
-  const fieldErrors: Partial<Record<Field, string>> = {}
+  setError: UseFormSetError<Values>,
+  fieldFor: Partial<Record<string, Path<Values>>>,
+): void {
+  const fieldErrors = error instanceof ApiError ? error.fieldErrors : {}
   const unmatched: string[] = []
 
-  for (const [key, message] of Object.entries(error.fieldErrors)) {
+  for (const [key, message] of Object.entries(fieldErrors)) {
     const field = fieldFor[key]
     if (field) {
-      fieldErrors[field] ??= message
+      setError(field, { message })
     } else {
       unmatched.push(message)
     }
   }
 
-  return { fieldErrors, formError: unmatched[0] }
+  if (Object.keys(fieldErrors).length === 0) unmatched.push(formMessage(error))
+  if (unmatched.length > 0) setError('root.server', { message: unmatched.join(' ') })
 }

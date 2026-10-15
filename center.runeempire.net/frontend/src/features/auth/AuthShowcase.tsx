@@ -1,5 +1,4 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Link } from 'react-router'
 
 import { ServerStatus } from '@/components/ServerStatus'
 import { site } from '@/config/site'
@@ -25,13 +24,11 @@ export function AuthShowcase({ className }: { className?: string }) {
         />
       )}
 
-      <Link
-        to="/"
-        className="flex items-center gap-4 self-center rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
+      {/* Not a link: leaving the auth page would lose what was typed in the forms. */}
+      <div className="flex items-center gap-4 self-center">
         <img src={site.logoUrl} alt="" width={64} height={64} className="size-16" />
         <h1 className="font-heading text-3xl leading-none tracking-wide text-foreground">{site.name}</h1>
-      </Link>
+      </div>
 
       <ul className="flex flex-col gap-4 max-md:hidden">
         {site.centerIntro.map((item) => (

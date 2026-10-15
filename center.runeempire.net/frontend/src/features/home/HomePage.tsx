@@ -1,32 +1,16 @@
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { site } from '@/config/site'
-import { logout } from '@/features/auth/api'
-import { useAuth } from '@/features/auth/authContext'
 import { formMessage } from '@/features/auth/errors'
-import { FormAlert } from '@/features/auth/FormAlert'
+import { useAccount, useLogout } from '@/features/auth/queries'
 
 /** Where a player lands after logging in. Placeholder until the account pages exist. */
 export function HomePage() {
-  const { account, setAccount } = useAuth()
-  const [error, setError] = useState<string>()
-  const [leaving, setLeaving] = useState(false)
-
-  async function handleLogout() {
-    setError(undefined)
-    setLeaving(true)
-    try {
-      await logout()
-      // Logged out: the home page sends the player to the login page.
-      setAccount(null)
-    } catch (failure) {
-      setError(formMessage(failure))
-      setLeaving(false)
-    }
-  }
+  const { data: account } = useAccount()
+  const logout = useLogout()
 
   return (
     <main
@@ -45,10 +29,15 @@ export function HomePage() {
           <h1 className="font-heading text-3xl text-foreground">Szia, {account?.display_name}!</h1>
           <p className="mt-2 text-muted-foreground">Be vagy jelentkezve. A fiókoldalad hamarosan itt lesz.</p>
         </div>
-        <FormAlert message={error} />
-        <Button variant="secondary" onClick={handleLogout} disabled={leaving} className="h-10 rounded-lg px-5">
+        <Button
+          variant="secondary"
+          // Logged out: the home page sends the player to the login page.
+          onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
+          disabled={logout.isPending}
+          className="h-10 rounded-lg px-5"
+        >
           <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />
-          {leaving ? 'Kijelentkezés…' : 'Kijelentkezés'}
+          {logout.isPending ? 'Kijelentkezés…' : 'Kijelentkezés'}
         </Button>
       </div>
     </main>

@@ -1,11 +1,20 @@
+import { QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router'
 
 import { SiteFooter } from '@/components/SiteFooter'
+import { Toaster } from '@/components/ui/sonner'
 import { AuthPage } from '@/features/auth/AuthPage'
-import { AuthProvider, GuestOnly, RequireAccount } from '@/features/auth/AuthProvider'
+import { GuestOnly, RequireAccount } from '@/features/auth/guards'
+import { useAccount } from '@/features/auth/queries'
 import { HomePage } from '@/features/home/HomePage'
+import { queryClient } from '@/queryClient'
 
 function RootLayout() {
+  // Nothing until the session check answers, so the footer does not flash alone.
+  const { isPending } = useAccount()
+  if (isPending) return null
+
   return (
     <>
       <Outlet />
@@ -46,8 +55,11 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    <AuthProvider>
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-    </AuthProvider>
+      <Toaster position="top-center" />
+      {/* Rendered only in development; production builds replace it with nothing. */}
+      <ReactQueryDevtools buttonPosition="bottom-left" />
+    </QueryClientProvider>
   )
 }

@@ -1,10 +1,13 @@
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+
 /*
- * JSON client for the Laravel API. Session login: the session and XSRF-TOKEN
- * cookies live on this origin, and every state-changing request echoes the
- * XSRF token back in a header.
+ * Axios client for the Laravel API. Session login: axios already echoes the
+ * XSRF-TOKEN cookie back as the X-XSRF-TOKEN header on same-origin requests
+ * (its default names match Laravel's), so this module only makes sure the
+ * cookie exists and turns every failure into an ApiError.
  */
 
-const GENERIC_ERROR = 'Váratlan hiba történt, próbáld újra később.'
+export const GENERIC_ERROR = 'Váratlan hiba történt, próbáld újra később.'
 
 /** A failed API call, with the backend's per-field messages when it sent any (422). */
 export class ApiError extends Error {
@@ -18,28 +21,49 @@ export class ApiError extends Error {
   }
 }
 
+export const http = axios.create({
+  baseURL: '/api',
+  headers: { Accept: 'application/json' },
+})
+
+function hasXsrfCookie(): boolean {
+  return document.cookie.split('; ').some((entry) => entry.startsWith('XSRF-TOKEN='))
+}
+
+function fetchCsrfCookie() {
+  return http.get('/sanctum/csrf-cookie')
+}
+
+// State-changing requests need the XSRF cookie; the first one of a visit fetches it.
+http.interceptors.request.use(async (config) => {
+  if (config.method !== 'get' && !hasXsrfCookie()) await fetchCsrfCookie()
+  return config
+})
+
+type RetriableConfig = InternalAxiosRequestConfig & { csrfRetried?: boolean }
+
+http.interceptors.response.use(undefined, async (error: unknown) => {
+  if (!axios.isAxiosError(error)) throw error
+
+  // An expired session takes its CSRF token with it: fetch a fresh one and try once more.
+  const config = error.config as RetriableConfig | undefined
+  if (error.response?.status === 419 && config && !config.csrfRetried) {
+    config.csrfRetried = true
+    await fetchCsrfCookie()
+    return http(config)
+  }
+
+  throw toApiError(error)
+})
+
 type ErrorBody = { message?: unknown; errors?: Record<string, unknown> }
 
-function xsrfToken(): string | undefined {
-  const cookie = document.cookie.split('; ').find((entry) => entry.startsWith('XSRF-TOKEN='))
-  return cookie && decodeURIComponent(cookie.slice('XSRF-TOKEN='.length))
-}
+function toApiError(error: AxiosError): ApiError {
+  const response = error.response
+  if (!response) return new ApiError(0, 'Nem sikerült elérni a szervert. Ellenőrizd az internetkapcsolatod.')
 
-async function fetchCsrfCookie() {
-  await fetch('/api/sanctum/csrf-cookie', { headers: { Accept: 'application/json' } })
-}
-
-async function readJson(response: Response): Promise<unknown> {
   // The dev proxy answers with an empty or HTML body while the backend is down.
-  try {
-    return await response.json()
-  } catch {
-    return undefined
-  }
-}
-
-async function toApiError(response: Response): Promise<ApiError> {
-  const body = ((await readJson(response)) ?? {}) as ErrorBody
+  const body: ErrorBody = typeof response.data === 'object' && response.data !== null ? response.data : {}
   const backendMessage = typeof body.message === 'string' ? body.message : undefined
 
   const fieldErrors: Record<string, string> = {}
@@ -49,49 +73,13 @@ async function toApiError(response: Response): Promise<ApiError> {
     }
   }
 
+  if (response.status === 419) {
+    return new ApiError(419, 'A munkamenet lejárt. Frissítsd az oldalt, és ellenőrizd, hogy a sütik engedélyezve vannak.')
+  }
+
   // Only these statuses carry a message meant for players. Other 5xx bodies
   // can hold raw exception text while the backend runs in debug mode.
-  const message =
-    backendMessage && [403, 422, 429, 503].includes(response.status) ? backendMessage : GENERIC_ERROR
+  const message = backendMessage && [403, 422, 429, 503].includes(response.status) ? backendMessage : GENERIC_ERROR
 
   return new ApiError(response.status, message, fieldErrors)
-}
-
-/**
- * Calls the API and returns the parsed JSON body (undefined for 204).
- * State-changing requests fetch the CSRF cookie first when it is missing,
- * and retry once after a 419 (the session, and with it the token, expired).
- */
-export async function apiRequest<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown): Promise<T> {
-  const send = async () => {
-    const headers: Record<string, string> = { Accept: 'application/json' }
-    if (body !== undefined) headers['Content-Type'] = 'application/json'
-
-    if (method !== 'GET') {
-      if (!xsrfToken()) await fetchCsrfCookie()
-      // Read on every request: login and logout issue a new token.
-      const token = xsrfToken()
-      if (token) headers['X-XSRF-TOKEN'] = token
-    }
-
-    return fetch(`/api${path}`, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    })
-  }
-
-  let response: Response
-  try {
-    response = await send()
-    if (response.status === 419) {
-      await fetchCsrfCookie()
-      response = await send()
-    }
-  } catch {
-    throw new ApiError(0, 'Nem sikerült elérni a szervert. Ellenőrizd az internetkapcsolatod.')
-  }
-
-  if (!response.ok) throw await toApiError(response)
-  return (await readJson(response)) as T
 }
