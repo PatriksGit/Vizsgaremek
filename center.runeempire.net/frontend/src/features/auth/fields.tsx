@@ -72,6 +72,7 @@ export function PasswordField(props: PasswordFieldProps) {
 
   return (
     <TextField
+      placeholder="••••••••"
       {...props}
       icon={faLock}
       type={visible ? 'text' : 'password'}

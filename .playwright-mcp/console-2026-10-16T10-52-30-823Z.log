@@ -1,0 +1,13 @@
+[     454ms] [INFO] %c[libdiscore] 
+font-weight: bold;
+color: purple;
+ [experiment_manager] Loaded experiments from cache @ https://discord.com/assets/556707.bb1a25f3c212ce8f.js:464
+[     479ms] [LOG] %c[ProcessUtilsElectron] 
+font-weight: bold;
+color: purple;
+ setMemoryInformation not available. @ https://discord.com/assets/556707.bb1a25f3c212ce8f.js:464
+[     558ms] [LOG] %c[default] 
+font-weight: bold;
+color: purple;
+ [BUILD INFO] Release Channel: stable, Build Number: 638651, Version Hash: 5622b31c0cab24812146307b2dd36712a87d7174 @ https://discord.com/assets/556707.bb1a25f3c212ce8f.js:464
+[     559ms] [LOG] AppCrashedFatalReport: getLastCrash not supported. @ https://discord.com/assets/556707.bb1a25f3c212ce8f.js:464

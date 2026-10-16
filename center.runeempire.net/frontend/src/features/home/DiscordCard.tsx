@@ -23,9 +23,10 @@ const countFormat = new Intl.NumberFormat('hu-HU')
 /**
  * Who is on the RuneEmpire Discord and every voice channel with who sits in
  * it, drawn in the site's own style from the backend's copy of the widget.
- * It is the overview's widest card while the game server sends no data, so
- * the channels spread over columns instead of scrolling inside the card.
- * When the fetch fails, the player can try again.
+ * It sizes itself to its own width (a container), not the window's: in the
+ * overview's narrow column the channels stack and the join button sits at
+ * the bottom; given more room, the channels spread over columns and the
+ * button moves up beside the title. When the fetch fails, the player can try again.
  */
 export function DiscordCard() {
   const { data: widget, isPending, isFetching, refetch } = useDiscordWidget()
@@ -33,10 +34,10 @@ export function DiscordCard() {
   const invite = widget?.instant_invite ?? site.discordInviteUrl
 
   return (
-    <Panel as="section" className="content-in flex min-w-0 flex-col gap-5" style={enterAfter(700)}>
+    <Panel as="section" className="content-in @container flex min-w-0 flex-col gap-5" style={enterAfter(980)}>
       <div className="flex items-center justify-between gap-4">
         <PanelHeader icon={faDiscord} tone="discord" title="Discord" />
-        <JoinLink href={invite} className="max-sm:hidden" />
+        <JoinLink href={invite} className="hidden @2xl:flex" />
       </div>
 
       {/* A failed refresh keeps showing the last good answer. */}
@@ -54,8 +55,8 @@ export function DiscordCard() {
         </div>
       )}
 
-      {/* Phones get the button at the bottom, in thumb reach. */}
-      <JoinLink href={invite} className="w-full sm:hidden" />
+      {/* A narrow card keeps the button at the bottom: full width, and in thumb reach on phones. */}
+      <JoinLink href={invite} className="mt-auto w-full @2xl:hidden" />
     </Panel>
   )
 }
@@ -101,7 +102,7 @@ function Presence({ widget }: { widget: DiscordWidget }) {
         {inVoice > 0 && <p className="mt-0.5 pl-4 text-xs text-muted-foreground">{countFormat.format(inVoice)} fő hangcsatornában</p>}
       </div>
 
-      <ul aria-label="Hangcsatornák" className="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+      <ul aria-label="Hangcsatornák" className="grid gap-x-8 gap-y-1 @2xl:grid-cols-2 @4xl:grid-cols-3">
         {channels.map((channel) => {
           const occupied = channel.members.length > 0
 

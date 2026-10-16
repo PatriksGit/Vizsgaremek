@@ -8,14 +8,15 @@ import { cn } from '@/lib/utils'
 
 import { IconBadge } from './IconBadge'
 import { Panel, panelLook } from './Panel'
+import { SoonTooltip } from './SoonTooltip'
 import type { Tone } from './tones'
 
 type StatTileProps = {
   icon: IconDefinition
   tone: Tone
   label: string
-  /** The number to show. A stat with no source yet belongs in a "coming soon" list, not in a tile. */
-  value: ReactNode
+  /** The number to show. Left out while it has no source: a faint dash with a "Hamarosan" tooltip. */
+  value?: ReactNode
   /** The value is being fetched right now: a skeleton bar instead. */
   loading?: boolean
   /** The page with the details, when there is one: the whole tile becomes a link to it. */
@@ -35,8 +36,13 @@ export function StatTile({ icon, tone, label, value, loading = false, to, classN
           <Skeleton className="mt-1.5 h-5 w-16" />
           <span className="sr-only">betöltés…</span>
         </>
-      ) : (
+      ) : value !== undefined ? (
         <p className="text-xl font-semibold text-foreground tabular-nums">{value}</p>
+      ) : (
+        <p className="text-xl font-semibold text-muted-foreground/50">
+          <span aria-hidden="true">–</span>
+          <span className="sr-only">hamarosan</span>
+        </p>
       )}
     </>
   )
@@ -59,9 +65,11 @@ export function StatTile({ icon, tone, label, value, loading = false, to, classN
     )
   }
 
-  return (
+  const tile = (
     <Panel as="li" className={cn('p-4', className)} style={style}>
       {content}
     </Panel>
   )
+
+  return value === undefined && !loading ? <SoonTooltip>{tile}</SoonTooltip> : tile
 }
