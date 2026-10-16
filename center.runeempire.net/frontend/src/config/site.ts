@@ -24,6 +24,9 @@ export const site = {
   tagline: 'Magyar survival szerver, ahol a birodalmadat te építed fel.',
   playersOnline: 147,
 
+  /** A lasting invite to the Discord server, for when the widget (and its own invite) cannot be fetched. */
+  discordInviteUrl: 'https://discord.com/invite/dJg46dtc',
+
   logoUrl: '/RuneLogo.webp',
 
   /** Shader screenshot from the server, behind the glass cards. */

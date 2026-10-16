@@ -99,6 +99,10 @@ rate-limits:
   password-change:      # PUT /api/auth/password, per account
     per-minute: 5
 
+discord:
+  # The server shown on the overview; turn its widget on in Server settings > Widget.
+  guild-id: "1512369732668362842"
+
 cors:
   # Origins of the React frontend allowed to call the API.
   allowed-origins:

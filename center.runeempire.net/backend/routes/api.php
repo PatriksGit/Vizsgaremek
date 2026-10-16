@@ -6,7 +6,11 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Auth\StartRegistrationController;
 use App\Http\Controllers\Auth\VerifyRegistrationController;
+use App\Http\Controllers\DiscordWidgetController;
 use Illuminate\Support\Facades\Route;
+
+// Public, like Discord's own widget; cached, so Discord is asked at most once a minute.
+Route::get('/discord-widget', DiscordWidgetController::class)->name('discord-widget');
 
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::post('/register', StartRegistrationController::class)

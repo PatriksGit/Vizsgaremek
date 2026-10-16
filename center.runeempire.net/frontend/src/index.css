@@ -17,6 +17,11 @@
     --font-heading: 'Grenze', serif;
     --color-bedrock: var(--bedrock);
     --color-xp: var(--xp);
+    --color-enchant: var(--enchant);
+    --color-ember: var(--ember);
+    --color-diamond: var(--diamond);
+    --color-redstone: var(--redstone);
+    --color-discord: var(--discord);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -48,7 +53,13 @@
  *   obsidian  #16161A  dialogs, solid panels   void           #0E0E11  page
  *   vein      #2E2D34  borders                  bedrock        #09090B  footer
  *   bone      #E9E4D8  text                     ash            #A8A39A  secondary text
- *   rune gold #F2B544  CTA, focus               xp green       #7ED957  online dot only
+ *   rune gold #F2B544  CTA, focus, rank         xp green       #7ED957  online, playtime
+ *
+ * Each kind of player data has its own material colour, used only in that
+ * data's icon badge (components/app/tones.ts), never on card surfaces:
+ *   enchant   #B48CFF  runes                    ember          #FF8A3D  streak
+ *   diamond   #5EE0D4  server                   redstone       #FF5E57  punishments
+ *   discord   #5865F2  the Discord card
  */
 :root {
     color-scheme: dark;
@@ -73,6 +84,11 @@
     --radius: 0.25rem;
     --bedrock: #09090b;
     --xp: #7ed957;
+    --enchant: #b48cff;
+    --ember: #ff8a3d;
+    --diamond: #5ee0d4;
+    --redstone: #ff5e57;
+    --discord: #5865f2;
 }
 
 @layer base {
@@ -87,6 +103,25 @@
     }
 }
 
+
+/* The black glass of the login card and the menus. */
+@utility glass {
+    @apply rounded-3xl border border-white/10 bg-black/55 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl;
+}
+
+/* Thin, dark scrollbars instead of the browser's light grey ones. */
+@layer base {
+    html {
+        scrollbar-width: thin;
+        scrollbar-color: rgb(255 255 255 / 0.16) var(--bedrock);
+    }
+}
+
+/* A scroll area inside a panel (the sidebar menu): a barely visible thumb, no track. */
+@utility scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.1) transparent;
+}
 
 /*
  * Page-load choreography, played once when a page mounts: the background
@@ -111,6 +146,16 @@
     from {
         opacity: 0;
         transform: translateY(10px);
+    }
+}
+
+/* A small turn around a three-quarter view, for the stand-in player figure. */
+@keyframes sway {
+    from {
+        transform: rotateY(-32deg);
+    }
+    to {
+        transform: rotateY(-18deg);
     }
 }
 

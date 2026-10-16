@@ -1,40 +1,42 @@
-import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { toast } from 'sonner'
+import { faCalendarDays, faClock, faFire, faGavel, faGem, faServer, type IconDefinition } from '@fortawesome/free-solid-svg-icons'
 
-import { ServerBackdrop } from '@/components/ServerBackdrop'
-import { Button } from '@/components/ui/button'
+import { StatTile } from '@/components/app/StatTile'
+import type { Tone } from '@/components/app/tones'
 import { site } from '@/config/site'
-import { formMessage } from '@/features/auth/errors'
-import { useAccount, useLogout } from '@/features/auth/queries'
+import { enterAfter } from '@/lib/motion'
 
-/** Where a player lands after logging in. Placeholder until the account pages exist. */
+import { DiscordCard } from './DiscordCard'
+import { HeroCard } from './HeroCard'
+import { PlaytimeCard } from './PlaytimeCard'
+
+/** The player's numbers; values arrive once the game server's data is wired. */
+const STATS: { icon: IconDefinition; tone: Tone; label: string }[] = [
+  { icon: faGem, tone: 'enchant', label: 'Rúnák' },
+  { icon: faClock, tone: 'xp', label: 'Játékidő' },
+  { icon: faFire, tone: 'ember', label: 'Napos sorozat' },
+  { icon: faServer, tone: 'diamond', label: 'Online játékosok' },
+  { icon: faGavel, tone: 'redstone', label: 'Büntetések' },
+  { icon: faCalendarDays, tone: 'gold', label: 'Regisztráció' },
+]
+
+/** The overview a player lands on after logging in: greeting, numbers, then playtime and Discord. */
 export function HomePage() {
-  const { data: account } = useAccount()
-  const logout = useLogout()
-
   return (
-    <main className="relative isolate flex min-h-dvh items-center justify-center bg-background px-4 py-10">
-      <title>{`Fiókom | ${site.name}`}</title>
-      <ServerBackdrop />
+    <div className="flex flex-col gap-5">
+      <title>{`Áttekintés | ${site.name}`}</title>
 
-      <div className="card-rise flex w-full max-w-md flex-col items-center gap-6 rounded-3xl border border-white/10 bg-black/55 p-8 text-center shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8)] backdrop-blur-xl">
-        <img src={site.logoUrl} alt="" width={64} height={64} className="size-16" />
-        <div>
-          <h1 className="font-heading text-3xl text-foreground">Szia, {account?.display_name}!</h1>
-          <p className="mt-2 text-muted-foreground">Be vagy jelentkezve. A fiókoldalad hamarosan itt lesz.</p>
-        </div>
-        <Button
-          variant="secondary"
-          // Logged out: the home page sends the player to the login page.
-          onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
-          disabled={logout.isPending}
-          className="h-10 rounded-lg px-5"
-        >
-          <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />
-          {logout.isPending ? 'Kijelentkezés…' : 'Kijelentkezés'}
-        </Button>
+      <HeroCard />
+
+      <ul aria-label="Statisztikák" className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        {STATS.map((stat, index) => (
+          <StatTile key={stat.label} {...stat} className="content-in" style={enterAfter(560 + index * 60)} />
+        ))}
+      </ul>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <PlaytimeCard />
+        <DiscordCard />
       </div>
-    </main>
+    </div>
   )
 }

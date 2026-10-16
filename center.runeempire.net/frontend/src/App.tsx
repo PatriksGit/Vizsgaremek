@@ -4,24 +4,21 @@ import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-rou
 
 import { SiteFooter } from '@/components/SiteFooter'
 import { Toaster } from '@/components/ui/sonner'
+import { AccountPage } from '@/features/account/AccountPage'
+import { AppLayout } from '@/features/app/AppLayout'
 import { AuthPage } from '@/features/auth/AuthPage'
 import { GuestOnly, RequireAccount } from '@/features/auth/guards'
 import { useAccount } from '@/features/auth/queries'
 import { HomePage } from '@/features/home/HomePage'
-import { HomeMockup } from '@/features/mockup/HomeMockup'
+import { ShopPage } from '@/features/shop/ShopPage'
 import { queryClient } from '@/queryClient'
 
 function RootLayout() {
-  // Nothing until the session check answers, so the footer does not flash alone.
+  // Nothing until the session check answers, so no page flashes before its guard decides.
   const { isPending } = useAccount()
   if (isPending) return null
 
-  return (
-    <>
-      <Outlet />
-      <SiteFooter />
-    </>
-  )
+  return <Outlet />
 }
 
 const router = createBrowserRouter([
@@ -29,12 +26,17 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       {
-        index: true,
+        // The logged-in pages share the menu and the frame.
         element: (
           <RequireAccount>
-            <HomePage />
+            <AppLayout />
           </RequireAccount>
         ),
+        children: [
+          { index: true, element: <HomePage /> },
+          { path: 'bolt', element: <ShopPage /> },
+          { path: 'beallitasok', element: <AccountPage /> },
+        ],
       },
       {
         // One parent for both paths keeps the card mounted, so it can animate
@@ -42,6 +44,7 @@ const router = createBrowserRouter([
         element: (
           <GuestOnly>
             <AuthPage />
+            <SiteFooter />
           </GuestOnly>
         ),
         children: [
@@ -49,8 +52,6 @@ const router = createBrowserRouter([
           { path: 'register', element: null },
         ],
       },
-      // THROWAWAY: the home page mockup, open without login. Delete with src/features/mockup.
-      { path: 'mockup', element: <HomeMockup /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
@@ -62,7 +63,7 @@ export default function App() {
       <RouterProvider router={router} />
       <Toaster position="top-center" />
       {/* Rendered only in development; production builds replace it with nothing. */}
-      <ReactQueryDevtools buttonPosition="bottom-left" />
+      <ReactQueryDevtools buttonPosition="bottom-right" />
     </QueryClientProvider>
   )
 }

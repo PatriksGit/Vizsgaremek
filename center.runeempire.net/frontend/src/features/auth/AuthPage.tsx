@@ -25,7 +25,7 @@ export function AuthPage() {
       <title>{`${mode === 'register' ? 'Regisztráció' : 'Belépés'} | ${site.name}`}</title>
       <ServerBackdrop />
 
-      <div className="card-rise grid w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-black/55 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl md:grid-cols-2">
+      <div className="card-rise glass grid w-full max-w-4xl overflow-hidden md:grid-cols-2">
         <AuthShowcase className="border-white/10 max-md:border-b md:border-r" />
 
         {/* Both forms share one grid cell, so the column is as tall as the taller one.

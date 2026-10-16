@@ -1,0 +1,149 @@
+import { faDiscord } from '@fortawesome/free-brands-svg-icons'
+import { faVolumeHigh } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+
+import { Panel, PanelHeader } from '@/components/app/Panel'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Skeleton } from '@/components/ui/skeleton'
+import { site } from '@/config/site'
+import { enterAfter } from '@/lib/motion'
+import { cn } from '@/lib/utils'
+
+import { useDiscordWidget, type DiscordMember, type DiscordWidget } from './discord'
+
+/** What Discord itself shows for someone without a picture. */
+const DEFAULT_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png'
+
+/**
+ * Who is on the RuneEmpire Discord and every voice channel with who sits in
+ * it, drawn in the site's own style from the backend's copy of the widget. On
+ * wide screens the card takes the height the playtime chart gives the row,
+ * and the channel list scrolls inside it rather than stretching the row.
+ */
+export function DiscordCard() {
+  const { data: widget, isPending } = useDiscordWidget()
+  // The widget's own invite when it has one; the fixed one keeps the button while Discord is down.
+  const invite = widget?.instant_invite ?? site.discordInviteUrl
+
+  return (
+    <Panel as="section" className="content-in flex flex-col gap-5 lg:h-0 lg:min-h-full" style={enterAfter(980)}>
+      <PanelHeader icon={faDiscord} tone="discord" title="Discord" />
+
+      {/* A failed refresh keeps showing the last good answer. */}
+      {widget ? (
+        <Presence widget={widget} />
+      ) : isPending ? (
+        <PresenceSkeleton />
+      ) : (
+        <p className="text-sm text-muted-foreground">A Discord most nem elérhető.</p>
+      )}
+
+      <a
+        href={invite}
+        target="_blank"
+        rel="noopener noreferrer"
+        // Tinted with Discord's blue, never filled with it: the page's strongest colour stays gold.
+        className={cn(
+          'mt-auto flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-discord/40 bg-discord/20 text-base font-medium text-white transition-colors hover:bg-discord/30',
+          'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+        )}
+      >
+        <FontAwesomeIcon icon={faDiscord} className="size-5" aria-hidden="true" />
+        Csatlakozás
+      </a>
+    </Panel>
+  )
+}
+
+function Presence({ widget }: { widget: DiscordWidget }) {
+  // Only the channels the widget lists, the ones everyone may see: someone in
+  // a private channel is never shown as sitting in voice.
+  const channels = widget.channels.map((channel) => ({
+    ...channel,
+    members: widget.members.filter((member) => member.channel_id === channel.id),
+  }))
+  const inVoice = channels.reduce((count, channel) => count + channel.members.length, 0)
+
+  return (
+    <>
+      <div className="shrink-0 border-b border-white/8 pb-4">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span aria-hidden="true" className="size-2 rounded-full bg-xp shadow-[0_0_8px_var(--color-xp)]" />
+          <span>
+            <span className="font-semibold text-foreground tabular-nums">{widget.presence_count}</span> tag online
+          </span>
+        </p>
+        {inVoice > 0 && <p className="mt-0.5 pl-4 text-xs text-muted-foreground">{inVoice} hangcsatornában</p>}
+      </div>
+
+      <ul aria-label="Hangcsatornák" className="scrollbar-slim min-h-0 flex-1 space-y-0.5 overflow-y-auto max-lg:max-h-72">
+        {channels.map((channel) => {
+          const occupied = channel.members.length > 0
+
+          return (
+            <li key={channel.id}>
+              <p className={cn('flex h-6 items-center gap-2 text-sm', occupied ? 'text-foreground' : 'text-muted-foreground')}>
+                <FontAwesomeIcon
+                  icon={faVolumeHigh}
+                  className={cn('size-3.5 shrink-0', occupied ? 'text-xp' : 'text-muted-foreground/60')}
+                  aria-hidden="true"
+                />
+                <span className="min-w-0 truncate">{channelLabel(channel.name)}</span>
+                {occupied && (
+                  <span className="ml-auto shrink-0 rounded-md bg-xp/15 px-1.5 text-xs leading-5 font-medium text-xp tabular-nums">
+                    {channel.members.length}
+                    <span className="sr-only"> fő</span>
+                  </span>
+                )}
+              </p>
+              {occupied && (
+                <ul className="space-y-0.5 pb-1 pl-6">
+                  {channel.members.map((member, index) => (
+                    <li key={index} className="flex items-center gap-2 text-sm text-foreground">
+                      <MemberAvatar member={member} className="size-5" />
+                      <span className="min-w-0 truncate">{member.username}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </>
+  )
+}
+
+/** A channel's name without the emoji and separator the server puts in front ("🔊・Társalgó I"): the card draws its own icon. */
+function channelLabel(name: string) {
+  return name.replace(/^[^\p{L}\p{N}]+/u, '') || name
+}
+
+/** A member's Discord picture; without one, or if it does not load, Discord's own default picture. Their name is written beside it. */
+function MemberAvatar({ member, className }: { member: DiscordMember; className?: string }) {
+  return (
+    <Avatar className={cn('bg-secondary after:hidden', className)}>
+      {member.avatar_url && <AvatarImage src={member.avatar_url} alt="" referrerPolicy="no-referrer" />}
+      <AvatarFallback className="bg-transparent">
+        <img src={DEFAULT_AVATAR} alt="" referrerPolicy="no-referrer" className="size-full rounded-full" />
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
+function PresenceSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <Skeleton className="h-5 w-28" />
+      <div className="space-y-2.5 border-t border-white/8 pt-4">
+        {[28, 24, 26, 22, 24].map((width, row) => (
+          <div key={row} className="flex items-center gap-2">
+            <Skeleton className="size-3.5 rounded-sm" />
+            <Skeleton className="h-4" style={{ width: width * 4 }} />
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">A Discord betöltése…</span>
+    </div>
+  )
+}
