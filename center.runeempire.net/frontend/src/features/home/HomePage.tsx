@@ -13,7 +13,6 @@ import { enterAfter } from '@/lib/motion'
 import { DiscordCard } from './DiscordCard'
 import { HeroCard } from './HeroCard'
 import { JoinCard } from './JoinCard'
-import { PlaytimeCard } from './PlaytimeCard'
 import { registeredWithin } from './registration'
 
 type Stat = {
@@ -40,7 +39,7 @@ const JOIN_HINT_DAYS = 7
 
 /**
  * The overview a player lands on after logging in: greeting, how to join (for
- * new players), the numbers that exist, then playtime and Discord.
+ * new players), the numbers that exist and those on their way, then Discord.
  */
 export function HomePage() {
   const { data: account } = useAccount()
@@ -72,10 +71,8 @@ export function HomePage() {
 
       {upcoming.length > 0 && <UpcomingStats stats={upcoming} />}
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <PlaytimeCard />
-        <DiscordCard />
-      </div>
+      {/* The one live source today, so it gets the full width; playtime joins once the server sends it. */}
+      <DiscordCard />
     </div>
   )
 }

@@ -29,6 +29,8 @@ export function TextField({
 }: TextFieldProps) {
   const id = useId()
   const hintId = `${id}-hint`
+  const errorId = `${id}-error`
+  const describedBy = [description && hintId, error && errorId].filter(Boolean).join(' ') || undefined
 
   return (
     <Field data-invalid={error ? true : undefined}>
@@ -46,7 +48,7 @@ export function TextField({
         <Input
           id={id}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error || description ? hintId : undefined}
+          aria-describedby={describedBy}
           className={cn(
             'h-11 rounded-lg border-white/10 bg-black/40 px-3.5 text-base text-foreground shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] md:h-10 md:text-base',
             icon && 'pl-10',
@@ -57,11 +59,8 @@ export function TextField({
         />
         {trailing && <div className="absolute inset-y-0 right-1 flex items-center">{trailing}</div>}
       </div>
-      {error ? (
-        <FieldError id={hintId}>{error}</FieldError>
-      ) : (
-        description && <FieldDescription id={hintId}>{description}</FieldDescription>
-      )}
+      {description && <FieldDescription id={hintId}>{description}</FieldDescription>}
+      {error && <FieldError id={errorId}>{error}</FieldError>}
     </Field>
   )
 }

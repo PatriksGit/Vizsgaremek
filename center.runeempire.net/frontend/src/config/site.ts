@@ -11,7 +11,6 @@ import {
   faTrophy,
   faUserLock,
   faUsers,
-  faUserShield,
 } from '@fortawesome/free-solid-svg-icons'
 
 /**
@@ -33,7 +32,10 @@ export const site = {
   /** Shader screenshot from the server, behind the glass cards. */
   backgroundUrl: '/backgrounds/bg.webp',
 
-  /** What the login card's left panel tells a visitor about the server and the Center. */
+  /**
+   * What the login card's left panel tells a visitor about the server and the
+   * Center. Only what is true today: planned features are named as coming.
+   */
   centerIntro: [
     {
       icon: faUsers,
@@ -48,22 +50,12 @@ export const site = {
     {
       icon: faCompass,
       title: 'Mi az a Center?',
-      text: 'A szerver weboldala, ahol parancsok helyett pár kattintással intézed a dolgaidat.',
+      text: 'A szerver weboldala: itt kezeled a fiókod, és itt látod, ki van fent a Discordon. Hamarosan a webshop és a statisztikáid is ide költöznek.',
     },
     {
       icon: faDesktop,
       title: 'Saját kliens',
       text: 'A szerverre a saját kliensünkkel lépsz fel, ugyanazzal a névvel és jelszóval, mint itt.',
-    },
-    {
-      icon: faCartShopping,
-      title: 'Webshop',
-      text: 'Coint vehetsz, abból pedig rangot. A korábbi vásárlásaidat is itt találod.',
-    },
-    {
-      icon: faUserShield,
-      title: 'A fiókod',
-      text: 'Itt cseréled a jelszavad, kapcsolod be a kétlépcsős azonosítást, és nézed a statisztikáidat.',
     },
   ],
 

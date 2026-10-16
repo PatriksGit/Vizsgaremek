@@ -15,11 +15,17 @@ import { useDiscordWidget, type DiscordMember, type DiscordWidget } from './disc
 /** What Discord itself shows for someone without a picture. */
 const DEFAULT_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png'
 
+/** How many people a channel lists before the rest become "+N további". */
+const MEMBERS_SHOWN = 8
+
+const countFormat = new Intl.NumberFormat('hu-HU')
+
 /**
  * Who is on the RuneEmpire Discord and every voice channel with who sits in
- * it, drawn in the site's own style from the backend's copy of the widget. On
- * long channel list it scrolls inside the card. When Discord cannot be
- * reached, the player can try again.
+ * it, drawn in the site's own style from the backend's copy of the widget.
+ * It is the overview's widest card while the game server sends no data, so
+ * the channels spread over columns instead of scrolling inside the card.
+ * When the fetch fails, the player can try again.
  */
 export function DiscordCard() {
   const { data: widget, isPending, isFetching, refetch } = useDiscordWidget()
@@ -27,8 +33,11 @@ export function DiscordCard() {
   const invite = widget?.instant_invite ?? site.discordInviteUrl
 
   return (
-    <Panel as="section" className="content-in flex min-w-0 flex-col gap-5" style={enterAfter(980)}>
-      <PanelHeader icon={faDiscord} tone="discord" title="Discord" />
+    <Panel as="section" className="content-in flex min-w-0 flex-col gap-5" style={enterAfter(700)}>
+      <div className="flex items-center justify-between gap-4">
+        <PanelHeader icon={faDiscord} tone="discord" title="Discord" />
+        <JoinLink href={invite} className="max-sm:hidden" />
+      </div>
 
       {/* A failed refresh keeps showing the last good answer. */}
       {widget ? (
@@ -37,7 +46,7 @@ export function DiscordCard() {
         <PresenceSkeleton />
       ) : (
         <div className="flex flex-col items-start gap-3">
-          <p className="text-sm text-muted-foreground">A Discord most nem elérhető.</p>
+          <p className="text-sm text-muted-foreground">Most nem sikerült betölteni a Discordot.</p>
           <Button variant="outline" onClick={() => refetch()} disabled={isFetching} className="h-11 px-4 md:h-9">
             <FontAwesomeIcon icon={faRotateRight} className={cn(isFetching && 'motion-safe:animate-spin')} aria-hidden="true" />
             {isFetching ? 'Próbálkozás…' : 'Újrapróbálás'}
@@ -45,20 +54,29 @@ export function DiscordCard() {
         </div>
       )}
 
-      <a
-        href={invite}
-        target="_blank"
-        rel="noopener noreferrer"
-        // Tinted with Discord's blue, never filled with it: the page's strongest colour stays gold.
-        className={cn(
-          'mt-auto flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-discord/40 bg-discord/20 text-base font-medium text-white transition-colors hover:bg-discord/30',
-          'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-        )}
-      >
-        <FontAwesomeIcon icon={faDiscord} className="size-5" aria-hidden="true" />
-        Csatlakozás
-      </a>
+      {/* Phones get the button at the bottom, in thumb reach. */}
+      <JoinLink href={invite} className="w-full sm:hidden" />
     </Panel>
+  )
+}
+
+/** Opens the Discord invite. Tinted with Discord's blue, never filled with it: the page's strongest colour stays gold. */
+function JoinLink({ href, className }: { href: string; className?: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        'flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-discord/40 bg-discord/20 px-4 font-medium text-white transition-colors hover:bg-discord/30',
+        'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+        className,
+      )}
+    >
+      <FontAwesomeIcon icon={faDiscord} className="size-5" aria-hidden="true" />
+      Csatlakozás a Discordhoz
+      <span className="sr-only"> (új lapon nyílik)</span>
+    </a>
   )
 }
 
@@ -77,18 +95,18 @@ function Presence({ widget }: { widget: DiscordWidget }) {
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <span aria-hidden="true" className="size-2 rounded-full bg-xp" />
           <span>
-            <span className="font-semibold text-foreground tabular-nums">{widget.presence_count}</span> tag online
+            <span className="font-semibold text-foreground tabular-nums">{countFormat.format(widget.presence_count)}</span> tag online
           </span>
         </p>
-        {inVoice > 0 && <p className="mt-0.5 pl-4 text-xs text-muted-foreground">{inVoice} fő hangcsatornában</p>}
+        {inVoice > 0 && <p className="mt-0.5 pl-4 text-xs text-muted-foreground">{countFormat.format(inVoice)} fő hangcsatornában</p>}
       </div>
 
-      <ul aria-label="Hangcsatornák" className="scrollbar-slim max-h-72 space-y-0.5 overflow-y-auto">
+      <ul aria-label="Hangcsatornák" className="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
         {channels.map((channel) => {
           const occupied = channel.members.length > 0
 
           return (
-            <li key={channel.id}>
+            <li key={channel.id} className="min-w-0">
               <p className={cn('flex h-6 items-center gap-2 text-sm', occupied ? 'text-foreground' : 'text-muted-foreground')}>
                 <FontAwesomeIcon
                   icon={faVolumeHigh}
@@ -105,12 +123,15 @@ function Presence({ widget }: { widget: DiscordWidget }) {
               </p>
               {occupied && (
                 <ul className="space-y-0.5 pb-1 pl-6">
-                  {channel.members.map((member, index) => (
+                  {channel.members.slice(0, MEMBERS_SHOWN).map((member, index) => (
                     <li key={index} className="flex items-center gap-2 text-sm text-foreground">
                       <MemberAvatar member={member} className="size-5" />
                       <span className="min-w-0 truncate">{member.username}</span>
                     </li>
                   ))}
+                  {channel.members.length > MEMBERS_SHOWN && (
+                    <li className="pl-7 text-sm text-muted-foreground">+{channel.members.length - MEMBERS_SHOWN} további</li>
+                  )}
                 </ul>
               )}
             </li>

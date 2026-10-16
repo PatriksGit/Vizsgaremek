@@ -61,7 +61,7 @@ function FormSlide({ mode, active, from, children }: FormSlideProps) {
     <div
       inert={!active}
       className={cn(
-        'col-start-1 row-start-1 flex flex-col justify-center gap-6 p-6 sm:p-8',
+        'col-start-1 row-start-1 flex flex-col justify-start gap-6 p-6 sm:p-8',
         'transition-[translate,opacity] duration-600 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none',
         active
           ? cn(
