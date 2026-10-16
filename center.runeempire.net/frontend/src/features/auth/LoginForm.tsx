@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
+import { site } from '@/config/site'
 
 import { formMessage } from './errors'
 import { PasswordField, TextField } from './fields'
@@ -55,7 +56,11 @@ export function LoginForm() {
           {/* A link would leave the page and lose what was typed; the reset page does not exist yet. */}
           <button
             type="button"
-            onClick={() => toast.info('A jelszó-visszaállítás hamarosan érkezik.')}
+            onClick={() =>
+              toast.info('A jelszó-visszaállítás még nem érhető el. Írj nekünk a Discordon, és segítünk.', {
+                action: { label: 'Discord', onClick: () => window.open(site.discordInviteUrl, '_blank', 'noopener') },
+              })
+            }
             className="self-end rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             Elfelejtetted a jelszavad?
@@ -64,7 +69,7 @@ export function LoginForm() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]"
+          className="mt-2 h-11 w-full rounded-lg text-base font-semibold md:h-10"
         >
           <FontAwesomeIcon icon={faRightToBracket} aria-hidden="true" />
           {isSubmitting ? 'Belépés…' : 'Belépés'}

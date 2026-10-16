@@ -61,6 +61,7 @@ class LoginControllerTest extends TestCase
             'uuid' => '70404374-69da-35c1-82bc-fcf925aa903a',
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
+            'registered_at' => $account->refresh()->created_at->toIso8601String(),
         ]]);
         $this->assertAuthenticatedAs($account, 'web');
     }

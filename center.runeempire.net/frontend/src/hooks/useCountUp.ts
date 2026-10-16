@@ -37,5 +37,6 @@ export function useCountUp(target: number, { durationMs = 1200, delayMs = 0 } = 
     }
   }, [target, durationMs, delayMs])
 
-  return value
+  // Reduced motion shows the target as it is, also when it arrives after the first render.
+  return prefersReducedMotion() ? target : value
 }

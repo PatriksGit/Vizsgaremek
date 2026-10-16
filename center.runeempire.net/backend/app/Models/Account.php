@@ -95,6 +95,7 @@ class Account extends Model implements AuthenticatableContract
     {
         return [
             'password_hash' => 'hashed',
+            'created_at' => 'immutable_datetime',
         ];
     }
 }

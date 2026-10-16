@@ -26,6 +26,8 @@ export function RegisterForm() {
   })
   const startRegistration = useStartRegistration()
   const [pending, setPending] = useState<PendingRegistration>()
+  // Coming back from the code step, focus goes to the field to fix instead of being lost.
+  const [cameBack, setCameBack] = useState(false)
   const step = pending ? 1 : 0
 
   async function requestCode(values: RegisterValues) {
@@ -79,9 +81,16 @@ export function RegisterForm() {
 
       <FormProvider {...form}>
         {pending ? (
-          <RegisterCodeStep pending={pending} onResend={resendCode} onBack={() => setPending(undefined)} />
+          <RegisterCodeStep
+            pending={pending}
+            onResend={resendCode}
+            onBack={() => {
+              setPending(undefined)
+              setCameBack(true)
+            }}
+          />
         ) : (
-          <RegisterDetailsStep onSubmit={requestCode} />
+          <RegisterDetailsStep onSubmit={requestCode} focusEmail={cameBack} />
         )}
       </FormProvider>
     </div>

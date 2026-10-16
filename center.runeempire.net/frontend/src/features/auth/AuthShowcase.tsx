@@ -17,7 +17,7 @@ const statusEntersAt = STAGGER_START + site.centerIntro.length * STAGGER_STEP
 export function AuthShowcase({ className }: { className?: string }) {
   return (
     <aside
-      className={cn('flex flex-col gap-7 overflow-hidden bg-black/30 p-6 sm:p-8', className)}
+      className={cn('flex flex-col gap-7 overflow-hidden p-6 sm:p-8 md:bg-black/30', className)}
     >
 
       {/* Not a link: leaving the auth page would lose what was typed in the forms. */}
@@ -25,6 +25,11 @@ export function AuthShowcase({ className }: { className?: string }) {
         <img src={site.logoUrl} alt="" width={64} height={64} className="size-16" />
         <h1 className="font-heading text-3xl leading-none tracking-wide text-foreground">{site.name}</h1>
       </div>
+
+      {/* Phones skip the intro below; this one fact is the one a new player must not miss. */}
+      <p className="-mt-2 text-center text-sm text-muted-foreground md:hidden">
+        Ugyanazzal a névvel és jelszóval lépsz be a játékba is.
+      </p>
 
       <ul className="flex flex-col gap-4 max-md:hidden">
         {site.centerIntro.map((item, index) => (
@@ -40,10 +45,7 @@ export function AuthShowcase({ className }: { className?: string }) {
         ))}
       </ul>
 
-      <div
-        className="content-in mt-auto self-center rounded-full border border-white/10 bg-black/30 px-4 py-2 max-md:hidden"
-        style={enterAfter(statusEntersAt)}
-      >
+      <div className="content-in mt-auto self-center max-md:hidden" style={enterAfter(statusEntersAt)}>
         <ServerStatus countAfter={statusEntersAt} />
       </div>
     </aside>

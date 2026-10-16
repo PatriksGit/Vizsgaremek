@@ -48,7 +48,7 @@ export function TextField({
           aria-invalid={error ? true : undefined}
           aria-describedby={error || description ? hintId : undefined}
           className={cn(
-            'h-10 rounded-lg border-white/10 bg-black/40 px-3.5 text-base text-foreground shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] md:text-base',
+            'h-11 rounded-lg border-white/10 bg-black/40 px-3.5 text-base text-foreground shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] md:h-10 md:text-base',
             icon && 'pl-10',
             trailing && 'pr-12',
             className,
@@ -73,7 +73,6 @@ export function PasswordField(props: PasswordFieldProps) {
 
   return (
     <TextField
-      placeholder="••••••••"
       {...props}
       icon={faLock}
       type={visible ? 'text' : 'password'}
@@ -82,8 +81,7 @@ export function PasswordField(props: PasswordFieldProps) {
           type="button"
           onClick={() => setVisible((value) => !value)}
           aria-label={visible ? 'Jelszó elrejtése' : 'Jelszó megjelenítése'}
-          aria-pressed={visible}
-          className="grid size-8 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="grid size-10 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <FontAwesomeIcon icon={visible ? faEyeSlash : faEye} className="size-4" />
         </button>

@@ -5,6 +5,8 @@ export type Account = {
   uuid: string
   username: string
   display_name: string
+  /** When the account was created (ISO 8601); null only if the backend could not read it. */
+  registered_at: string | null
 }
 
 type Wrapped<T> = { data: T }

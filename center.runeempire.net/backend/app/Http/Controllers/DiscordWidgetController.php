@@ -12,28 +12,35 @@ class DiscordWidgetController extends Controller
     public const string UNAVAILABLE = 'A Discord most nem elérhető.';
 
     /**
-     * How long one answer from Discord is reused, failures included.
+     * How long one answer from Discord is reused.
      */
     private const int CACHE_SECONDS = 60;
+
+    /**
+     * How long a failed fetch is remembered: long enough that an outage is not
+     * hammered, short enough that the card's retry button soon gets a new try.
+     */
+    private const int FAILURE_CACHE_SECONDS = 15;
 
     /**
      * Who is on the RuneEmpire Discord: the server's public widget, cut down
      * to what the overview shows.
      *
      * The browser never talks to Discord itself, and Discord is asked at most
-     * once a minute however many players have the page open. A failed fetch
-     * is remembered just as long, so an outage is not hammered either.
+     * once a minute however many players have the page open.
      */
     public function __invoke(): JsonResponse
     {
         $guildId = (string) config('discord.guild_id');
+        $key = "discord-widget:{$guildId}";
 
-        // A failure is cached as false: Cache::remember would not keep a null.
-        $widget = Cache::remember(
-            "discord-widget:{$guildId}",
-            self::CACHE_SECONDS,
-            fn () => $this->fetch($guildId) ?? false,
-        );
+        // A failure is cached as false, which (unlike null) counts as a hit.
+        $widget = Cache::get($key);
+
+        if ($widget === null) {
+            $widget = $this->fetch($guildId) ?? false;
+            Cache::put($key, $widget, $widget === false ? self::FAILURE_CACHE_SECONDS : self::CACHE_SECONDS);
+        }
 
         return $widget === false
             ? response()->json(['message' => self::UNAVAILABLE], 503)

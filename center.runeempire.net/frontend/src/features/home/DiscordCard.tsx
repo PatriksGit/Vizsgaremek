@@ -1,9 +1,10 @@
 import { faDiscord } from '@fortawesome/free-brands-svg-icons'
-import { faVolumeHigh } from '@fortawesome/free-solid-svg-icons'
+import { faRotateRight, faVolumeHigh } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { Panel, PanelHeader } from '@/components/app/Panel'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { site } from '@/config/site'
 import { enterAfter } from '@/lib/motion'
@@ -17,16 +18,16 @@ const DEFAULT_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png'
 /**
  * Who is on the RuneEmpire Discord and every voice channel with who sits in
  * it, drawn in the site's own style from the backend's copy of the widget. On
- * wide screens the card takes the height the playtime chart gives the row,
- * and the channel list scrolls inside it rather than stretching the row.
+ * long channel list it scrolls inside the card. When Discord cannot be
+ * reached, the player can try again.
  */
 export function DiscordCard() {
-  const { data: widget, isPending } = useDiscordWidget()
+  const { data: widget, isPending, isFetching, refetch } = useDiscordWidget()
   // The widget's own invite when it has one; the fixed one keeps the button while Discord is down.
   const invite = widget?.instant_invite ?? site.discordInviteUrl
 
   return (
-    <Panel as="section" className="content-in flex flex-col gap-5 lg:h-0 lg:min-h-full" style={enterAfter(980)}>
+    <Panel as="section" className="content-in flex min-w-0 flex-col gap-5" style={enterAfter(980)}>
       <PanelHeader icon={faDiscord} tone="discord" title="Discord" />
 
       {/* A failed refresh keeps showing the last good answer. */}
@@ -35,7 +36,13 @@ export function DiscordCard() {
       ) : isPending ? (
         <PresenceSkeleton />
       ) : (
-        <p className="text-sm text-muted-foreground">A Discord most nem elérhető.</p>
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-sm text-muted-foreground">A Discord most nem elérhető.</p>
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching} className="h-11 px-4 md:h-9">
+            <FontAwesomeIcon icon={faRotateRight} className={cn(isFetching && 'motion-safe:animate-spin')} aria-hidden="true" />
+            {isFetching ? 'Próbálkozás…' : 'Újrapróbálás'}
+          </Button>
+        </div>
       )}
 
       <a
@@ -68,15 +75,15 @@ function Presence({ widget }: { widget: DiscordWidget }) {
     <>
       <div className="shrink-0 border-b border-white/8 pb-4">
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span aria-hidden="true" className="size-2 rounded-full bg-xp shadow-[0_0_8px_var(--color-xp)]" />
+          <span aria-hidden="true" className="size-2 rounded-full bg-xp" />
           <span>
             <span className="font-semibold text-foreground tabular-nums">{widget.presence_count}</span> tag online
           </span>
         </p>
-        {inVoice > 0 && <p className="mt-0.5 pl-4 text-xs text-muted-foreground">{inVoice} hangcsatornában</p>}
+        {inVoice > 0 && <p className="mt-0.5 pl-4 text-xs text-muted-foreground">{inVoice} fő hangcsatornában</p>}
       </div>
 
-      <ul aria-label="Hangcsatornák" className="scrollbar-slim min-h-0 flex-1 space-y-0.5 overflow-y-auto max-lg:max-h-72">
+      <ul aria-label="Hangcsatornák" className="scrollbar-slim max-h-72 space-y-0.5 overflow-y-auto">
         {channels.map((channel) => {
           const occupied = channel.members.length > 0
 

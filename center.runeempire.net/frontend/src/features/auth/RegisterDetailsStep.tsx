@@ -1,6 +1,6 @@
 import { faEnvelope, faPaperPlane, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useId, type ReactNode } from 'react'
+import { useEffect, useId, type ReactNode } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
@@ -16,12 +16,18 @@ import { PASSWORD_MIN_LENGTH, registerFieldForKey, type RegisterValues } from '.
 type RegisterDetailsStepProps = {
   /** Sends the details; resolves once the code is on its way. */
   onSubmit: (values: RegisterValues) => Promise<void>
+  /** Back from the code step to fix the address: focus lands on the e-mail field. */
+  focusEmail?: boolean
 }
 
 /** The details form; its values live in the parent's form, so they survive the code step. */
-export function RegisterDetailsStep({ onSubmit }: RegisterDetailsStepProps) {
+export function RegisterDetailsStep({ onSubmit, focusEmail = false }: RegisterDetailsStepProps) {
   const form = useFormContext<RegisterValues>()
   const { errors, isSubmitting } = form.formState
+
+  useEffect(() => {
+    if (focusEmail) form.setFocus('email')
+  }, [focusEmail, form])
 
   const submit = form.handleSubmit(async (values) => {
     try {
@@ -43,7 +49,7 @@ export function RegisterDetailsStep({ onSubmit }: RegisterDetailsStepProps) {
           autoCapitalize="none"
           spellCheck={false}
           placeholder="Játékosnév"
-          description="Ezzel a névvel lépsz be a szerverre is."
+          description="3–16 karakter: betű, szám vagy aláhúzás. Ezzel a névvel lépsz be a szerverre is."
           error={errors.name?.message}
           {...form.register('name')}
         />
@@ -51,7 +57,7 @@ export function RegisterDetailsStep({ onSubmit }: RegisterDetailsStepProps) {
           label="E-mail cím"
           icon={faEnvelope}
           type="email"
-          placeholder="peldaemail@gmail.com"
+          placeholder="pl. peldaemail@gmail.com"
           autoComplete="email"
           spellCheck={false}
           error={errors.email?.message}
@@ -90,7 +96,7 @@ export function RegisterDetailsStep({ onSubmit }: RegisterDetailsStepProps) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-1 h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]"
+          className="mt-1 h-11 w-full rounded-lg text-base font-semibold md:h-10"
         >
           <FontAwesomeIcon icon={faPaperPlane} aria-hidden="true" />
           {isSubmitting ? 'Kód küldése…' : 'Kód küldése'}

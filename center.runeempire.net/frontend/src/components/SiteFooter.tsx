@@ -28,12 +28,12 @@ export function SiteFooter() {
         {site.footerLinks.map((column) => (
           <nav key={column.title} aria-label={column.title}>
             <h2 className="mb-4 font-medium text-foreground">{column.title}</h2>
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col gap-1">
               {column.links.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="group inline-flex items-center gap-2.5 rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className="group inline-flex items-center gap-2.5 rounded-sm py-2 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
                     <FontAwesomeIcon
                       icon={link.icon}

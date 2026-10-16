@@ -6,15 +6,17 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { showComingSoon } from '@/config/features'
 import { site } from '@/config/site'
 import { formMessage } from '@/features/auth/errors'
 import { useLogout } from '@/features/auth/queries'
+import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
-import { APP_NAV } from './nav'
+import { APP_NAV, isBuilt } from './nav'
 
-/** Keyboard focus only, and neutral, so it never reads as the gold of the open page. */
-const focusRing = 'outline-none focus-visible:ring-2 focus-visible:ring-white/40'
+/** Keyboard focus only: a mouse click lets go of the focus (blurAfterPointerClick), so no ring stays behind. */
+const focusRing = 'outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
 
 /** The sidebar's surface: the page's own dark tone, slightly see-through, split from the content by a faint line. */
 const surface = 'border-white/8 bg-background/80 backdrop-blur-xl'
@@ -41,7 +43,7 @@ export function MobileTopBar() {
   return (
     <header className={cn('sticky top-0 z-20 flex h-14 items-center gap-3 border-b px-3 lg:hidden', surface)}>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger render={<Button variant="ghost" size="icon-lg" aria-label="Menü megnyitása" />}>
+        <SheetTrigger render={<Button variant="ghost" size="icon-lg" aria-label="Menü megnyitása" className="size-11" />}>
           <FontAwesomeIcon icon={faBars} className="size-4.5" aria-hidden="true" />
         </SheetTrigger>
         <SheetContent side="left" className="w-60 gap-0 border-white/8 bg-background p-0">
@@ -64,9 +66,13 @@ type SidebarContentProps = {
 /**
  * Logo on top, the pages in the middle (the only part that scrolls),
  * logging out at the bottom. A group gets its title only once it has two or
- * more pages.
+ * more pages. Unbuilt pages show as coming soon in development only.
  */
 function SidebarContent({ onNavigate }: SidebarContentProps) {
+  const groups = APP_NAV.map((group) => ({ ...group, items: group.items.filter((item) => isBuilt(item) || showComingSoon) })).filter(
+    (group) => group.items.length > 0,
+  )
+
   return (
     <>
       <div className="flex h-16 shrink-0 items-center gap-3 px-5">
@@ -75,19 +81,24 @@ function SidebarContent({ onNavigate }: SidebarContentProps) {
       </div>
 
       <nav aria-label="Főmenü" className="scrollbar-slim flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-3">
-        {APP_NAV.map((group) => (
+        {groups.map((group) => (
           <div key={group.title} className={cn('flex flex-col gap-1', group.items.length >= 2 && 'mt-3')}>
             {group.items.length >= 2 && (
-              <h2 className="px-3 pb-1 text-xs font-medium tracking-wider text-muted-foreground/60 uppercase">{group.title}</h2>
+              <p id={`nav-${group.title}`} className="px-3 pb-1 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                {group.title}
+              </p>
             )}
-            <ul className="flex flex-col gap-1">
+            <ul aria-labelledby={group.items.length >= 2 ? `nav-${group.title}` : undefined} className="flex flex-col gap-1">
               {group.items.map((item) => (
                 <li key={item.label}>
-                  {item.to ? (
+                  {isBuilt(item) ? (
                     <NavLink
                       to={item.to}
                       end
-                      onClick={onNavigate}
+                      onClick={(event) => {
+                        blurAfterPointerClick(event)
+                        onNavigate?.()
+                      }}
                       className={({ isActive }) =>
                         cn(
                           itemBase,
@@ -101,10 +112,12 @@ function SidebarContent({ onNavigate }: SidebarContentProps) {
                       {item.label}
                     </NavLink>
                   ) : (
-                    <span aria-disabled="true" className={cn(itemBase, 'cursor-not-allowed text-muted-foreground opacity-60')}>
-                      <FontAwesomeIcon icon={item.icon} className="size-5 shrink-0" aria-hidden="true" />
-                      <span className="min-w-0 truncate">{item.label}</span>
-                      <span className="ml-auto shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-[10px] leading-none uppercase">
+                    <span aria-disabled="true" className={cn(itemBase, 'cursor-not-allowed text-muted-foreground')}>
+                      <span className="flex min-w-0 items-center gap-3 opacity-60">
+                        <FontAwesomeIcon icon={item.icon} className="size-5 shrink-0" aria-hidden="true" />
+                        <span className="min-w-0 truncate">{item.label}</span>
+                      </span>
+                      <span className="ml-auto shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-[11px] leading-none uppercase">
                         Hamarosan
                       </span>
                     </span>
@@ -130,7 +143,10 @@ function LogoutButton() {
       <button
         type="button"
         // Logged out: the guard sends the player to the login page.
-        onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
+        onClick={(event) => {
+          blurAfterPointerClick(event)
+          logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })
+        }}
         disabled={logout.isPending}
         className={cn(
           itemBase,

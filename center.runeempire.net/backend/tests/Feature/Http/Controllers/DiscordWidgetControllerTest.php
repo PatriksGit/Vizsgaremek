@@ -116,14 +116,20 @@ class DiscordWidgetControllerTest extends TestCase
             ->assertExactJson(['message' => DiscordWidgetController::UNAVAILABLE]);
     }
 
-    public function test_remembers_a_failure_for_a_minute(): void
+    public function test_remembers_a_failure_for_15_seconds(): void
     {
         Http::fake([self::WIDGET_URL => Http::response(null, 500)]);
 
         $this->getJson('/api/discord-widget')->assertServiceUnavailable();
+        $this->travel(14)->seconds();
         $this->getJson('/api/discord-widget')->assertServiceUnavailable();
 
         Http::assertSentCount(1);
+
+        $this->travel(2)->seconds();
+        $this->getJson('/api/discord-widget')->assertServiceUnavailable();
+
+        Http::assertSentCount(2);
     }
 
     public function test_returns_503_when_discord_is_unreachable(): void

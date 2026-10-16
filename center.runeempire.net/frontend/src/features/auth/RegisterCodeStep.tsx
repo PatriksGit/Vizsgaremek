@@ -1,7 +1,7 @@
 import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -35,6 +35,11 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
   // going back mid-request would land its answer on the wrong step.
   const busy = isSubmitting || resending
 
+  // The details form that had focus is gone: move focus to this step's heading,
+  // so keyboard and screen reader users land on "Nézd meg az e-mailed".
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => headingRef.current?.focus(), [])
+
   const submit = form.handleSubmit(async ({ code }) => {
     try {
       // The account exists and the player is logged in: the login page sends them on.
@@ -61,7 +66,9 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-6">
       <div>
-        <h2 className="font-heading text-2xl leading-tight text-foreground">Nézd meg az e-mailed</h2>
+        <h2 ref={headingRef} tabIndex={-1} className="font-heading text-2xl leading-tight text-foreground outline-none">
+          Nézd meg az e-mailed
+        </h2>
         <p className="mt-2 text-muted-foreground">
           Küldtünk egy {CODE_LENGTH} jegyű kódot ide:{' '}
           <span className="font-medium wrap-anywhere text-foreground">{pending.email}</span>
@@ -118,7 +125,7 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
         <Button
           type="submit"
           disabled={busy}
-          className="h-10 w-full rounded-lg text-base font-semibold shadow-[0_8px_24px_-8px_rgb(242_181_68/0.55)]"
+          className="h-11 w-full rounded-lg text-base font-semibold md:h-10"
         >
           <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
           {isSubmitting ? 'Fiók létrehozása…' : 'Fiók létrehozása'}

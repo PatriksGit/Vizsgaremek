@@ -22,10 +22,11 @@ import {
 export const site = {
   name: 'RuneEmpire',
   tagline: 'Magyar survival szerver, ahol a birodalmadat te építed fel.',
-  playersOnline: 147,
-
   /** A lasting invite to the Discord server, for when the widget (and its own invite) cannot be fetched. */
   discordInviteUrl: 'https://discord.com/invite/dJg46dtc',
+
+  /** Where the RuneEmpire client can be downloaded; null until it is public. */
+  clientDownloadUrl: null as string | null,
 
   logoUrl: '/RuneLogo.webp',
 

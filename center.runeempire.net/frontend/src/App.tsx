@@ -10,7 +10,6 @@ import { AuthPage } from '@/features/auth/AuthPage'
 import { GuestOnly, RequireAccount } from '@/features/auth/guards'
 import { useAccount } from '@/features/auth/queries'
 import { HomePage } from '@/features/home/HomePage'
-import { ShopPage } from '@/features/shop/ShopPage'
 import { queryClient } from '@/queryClient'
 
 function RootLayout() {
@@ -34,7 +33,6 @@ const router = createBrowserRouter([
         ),
         children: [
           { index: true, element: <HomePage /> },
-          { path: 'bolt', element: <ShopPage /> },
           { path: 'beallitasok', element: <AccountPage /> },
         ],
       },

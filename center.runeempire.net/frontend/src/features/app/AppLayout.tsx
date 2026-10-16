@@ -9,6 +9,13 @@ import { AppSidebar, MobileTopBar } from './AppSidebar'
 export function AppLayout() {
   return (
     <>
+      {/* The first Tab stop: past the menu straight to the page. */}
+      <a
+        href="#tartalom"
+        className="sr-only z-50 rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
+        Ugrás a tartalomra
+      </a>
       <AppSidebar />
       <MobileTopBar />
 
@@ -18,7 +25,7 @@ export function AppLayout() {
         {/* Darker and blurrier than behind the login card, so no colour of the screenshot shows through the cards. */}
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-black/70 backdrop-blur-xl" />
         {/* Capped in width, so the cards do not stretch across a large screen. */}
-        <main className="mx-auto min-h-dvh w-full max-w-7xl px-4 pt-6 pb-8 sm:px-6 lg:px-8">
+        <main id="tartalom" tabIndex={-1} className="mx-auto min-h-dvh w-full max-w-7xl px-4 pt-6 pb-8 outline-none sm:px-6 lg:px-8">
           <Outlet />
         </main>
       </div>
