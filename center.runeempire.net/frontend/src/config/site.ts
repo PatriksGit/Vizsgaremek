@@ -27,6 +27,9 @@ export const site = {
   /** Where the RuneEmpire client can be downloaded; null until it is public. */
   clientDownloadUrl: null as string | null,
 
+  /** The game server's address, copyable from the sidebar; null hides it until it is decided. */
+  serverAddress: null as string | null,
+
   logoUrl: '/RuneLogo.webp',
 
   /** Shader screenshot from the server, behind the glass cards. */

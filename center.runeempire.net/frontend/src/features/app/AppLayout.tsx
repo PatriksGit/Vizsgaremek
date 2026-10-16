@@ -19,18 +19,26 @@ export function AppLayout() {
       <AppSidebar />
       <MobileTopBar />
 
-      {/* Wide screens: everything starts where the sidebar ends. */}
-      <div className="relative isolate bg-background lg:ml-60">
+      {/*
+       * The server backdrop fills the whole window behind the sidebar and the
+       * content alike, so its warm glow reaches the see-through sidebar too and
+       * the two read as one page. Darker and blurrier than behind the login
+       * card, so no colour of the screenshot shows through the cards.
+       */}
+      <div aria-hidden="true" className="fixed inset-0 -z-10">
         <ServerBackdrop />
-        {/* Darker and blurrier than behind the login card, so no colour of the screenshot shows through the cards. */}
-        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-black/70 backdrop-blur-xl" />
-        {/* Capped in width, so the cards do not stretch across a large screen. */}
-        <main id="tartalom" tabIndex={-1} className="mx-auto min-h-dvh w-full max-w-7xl px-4 pt-6 pb-8 outline-none sm:px-6 lg:px-8">
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" />
+      </div>
+
+      {/* Wide screens: everything starts where the sidebar ends. */}
+      <div className="relative isolate lg:ml-72">
+        {/* Capped in width only on very large screens, so the cards fill the room beside the sidebar without stretching endlessly. */}
+        <main id="tartalom" tabIndex={-1} className="mx-auto min-h-dvh w-full max-w-400 px-4 pt-6 pb-8 outline-none sm:px-6 lg:px-8">
           <Outlet />
         </main>
       </div>
 
-      <div className="bg-bedrock lg:ml-60">
+      <div className="bg-bedrock lg:ml-72">
         <SiteFooter />
       </div>
     </>

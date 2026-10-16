@@ -5,10 +5,13 @@
 export const features = {
   ranks: false,
   runes: false,
+  /** Buying a shorter ban. */
+  banReduction: false,
+  /** Sending runes to another player. */
+  transfer: false,
   players: false,
   leaderboard: false,
   log: false,
-  settings: true,
 } satisfies Record<string, boolean>
 
 export type Feature = keyof typeof features
