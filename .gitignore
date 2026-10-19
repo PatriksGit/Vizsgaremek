@@ -1,0 +1,9 @@
+# ===== Claude / AI eszközök =====
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json
+AGENTS.md
+.ai/
+.superpowers/
+.playwright-mcp/
