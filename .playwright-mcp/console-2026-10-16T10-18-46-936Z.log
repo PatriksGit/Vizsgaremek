@@ -1,7 +1,0 @@
-[ 2066704ms] [ERROR] Failed to load resource: the server responded with a status of 422 (Unprocessable Content) @ http://localhost:5173/api/auth/login:0
-[ 2068203ms] [ERROR] Failed to load resource: the server responded with a status of 422 (Unprocessable Content) @ http://localhost:5173/api/auth/login:0
-[ 2069886ms] [ERROR] Failed to load resource: the server responded with a status of 422 (Unprocessable Content) @ http://localhost:5173/api/auth/login:0
-[ 2070999ms] [ERROR] Failed to load resource: the server responded with a status of 422 (Unprocessable Content) @ http://localhost:5173/api/auth/login:0
-[ 2071958ms] [ERROR] Failed to load resource: the server responded with a status of 422 (Unprocessable Content) @ http://localhost:5173/api/auth/login:0
-[ 2072767ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ http://localhost:5173/api/auth/login:0
-[ 2075321ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ http://localhost:5173/api/auth/login:0
