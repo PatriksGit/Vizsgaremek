@@ -1,0 +1,105 @@
+Stored procedures the backend needs
+===================================
+
+Every query the backend's own code runs today, one stored procedure each.
+Collected from the code and from a full test run that logged every SQL
+statement (test-only queries such as assertDatabaseHas and the factories
+were left out). The procedures themselves are in procedures.sql.
+
+All of them work on the auth ("global") database: the accounts table
+(owned by the PAxAuth plugin) and pending_registrations (ours).
+
+
+accounts
+--------
+
+1. FindAccountById(id)
+   Used by:  every request of a logged-in player (the session stores the
+             account id; Laravel loads the account from it)
+   Today:    select * from accounts where id = ? limit 1
+
+2. FindAccountByUsername(username)
+   Used by:  POST /api/auth/login (the password is then checked in PHP)
+   Today:    select * from accounts where username = ? limit 1
+
+3. AccountUsernameExists(username)
+   Used by:  registration form check "is this name free"
+             (RegisterRequest::nameIsFree, also php artisan user:register)
+   Today:    select exists(select * from accounts where username = ?)
+
+4. AccountEmailExists(email)
+   Used by:  registration form check "is this email free"
+             (RegisterRequest, Rule::unique on email)
+   Today:    select count(*) from accounts where email = ?
+
+5. AccountUsernameOrEmailExists(username, email)
+   Used by:  POST /api/auth/register/verify, a last check that nobody took
+             the name or email while the registration was pending
+   Today:    select exists(select * from accounts where username = ? or email = ?)
+
+6. CreateAccount(uuid, username, display_name, password_hash, email)
+   Used by:  POST /api/auth/register/verify and php artisan user:register
+             (RegisterAccount); returns the new id
+   Today:    insert into accounts (uuid, username, display_name, password_hash, email) values (...)
+
+7. UpdateAccountPassword(id, password_hash)
+   Used by:  PUT /api/auth/password
+   Today:    update accounts set password_hash = ? where id = ?
+
+
+pending_registrations
+---------------------
+
+8. DeleteExpiredPendingRegistrations(now)
+   Used by:  POST /api/auth/register, clears expired rows first
+   Today:    delete from pending_registrations where expires_at <= ?
+
+9. FindPendingRegistrationsByUsernameOrEmail(username, email)
+   Used by:  POST /api/auth/register, finds rows that already hold the name
+             or the email (they are replaced if this browser started them,
+             refused otherwise)
+   Today:    select * from pending_registrations where username = ? or email = ?
+
+10. CreatePendingRegistration(username, display_name, email, password_hash,
+                              code_hash, owner_hash, expires_at)
+    Used by:  POST /api/auth/register; returns the new id
+    Today:    insert into pending_registrations (...) values (...)
+
+11. FindPendingRegistrationByEmailForUpdate(email)
+    Used by:  POST /api/auth/register/verify; locks the row (FOR UPDATE)
+              so parallel wrong codes are counted one by one. Must be
+              called inside a transaction.
+    Today:    select * from pending_registrations where email = ? limit 1 for update
+
+12. UpdatePendingRegistrationAttempts(id, attempts)
+    Used by:  POST /api/auth/register/verify, after a wrong code
+    Today:    update pending_registrations set attempts = ? where id = ?
+
+13. DeletePendingRegistration(id)
+    Used by:  register (replacing this browser's old row, or when the
+              e-mail could not be sent) and verify (used up, expired or
+              too many wrong codes)
+    Today:    delete from pending_registrations where id = ?
+              (also "where id in (...)" for up to two rows: call it once per id)
+
+
+Not procedures: Laravel's own tables
+------------------------------------
+
+These are the framework's internals, not the application's CRUD, so they
+stay as Laravel runs them:
+
+- cache (web database): Laravel's cache store, used by the rate limiters
+  and the 60 s Discord widget cache
+- migrations (web database): which migrations have run
+- personal_access_tokens (web database): Sanctum's API tokens; unused,
+  the website logs in with a session cookie
+- sessions: in Redis, not in a database
+
+
+Transactions stay in the backend
+--------------------------------
+
+Registration and verification run several of these procedures as one
+unit; the backend opens the transaction around the CALLs (as it does
+around the queries today), so the locking stays the same.
