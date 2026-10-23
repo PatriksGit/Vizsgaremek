@@ -24,6 +24,9 @@ export const site = {
   /** A lasting invite to the Discord server, for when the widget (and its own invite) cannot be fetched. */
   discordInviteUrl: 'https://discord.com/invite/dJg46dtc',
 
+  /** Where players can write to the team; null hides the e-mail button on the error page. */
+  contactEmail: null as string | null,
+
   /** Where the RuneEmpire client can be downloaded; null until it is public. */
   clientDownloadUrl: null as string | null,
 

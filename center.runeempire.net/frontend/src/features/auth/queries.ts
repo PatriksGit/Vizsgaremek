@@ -11,7 +11,7 @@ export function useAccount() {
     queryFn: fetchCurrentAccount,
     // Rechecked when the player comes back to the tab, so an expired session shows.
     staleTime: 60_000,
-    // An unreachable backend shows the login page at once, which explains the error on submit.
+    // An unreachable backend shows the error page at once instead of after retries.
     retry: false,
     // A failed check is not repeated whenever another component using it mounts:
     // with the backend down, every remount would send a new request.
