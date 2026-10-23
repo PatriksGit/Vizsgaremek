@@ -25,6 +25,9 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // An unreachable database fails within seconds; PHP's own default
+            // would hold every login and /api/auth/me request for up to a minute.
+            'options' => [PDO::ATTR_TIMEOUT => 5],
         ],
 
     ],

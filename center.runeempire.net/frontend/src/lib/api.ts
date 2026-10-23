@@ -24,6 +24,8 @@ export class ApiError extends Error {
 export const http = axios.create({
   baseURL: '/api',
   headers: { Accept: 'application/json' },
+  // A hanging backend ends in an error the page can show, not in an endless wait.
+  timeout: 15_000,
 })
 
 function hasXsrfCookie(): boolean {
@@ -75,6 +77,11 @@ function toApiError(error: AxiosError): ApiError {
 
   if (response.status === 419) {
     return new ApiError(419, 'A munkamenet lejárt. Frissítsd az oldalt, és ellenőrizd, hogy a sütik engedélyezve vannak.')
+  }
+
+  // A proxy (Vite in dev, Cloudflare in production) answering for a backend that is down.
+  if (!backendMessage && [502, 503, 504, 530].includes(response.status)) {
+    return new ApiError(response.status, 'A szerver most nem érhető el, próbáld újra később.')
   }
 
   // Only these statuses carry a message meant for players. Other 5xx bodies

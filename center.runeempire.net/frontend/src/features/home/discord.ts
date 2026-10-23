@@ -32,6 +32,8 @@ export function useDiscordWidget() {
     queryKey: ['discord-widget'],
     queryFn: fetchDiscordWidget,
     refetchInterval: 60_000,
+    // Without it every return to the tab would ask again.
+    staleTime: 60_000,
     retry: false,
   })
 }
