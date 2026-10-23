@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * What the config files give when config.yml lacks a key (a teammate's or a
+ * What the config files give when .env lacks a key (a teammate's or a
  * fresh server's file) or holds a typo. phpunit.xml pins these variables, so
  * each file is read with the variables removed or replaced.
  */
@@ -82,7 +82,7 @@ class ConfigDefaultsTest extends TestCase
     }
 
     /**
-     * A typo in config.yml must not break registration: zero attempts would
+     * A typo in .env must not break registration: zero attempts would
      * refuse every correct code, a zero length would mail an empty code, and
      * more than 255 attempts overflows the attempts column.
      */

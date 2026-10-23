@@ -2,7 +2,7 @@
 
 /*
  * Proxies whose X-Forwarded-For / X-Forwarded-Proto headers are trusted, from
- * config.yml's trusted-proxies list (TRUSTED_PROXIES, comma-separated).
+ * TRUSTED_PROXIES in .env (comma-separated).
  * In production this is the Cloudflare Tunnel's cloudflared, which forwards
  * every request from 127.0.0.1 (or the Docker bridge gateway if the backend
  * runs in a container).

@@ -13,9 +13,11 @@ import { HomePage } from '@/features/home/HomePage'
 import { queryClient } from '@/queryClient'
 
 function RootLayout() {
-  // Nothing until the session check answers, so no page flashes before its guard decides.
-  const { isPending } = useAccount()
-  if (isPending) return null
+  // Nothing until the session check first answers, so no page flashes before its guard decides.
+  // Not isPending: a refetch after a failed check is pending again, and hiding the
+  // pages then would remount them on every answer.
+  const { isFetched } = useAccount()
+  if (!isFetched) return null
 
   return <Outlet />
 }

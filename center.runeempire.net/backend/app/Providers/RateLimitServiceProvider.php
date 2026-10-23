@@ -12,7 +12,7 @@ use Illuminate\Support\ServiceProvider;
 
 /**
  * The named rate limiters behind the routes' throttle:... middleware. The
- * numbers come from config/rate_limits.php (config.yml's rate-limits section).
+ * numbers come from config/rate_limits.php (the RATE_LIMITS_* lines in .env).
  * Within one limiter every limit needs its own key, or they would share one counter.
  */
 class RateLimitServiceProvider extends ServiceProvider

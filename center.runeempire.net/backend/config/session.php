@@ -2,7 +2,7 @@
 
 /*
  * Only the overrides; Laravel merges the rest from its own config/session.php
- * (lifetime, secure cookie, etc. come from config.yml's session section).
+ * (lifetime, secure cookie, etc. come from the SESSION_* lines in .env).
  */
 return [
 

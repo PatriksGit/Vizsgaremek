@@ -13,6 +13,9 @@ export function useAccount() {
     staleTime: 60_000,
     // An unreachable backend shows the login page at once, which explains the error on submit.
     retry: false,
+    // A failed check is not repeated whenever another component using it mounts:
+    // with the backend down, every remount would send a new request.
+    retryOnMount: false,
   })
 }
 

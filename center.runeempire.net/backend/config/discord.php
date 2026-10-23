@@ -1,8 +1,7 @@
 <?php
 
 /*
- * The Discord server shown on the overview, from config.yml's discord section
- * (discord.guild-id -> DISCORD_GUILD_ID).
+ * The Discord server shown on the overview (DISCORD_GUILD_ID in .env).
  */
 return [
 

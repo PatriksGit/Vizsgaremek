@@ -2,7 +2,7 @@
 
 /*
  * Only the overrides; Sanctum merges the rest from its own config/sanctum.php.
- * Stateful domains come from config.yml (sanctum.stateful-domains -> SANCTUM_STATEFUL_DOMAINS).
+ * Stateful domains come from SANCTUM_STATEFUL_DOMAINS in .env (comma-separated).
  */
 return [
 
@@ -14,7 +14,7 @@ return [
 
     /*
      * Website origins that get session login and CSRF protection; the dev
-     * frontend by default, center.runeempire.net in production via config.yml.
+     * frontend by default, center.runeempire.net in production via .env.
      */
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost:5173')),
 

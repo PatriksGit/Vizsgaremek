@@ -2,7 +2,7 @@
 
 /*
  * Only the overrides; Laravel merges the rest from its own config/mail.php.
- * Mail settings come from config.yml (mail.* -> MAIL_*).
+ * Mail settings come from the MAIL_* lines in .env.
  */
 return [
 

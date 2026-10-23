@@ -1,8 +1,7 @@
 <?php
 
 /*
- * Request limits, from config.yml's rate-limits section
- * (rate-limits.register.per-minute -> RATE_LIMITS_REGISTER_PER_MINUTE).
+ * Request limits, from the RATE_LIMITS_* lines in .env.
  */
 return [
 

@@ -2,17 +2,18 @@
 
 /*
  * Only the overrides; Laravel merges the rest from its own config/cors.php.
+ *
+ * Production is a single origin (center.runeempire.net serves both the site
+ * and /api), and the Vite dev server proxies /api too, so the browser normally
+ * never makes a cross-origin call. This only covers the dev frontend calling
+ * the backend directly on localhost.
  */
 return [
 
-    /*
-     * Origins of the React frontend allowed to call the API.
-     */
-    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')),
+    'allowed_origins' => ['http://localhost:5173'],
 
     /*
-     * The session and XSRF cookies must cross from the frontend's origin during
-     * development (production is a single origin and needs no CORS).
+     * The session and XSRF cookies must cross from the dev frontend's origin.
      */
     'supports_credentials' => true,
 
