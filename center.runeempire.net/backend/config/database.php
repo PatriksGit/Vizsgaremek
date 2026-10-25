@@ -10,6 +10,28 @@ return [
     'connections' => [
 
         /*
+         * The website's own database (the default connection): Laravel's tables
+         * (cache, rate limits, migrations, API tokens), later the shop's data.
+         * Declared whole, since Laravel merges connections by name: the
+         * framework's mysql connection plus the same 5 s timeout as global.
+         */
+        'mysql' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'web'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => [PDO::ATTR_TIMEOUT => 5],
+        ],
+
+        /*
          * Shared network database, owned by the PAxAuth plugin (accounts table).
          */
         'global' => [
