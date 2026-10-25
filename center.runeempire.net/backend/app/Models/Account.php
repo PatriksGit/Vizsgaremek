@@ -19,7 +19,17 @@ use Illuminate\Database\Eloquent\Model;
  * A player account in the PAxAuth plugin's table on the global database.
  *
  * The schema is owned by the plugin: created_at is filled by the database
- * and there is no updated_at column.
+ * and there is no updated_at column. Only the columns the website uses are listed.
+ *
+ * @property int $id
+ * @property string $uuid
+ * @property string $username
+ * @property string $display_name
+ * @property string $password_hash
+ * @property string|null $email
+ * @property bool $twofa_enabled
+ * @property bool $locked
+ * @property-read CarbonImmutable|null $created_at
  */
 #[Connection('global')]
 #[Table('accounts')]

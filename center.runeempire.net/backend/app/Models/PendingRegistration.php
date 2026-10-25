@@ -8,10 +8,22 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * A registration waiting for its emailed code, in the auth database.
  * It becomes an Account when the code is redeemed.
+ *
+ * @property int $id
+ * @property string $username
+ * @property string $display_name
+ * @property string $email
+ * @property string $password_hash
+ * @property string $code_hash
+ * @property string|null $owner_hash
+ * @property int $attempts
+ * @property Carbon $expires_at
+ * @property Carbon $created_at
  */
 #[Connection('global')]
 #[Fillable(['username', 'display_name', 'email', 'password_hash', 'code_hash', 'owner_hash', 'expires_at'])]
