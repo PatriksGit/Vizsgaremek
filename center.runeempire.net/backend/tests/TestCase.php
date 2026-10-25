@@ -39,6 +39,8 @@ abstract class TestCase extends BaseTestCase
             $table->string('password_hash');
             $table->string('email')->nullable();
             $table->string('registered_ip', 45)->default('0.0.0.0');
+            $table->boolean('twofa_enabled')->default(false);
+            $table->boolean('locked')->default(false);
             $table->dateTime('created_at')->useCurrent();
         });
     }

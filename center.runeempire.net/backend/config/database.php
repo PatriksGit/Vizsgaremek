@@ -50,6 +50,10 @@ return [
             // An unreachable database fails within seconds; PHP's own default
             // would hold every login and /api/auth/me request for up to a minute.
             'options' => [PDO::ATTR_TIMEOUT => 5],
+            // The time zone of the MySQL server's own clock (CURRENT_TIMESTAMP
+            // defaults such as accounts.created_at). Not Laravel's 'timezone'
+            // key, which would change that clock for the website's inserts.
+            'clock_timezone' => env('DB_GLOBAL_CLOCK_TIMEZONE', 'Europe/Budapest'),
         ],
 
     ],

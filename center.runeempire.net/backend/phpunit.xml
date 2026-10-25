@@ -26,6 +26,8 @@
         <env name="DB_URL" value="" force="true"/>
         <env name="DB_GLOBAL_DRIVER" value="sqlite" force="true"/>
         <env name="DB_GLOBAL_DATABASE" value=":memory:" force="true"/>
+        <!-- SQLite's CURRENT_TIMESTAMP is UTC. -->
+        <env name="DB_GLOBAL_CLOCK_TIMEZONE" value="UTC" force="true"/>
         <env name="PASSWORD_ARGON2_MEMORY_KIB" value="1024" force="true"/>
         <env name="PASSWORD_ARGON2_ITERATIONS" value="1" force="true"/>
         <env name="PASSWORD_ARGON2_PARALLELISM" value="1" force="true"/>

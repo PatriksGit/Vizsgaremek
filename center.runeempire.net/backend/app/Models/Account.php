@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\AccountFactory;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -71,6 +73,16 @@ class Account extends Model implements AuthenticatableContract
     }
 
     /**
+     * Whether the account may be used on the website: not locked by staff,
+     * and without two-factor authentication, which only the game can check
+     * for now (the website would let the password alone in).
+     */
+    public function canUseWebsite(): bool
+    {
+        return ! $this->locked && ! $this->twofa_enabled;
+    }
+
+    /**
      * The password lives in PAxAuth's password_hash column.
      */
     public function getAuthPasswordName(): string
@@ -95,7 +107,24 @@ class Account extends Model implements AuthenticatableContract
     {
         return [
             'password_hash' => 'hashed',
-            'created_at' => 'immutable_datetime',
+            'locked' => 'boolean',
+            'twofa_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * When the account was created, in UTC. MySQL fills created_at from its
+     * own clock, which runs on the server's local time (the global
+     * connection's clock_timezone), unlike the UTC times the plugin writes
+     * itself (last_login_at); read as UTC, an evening registration would show
+     * the next day.
+     *
+     * @return Attribute<?CarbonImmutable, never>
+     */
+    protected function createdAt(): Attribute
+    {
+        return Attribute::get(fn (?string $value): ?CarbonImmutable => $value === null
+            ? null
+            : CarbonImmutable::parse($value, config('database.connections.global.clock_timezone'))->utc());
     }
 }

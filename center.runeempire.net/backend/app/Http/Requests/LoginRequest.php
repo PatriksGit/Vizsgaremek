@@ -10,6 +10,10 @@ class LoginRequest extends FormRequest
 {
     public const INVALID_CREDENTIALS = 'Hibás játékosnév vagy jelszó.';
 
+    public const ACCOUNT_LOCKED = 'Ez a fiók zárolva van, ezért most nem tudsz belépni. Ha szerinted tévedés, írj nekünk Discordon.';
+
+    public const TWO_FACTOR_IN_GAME_ONLY = 'A fiókodon kétlépcsős azonosítás van bekapcsolva, ezzel a weboldalon még nem tudsz belépni.';
+
     /**
      * Get the validation rules that apply to the request.
      *

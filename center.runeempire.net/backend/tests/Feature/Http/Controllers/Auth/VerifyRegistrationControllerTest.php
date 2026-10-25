@@ -264,6 +264,117 @@ class VerifyRegistrationControllerTest extends TestCase
         $this->assertTrue(Hash::check('titkos-jelszo', Account::query()->sole()->password_hash));
     }
 
+    /**
+     * A registration started on the website: the mailed code and the id of
+     * the browser session that owns it.
+     *
+     * @return array{string, string}
+     */
+    private function pendingFromBrowser(): array
+    {
+        Notification::fake();
+        $this->postJson('/api/auth/register', [
+            'display_name' => 'PatrikT',
+            'email' => 'patrik@example.com',
+            'password' => 'titkos-jelszo',
+            'password_confirmation' => 'titkos-jelszo',
+            'terms' => true,
+            'age_confirmed' => true,
+        ], self::FROM_WEBSITE)->assertAccepted();
+        $session = $this->lastSessionId();
+
+        $code = null;
+        Notification::assertSentOnDemand(RegistrationCodeNotification::class, function (RegistrationCodeNotification $notification) use (&$code): bool {
+            $code = $notification->code;
+
+            return true;
+        });
+
+        return [$code, $session];
+    }
+
+    private static function wrongCode(string $code): string
+    {
+        return $code === '000000' ? '111111' : '000000';
+    }
+
+    /**
+     * Another browser: its own session, none of the owner's cookies.
+     */
+    private function asOtherBrowser(): static
+    {
+        $this->app['auth']->forgetGuards();
+        $this->app['session']->driver()->flush();
+        $this->defaultCookies = [];
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, array{bool}>
+     */
+    public static function outsiders(): array
+    {
+        return [
+            'outside the website' => [false],
+            'another browser' => [true],
+        ];
+    }
+
+    #[DataProvider('outsiders')]
+    public function test_wrong_codes_from_someone_else_do_not_cancel_the_registration(bool $fromWebsite): void
+    {
+        config(['auth.registration_code.max_attempts' => 3]);
+        [$code, $session] = $this->pendingFromBrowser();
+
+        foreach (range(1, 3) as $guess) {
+            $this->asOtherBrowser()->verify(self::wrongCode($code), headers: $fromWebsite ? self::FROM_WEBSITE : [])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
+        }
+
+        $this->assertDatabaseHas('pending_registrations', ['email' => 'patrik@example.com', 'attempts' => 0], 'global');
+        $this->asBrowserWithSession($session)->verify($code, headers: self::FROM_WEBSITE)->assertCreated();
+    }
+
+    #[DataProvider('outsiders')]
+    public function test_someone_else_is_refused_once_they_used_up_the_attempts(bool $fromWebsite): void
+    {
+        config(['auth.registration_code.max_attempts' => 3]);
+        [$code] = $this->pendingFromBrowser();
+        $headers = $fromWebsite ? self::FROM_WEBSITE : [];
+        foreach (range(1, 3) as $guess) {
+            $this->asOtherBrowser()->verify(self::wrongCode($code), headers: $headers)->assertUnprocessable();
+        }
+
+        $this->asOtherBrowser()->verify($code, headers: $headers)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
+
+        $this->assertDatabaseCount('accounts', 0, 'global');
+    }
+
+    public function test_the_right_code_from_another_browser_creates_the_account(): void
+    {
+        [$code] = $this->pendingFromBrowser();
+
+        $this->asOtherBrowser()->verify($code, headers: self::FROM_WEBSITE)->assertCreated();
+
+        $this->assertDatabaseCount('accounts', 1, 'global');
+    }
+
+    public function test_wrong_codes_from_the_registering_browser_still_cancel_it(): void
+    {
+        config(['auth.registration_code.max_attempts' => 3]);
+        [$code, $session] = $this->pendingFromBrowser();
+
+        foreach (range(1, 3) as $guess) {
+            $this->asBrowserWithSession($session)->verify(self::wrongCode($code), headers: self::FROM_WEBSITE)->assertUnprocessable();
+        }
+
+        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+    }
+
     public function test_returns_429_after_the_per_minute_limit_from_config(): void
     {
         config(['rate_limits.register_verify.per_minute' => 2]);

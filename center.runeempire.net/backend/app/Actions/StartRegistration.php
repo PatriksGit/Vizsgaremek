@@ -57,7 +57,7 @@ class StartRegistration
         $expiresInMinutes = config('auth.registration_code.expires_minutes');
 
         try {
-            $ownerHash = $ownerToken === null ? null : hash('sha256', $ownerToken);
+            $ownerHash = PendingRegistration::ownerHashFor($ownerToken);
             $pending = $this->replacePendingRegistration($username, $displayName, $email, Hash::make($password), $code, $expiresInMinutes, $ownerHash);
         } catch (Throwable $exception) {
             RateLimiter::clear($cooldownKey);
@@ -106,7 +106,7 @@ class StartRegistration
                 $held = PendingRegistration::query()
                     ->where(fn ($query) => $query->where('username', $username)->orWhere('email', $email))
                     ->get();
-                $heldByOthers = $held->reject(fn (PendingRegistration $pending): bool => self::isOwnedBy($pending, $ownerHash));
+                $heldByOthers = $held->reject(fn (PendingRegistration $pending): bool => $pending->isOwnedBy($ownerHash));
 
                 if ($heldByOthers->contains('username', $username)) {
                     throw self::nameHeld();
@@ -143,14 +143,6 @@ class StartRegistration
     {
         return str_contains($exception->getMessage(), 'pending_registrations_email_unique')
             || str_contains($exception->getMessage(), 'pending_registrations.email');
-    }
-
-    /**
-     * A request without a session owns nothing, not even a row without an owner.
-     */
-    private static function isOwnedBy(PendingRegistration $pending, ?string $ownerHash): bool
-    {
-        return $ownerHash !== null && $pending->owner_hash !== null && hash_equals($pending->owner_hash, $ownerHash);
     }
 
     private static function emailHeld(): ValidationException

@@ -37,13 +37,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        $schema = Schema::connection($this->getConnection());
-
-        if (! $schema->hasColumn('pending_registrations', 'owner_hash')) {
-            return;
-        }
-
-        $schema->table('pending_registrations', function (Blueprint $table) {
+        Schema::connection($this->getConnection())->table('pending_registrations', function (Blueprint $table) {
             $table->dropColumn('owner_hash');
         });
     }

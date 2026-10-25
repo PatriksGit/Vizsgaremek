@@ -27,6 +27,24 @@ class PendingRegistration extends Model
     public const UPDATED_AT = null;
 
     /**
+     * What is stored of a browser session's owner token (null outside the website).
+     */
+    public static function ownerHashFor(?string $ownerToken): ?string
+    {
+        return $ownerToken === null ? null : hash('sha256', $ownerToken);
+    }
+
+    /**
+     * Whether the browser session behind this owner hash started the
+     * registration. A request without a session owns nothing, not even a
+     * row without an owner.
+     */
+    public function isOwnedBy(?string $ownerHash): bool
+    {
+        return $ownerHash !== null && $this->owner_hash !== null && hash_equals($this->owner_hash, $ownerHash);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

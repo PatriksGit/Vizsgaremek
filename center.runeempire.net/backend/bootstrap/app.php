@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\LogOutBlockedAccounts;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Website requests (Sanctum stateful origins) get the session and CSRF protection.
         $middleware->statefulApi();
+
+        // After the session has started: a session whose account was locked meanwhile ends.
+        $middleware->api(append: [LogOutBlockedAccounts::class]);
 
         // An API has no login page: guests get a JSON 401, never a redirect.
         $middleware->redirectGuestsTo(fn () => null);
@@ -39,5 +44,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (HttpException $exception, Request $request) => $exception->getStatusCode() === 419 && $request->is('api/*')
             ? response()->json(['message' => 'A munkamenet lejárt. Frissítsd az oldalt, és próbáld újra.'], 419)
             : null);
+    })
+    // Runs only if the server's cron calls `php artisan schedule:run` every minute.
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('cache:prune-expired')->daily();
     })
     ->create();

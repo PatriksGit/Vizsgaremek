@@ -181,6 +181,40 @@ class LoginControllerTest extends TestCase
         $this->assertDatabaseHas('accounts', ['username' => 'patrikt', 'password_hash' => self::PLUGIN_HASH], 'global');
     }
 
+    /**
+     * @param  array<string, bool>  $flags
+     */
+    #[DataProvider('accountsKeptOffTheWebsite')]
+    public function test_returns_422_for_a_blocked_account_with_the_right_password(array $flags, string $message): void
+    {
+        $this->account()->forceFill($flags)->save();
+
+        $this->login()->assertUnprocessable()->assertJsonValidationErrors(['username' => $message]);
+
+        $this->assertGuest('web');
+    }
+
+    /**
+     * @return array<string, array{array<string, bool>, string}>
+     */
+    public static function accountsKeptOffTheWebsite(): array
+    {
+        return [
+            'locked' => [['locked' => true], LoginRequest::ACCOUNT_LOCKED],
+            'two-factor' => [['twofa_enabled' => true], LoginRequest::TWO_FACTOR_IN_GAME_ONLY],
+            'locked and two-factor' => [['locked' => true, 'twofa_enabled' => true], LoginRequest::ACCOUNT_LOCKED],
+        ];
+    }
+
+    public function test_a_locked_account_with_a_wrong_password_gets_the_usual_answer(): void
+    {
+        $this->account()->forceFill(['locked' => true])->save();
+
+        $this->login('PatrikT', 'rossz-jelszo')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['username' => LoginRequest::INVALID_CREDENTIALS]);
+    }
+
     public function test_returns_403_from_outside_the_website(): void
     {
         $this->account();
