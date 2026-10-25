@@ -1,12 +1,16 @@
-import { faCartShopping, faGear } from '@fortawesome/free-solid-svg-icons'
+import { faCartShopping, faCheck, faCopy } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useState } from 'react'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 
 import { Panel } from '@/components/app/Panel'
 import { SoonButton } from '@/components/app/SoonButton'
-import { buttonVariants } from '@/components/ui/button'
-import { features } from '@/config/features'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { site } from '@/config/site'
+import { builtPage } from '@/features/app/nav'
 import { useAccount } from '@/features/auth/queries'
+import { blurAfterPointerClick } from '@/lib/focus'
 import { enterAfter } from '@/lib/motion'
 
 import { CubePlayer } from './CubePlayer'
@@ -14,13 +18,14 @@ import { registeredWithin, registrationDate } from './registration'
 
 /**
  * The greeting with the player's name and registration date, the way to the
- * shop and the settings, and their figure on the right. The page's warmest
+ * shop and the server's address to copy, and their figure on the right. The page's warmest
  * card: a faint gold light from the top-left corner on top of the panel's own
  * sheen. A player on their first day is welcomed, not welcomed back.
  */
 export function HeroCard() {
   const { data: account } = useAccount()
   const greeting = registeredWithin(account, 1) ? 'Üdv a birodalomban,' : 'Üdv újra a birodalomban,'
+  const shop = builtPage('/bolt')
 
   return (
     <Panel
@@ -49,19 +54,51 @@ export function HeroCard() {
       </div>
 
       <div className="content-in col-span-2 flex flex-wrap gap-2 sm:col-span-1 sm:self-start" style={enterAfter(450)}>
-        {features.ranks ? (
-          <Link to="/rangok" className={buttonVariants({ size: 'lg', className: 'h-11 px-4' })}>
+        {shop ? (
+          <Link to={shop} className={buttonVariants({ size: 'lg', className: 'h-11 px-4' })}>
             <FontAwesomeIcon icon={faCartShopping} aria-hidden="true" />
             Bolt megnyitása
           </Link>
         ) : (
           <SoonButton icon={faCartShopping}>Bolt megnyitása</SoonButton>
         )}
-        <Link to="/beallitasok" className={buttonVariants({ variant: 'outline', size: 'lg', className: 'h-11 px-4' })}>
-          <FontAwesomeIcon icon={faGear} aria-hidden="true" />
-          Fiókbeállítások
-        </Link>
+        {site.serverAddress ? (
+          <CopyAddressButton address={site.serverAddress} />
+        ) : (
+          <SoonButton icon={faCopy}>Szerver IP másolása</SoonButton>
+        )}
       </div>
     </Panel>
+  )
+}
+
+/** Copies the server's address for the game's server list; the toast says it worked, or shows the address to copy by hand. */
+function CopyAddressButton({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(address)
+      setCopied(true)
+      toast.success(`Kimásoltad a szerver címét: ${address}`)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error(`Nem sikerült a vágólapra másolni. A szerver címe: ${address}`)
+    }
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="lg"
+      className="h-11 px-4"
+      onClick={(event) => {
+        blurAfterPointerClick(event)
+        void copy()
+      }}
+    >
+      <FontAwesomeIcon icon={copied ? faCheck : faCopy} className={copied ? 'text-xp' : undefined} aria-hidden="true" />
+      Szerver IP másolása
+    </Button>
   )
 }

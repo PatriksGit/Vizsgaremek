@@ -6,7 +6,7 @@ import { site } from '@/config/site'
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-bedrock text-sm text-muted-foreground">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.6fr_1fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-300 grid-cols-2 gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.6fr_1fr_1fr]">
         <div className="col-span-2 flex max-w-xs flex-col gap-5 md:col-span-1">
           <Logo />
           <p className="leading-relaxed">{site.tagline}</p>
@@ -50,7 +50,7 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-xs sm:px-6 md:flex-row md:justify-between md:gap-8 lg:px-8">
+        <div className="mx-auto flex max-w-300 flex-col gap-2 px-4 py-6 text-xs sm:px-6 md:flex-row md:justify-between md:gap-8">
           <p>© {new Date().getFullYear()} {site.name}</p>
           <p className="max-w-xl text-balance md:text-right">
             Nem hivatalos Minecraft termék. Nem a Mojang vagy a Microsoft által jóváhagyott, és nem

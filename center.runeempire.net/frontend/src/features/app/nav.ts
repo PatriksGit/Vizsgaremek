@@ -3,63 +3,80 @@ import {
   faArrowRightArrowLeft,
   faClockRotateLeft,
   faCrown,
+  faGavel,
   faGem,
-  faHourglassHalf,
   faHouse,
   faMagnifyingGlass,
+  faShieldHalved,
   faStore,
-  faTrophy,
+  faUser,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 
-import { features, type Feature } from '@/config/features'
-
-export type NavItem = {
+export type NavLinkItem = {
   label: string
   icon: IconDefinition
   to: string
-  /** The page's switch in config/features.ts; none means always built. */
-  feature?: Feature
+  /** The faint line under the label in a dropdown. */
+  description?: string
+  /** Not built yet: shown faded, not clickable, with a "Hamarosan" tooltip. */
+  comingSoon: boolean
 }
 
-export type NavGroup = {
-  title: string
-  /** Shown on the group's own row once it opens into a submenu. */
-  icon: IconDefinition
-  items: NavItem[]
+export type NavItem = NavLinkItem & {
+  /** Opens a dropdown on the desktop navbar; on the phone tab bar the item links to its own `to`. */
+  children?: NavLinkItem[]
+  /** Left out of the phone tab bar, which only has room for five. */
+  desktopOnly?: boolean
 }
 
-/**
- * The logged-in pages, grouped as the sidebar shows them. The account
- * settings are not here: the player card at the bottom of the sidebar leads there.
- */
-export const APP_NAV: NavGroup[] = [
-  { title: 'Áttekintés', icon: faHouse, items: [{ label: 'Áttekintés', icon: faHouse, to: '/' }] },
+/** The logged-in pages: the one list the desktop navbar and the phone tab bar are both built from. */
+export const NAV: NavItem[] = [
+  { label: 'Áttekintés', icon: faHouse, to: '/', comingSoon: false },
   {
-    title: 'Bolt',
+    label: 'Bolt',
     icon: faStore,
-    items: [
-      { label: 'Rangok', icon: faCrown, to: '/rangok', feature: 'ranks' },
-      { label: 'Rúnák', icon: faGem, to: '/runak', feature: 'runes' },
-      { label: 'Kitiltás-csökkentés', icon: faHourglassHalf, to: '/kitiltas-csokkentes', feature: 'banReduction' },
+    to: '/bolt',
+    comingSoon: false,
+    children: [
+      { label: 'Rangok', icon: faCrown, to: '/rangok', description: 'Rangok és az előnyeik', comingSoon: false },
+      { label: 'Rúnák', icon: faGem, to: '/runak', description: 'Rúnacsomagok a szerver pénzéhez', comingSoon: false },
     ],
   },
   {
-    title: 'Átutalás',
-    icon: faArrowRightArrowLeft,
-    items: [{ label: 'Átutalás', icon: faArrowRightArrowLeft, to: '/atutalas', feature: 'transfer' }],
-  },
-  {
-    title: 'Közösség',
+    label: 'Közösség',
     icon: faUsers,
-    items: [
-      { label: 'Játékosok', icon: faMagnifyingGlass, to: '/jatekosok', feature: 'players' },
-      { label: 'Ranglista', icon: faTrophy, to: '/ranglista', feature: 'leaderboard' },
+    to: '/kozosseg',
+    comingSoon: false,
+    children: [
+      {
+        label: 'Játékoskereső',
+        icon: faMagnifyingGlass,
+        to: '/jatekosok',
+        description: 'Bármelyik játékos adatlapja',
+        comingSoon: false,
+      },
+      { label: 'Szankciók', icon: faGavel, to: '/szankciok', description: 'Kitiltások és némítások', comingSoon: false },
+      { label: 'Csapat', icon: faShieldHalved, to: '/csapat', description: 'Akik a szervert viszik', comingSoon: false },
     ],
   },
-  { title: 'Napló', icon: faClockRotateLeft, items: [{ label: 'Napló', icon: faClockRotateLeft, to: '/naplo', feature: 'log' }] },
+  { label: 'Átutalás', icon: faArrowRightArrowLeft, to: '/atutalas', comingSoon: true, desktopOnly: true },
+  { label: 'Napló', icon: faClockRotateLeft, to: '/naplo', comingSoon: true },
 ]
 
-export function isBuilt(item: NavItem) {
-  return item.feature === undefined || features[item.feature]
+/** The account settings: on the desktop behind the avatar, on phones the tab bar's last tab. */
+export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faUser, to: '/beallitasok', comingSoon: false }
+
+/** The phone tab bar: every item that fits, then the account. */
+export const TAB_NAV: NavItem[] =[...NAV.filter((item) => !item.desktopOnly), ACCOUNT_NAV]
+
+/** Whether the current page is this item, or one of the pages in its dropdown. */
+export function isActive(item: NavItem, pathname: string) {
+  return item.to === pathname || (item.children?.some((child) => child.to === pathname) ?? false)
+}
+
+/** Where a page lives, if it is built; for links outside the menu, such as the overview's tiles. */
+export function builtPage(to: string) {
+  const items = NAV.flatMap((item) => [item, ...(item.children ?? [])])
+  return items.some((item) => item.to === to && !item.comingSoon) ? to : undefined
 }

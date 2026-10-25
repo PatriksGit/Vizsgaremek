@@ -3,8 +3,9 @@ import type { ReactNode } from 'react'
 
 import { StatTile } from '@/components/app/StatTile'
 import type { Tone } from '@/components/app/tones'
-import { features, type Feature } from '@/config/features'
 import { site } from '@/config/site'
+import { builtPage } from '@/features/app/nav'
+import { runeCountFormat, useRuneBalance } from '@/features/app/runes'
 import { useAccount } from '@/features/auth/queries'
 import { enterAfter } from '@/lib/motion'
 
@@ -18,10 +19,10 @@ type Stat = {
   icon: IconDefinition
   tone: Tone
   label: string
-  /** The number, once its source exists; until then the tile shows a dash with a "Hamarosan" tooltip. */
+  /** The number, once its source exists; until then the tile shows a skeleton. */
   value?: ReactNode
-  /** The page with the details, and its switch: the tile links there once the page is built. */
-  page?: { to: string; feature: Feature }
+  /** The page with the details; the tile links there while the menu lists it as built. */
+  page?: string
 }
 
 /** "2026.03.18.": the compact Hungarian form, so a date fits a tile on one line. */
@@ -40,13 +41,20 @@ const JOIN_HINT_DAYS = 7
  */
 export function HomePage() {
   const { data: account } = useAccount()
+  const runes = useRuneBalance()
 
   const stats: Stat[] = [
-    { icon: faGem, tone: 'enchant', label: 'Rúnák', page: { to: '/runak', feature: 'runes' } },
+    {
+      icon: faGem,
+      tone: 'enchant',
+      label: 'Rúnák',
+      value: runes === undefined ? undefined : runeCountFormat.format(runes),
+      page: '/runak',
+    },
     { icon: faClock, tone: 'xp', label: 'Játékidő' },
     { icon: faFire, tone: 'ember', label: 'Napi sorozat' },
-    { icon: faServer, tone: 'diamond', label: 'Online játékosok', page: { to: '/jatekosok', feature: 'players' } },
-    { icon: faGavel, tone: 'redstone', label: 'Büntetések', page: { to: '/naplo', feature: 'log' } },
+    { icon: faServer, tone: 'diamond', label: 'Online játékosok', page: '/jatekosok' },
+    { icon: faGavel, tone: 'redstone', label: 'Büntetések', page: '/szankciok' },
     {
       icon: faCalendarDays,
       tone: 'gold',
@@ -68,7 +76,7 @@ export function HomePage() {
           <StatTile
             key={stat.label}
             {...stat}
-            to={page && features[page.feature] ? page.to : undefined}
+            to={page && builtPage(page)}
             className="content-in"
             style={enterAfter(560 + index * 60)}
           />

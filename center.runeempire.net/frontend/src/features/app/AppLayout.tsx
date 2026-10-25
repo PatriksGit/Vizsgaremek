@@ -2,10 +2,13 @@ import { Outlet } from 'react-router'
 
 import { ServerBackdrop } from '@/components/ServerBackdrop'
 import { SiteFooter } from '@/components/SiteFooter'
+import { cn } from '@/lib/utils'
 
-import { AppSidebar, MobileTopBar } from './AppSidebar'
+import { AppNavbar } from './AppNavbar'
+import { MobileTabBar } from './MobileTabBar'
+import { pageWidth } from './pageWidth'
 
-/** The frame of every logged-in page: the sidebar, the server backdrop and the footer. */
+/** The frame of every logged-in page: the navbar (on phones the tab bar too), the server backdrop and the footer. */
 export function AppLayout() {
   return (
     <>
@@ -16,31 +19,28 @@ export function AppLayout() {
       >
         Ugrás a tartalomra
       </a>
-      <AppSidebar />
-      <MobileTopBar />
+      <AppNavbar />
 
       {/*
-       * The server backdrop fills the whole window behind the sidebar and the
-       * content alike, so its warm glow reaches the see-through sidebar too and
-       * the two read as one page. Darker and blurrier than behind the login
-       * card, so no colour of the screenshot shows through the cards.
+       * The server backdrop fills the whole window behind the bars and the
+       * content alike, so its warm glow reaches the see-through bars too.
+       * Darker and blurrier than behind the login card, so no colour of the
+       * screenshot shows through the cards.
        */}
       <div aria-hidden="true" className="fixed inset-0 -z-10">
         <ServerBackdrop />
         <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" />
       </div>
 
-      {/* Wide screens: everything starts where the sidebar ends. */}
-      <div className="relative isolate lg:ml-72">
-        {/* Capped in width only on very large screens, so the cards fill the room beside the sidebar without stretching endlessly. */}
-        <main id="tartalom" tabIndex={-1} className="mx-auto min-h-dvh w-full max-w-400 px-4 pt-6 pb-8 outline-none sm:px-6 lg:px-8">
-          <Outlet />
-        </main>
-      </div>
+      <main id="tartalom" tabIndex={-1} className={cn(pageWidth, 'relative isolate min-h-dvh pt-6 pb-8 outline-none')}>
+        <Outlet />
+      </main>
 
-      <div className="bg-bedrock lg:ml-72">
-        <SiteFooter />
-      </div>
+      <SiteFooter />
+
+      {/* Phones: room under the footer as tall as the tab bar, so it never covers the last line. */}
+      <div aria-hidden="true" className="h-[calc(4rem+env(safe-area-inset-bottom))] bg-bedrock md:hidden" />
+      <MobileTabBar />
     </>
   )
 }
