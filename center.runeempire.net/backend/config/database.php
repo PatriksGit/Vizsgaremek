@@ -18,8 +18,8 @@ return [
         'mysql' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'web'),
+            'port' => env('DB_PORT', '3954'),
+            'database' => env('DB_DATABASE', 'Center'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8mb4',
@@ -37,8 +37,8 @@ return [
         'global' => [
             'driver' => env('DB_GLOBAL_DRIVER', 'mysql'),
             'host' => env('DB_GLOBAL_HOST', '127.0.0.1'),
-            'port' => env('DB_GLOBAL_PORT', '3306'),
-            'database' => env('DB_GLOBAL_DATABASE', 'global'),
+            'port' => env('DB_GLOBAL_PORT', '3951'),
+            'database' => env('DB_GLOBAL_DATABASE', 'Auth'),
             'username' => env('DB_GLOBAL_USERNAME', 'root'),
             'password' => env('DB_GLOBAL_PASSWORD', ''),
             'charset' => 'utf8mb4',
