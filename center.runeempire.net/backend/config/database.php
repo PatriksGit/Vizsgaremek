@@ -80,6 +80,7 @@ return [
         'playerpoints' => env('DB_PLAYERPOINTS_DATABASE', 'PlayerPoints'),
         'luckperms' => env('DB_LUCKPERMS_DATABASE', 'LuckPerms'),
         'litebans' => env('DB_LITEBANS_DATABASE', 'LiteBans'),
+        'runefriends' => env('DB_RUNEFRIENDS_DATABASE', 'RuneFriends'),
     ],
 
     /*

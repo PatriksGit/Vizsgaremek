@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-/** A friend from RuneFriends, as the stats API will send it. */
+/** A friend from RuneFriends, as GET /api/me/friends sends it. */
 export type Friend = {
   name: string
   online: boolean
@@ -14,11 +14,10 @@ const countFormat = new Intl.NumberFormat('hu-HU')
 
 /**
  * The player's friends from the game: their heads with a green dot while
- * online, the online ones first. Until the server sends the list, faint rows
- * under a note.
+ * online, the online ones first (the server's order, like /fr in game).
+ * While the list loads, shimmering rows.
  */
 export function FriendsCard({ friends, className }: { friends?: Friend[]; className?: string }) {
-  const sorted = friends && [...friends].sort((a, b) => Number(b.online) - Number(a.online) || a.name.localeCompare(b.name, 'hu'))
   const online = friends?.filter((friend) => friend.online).length ?? 0
 
   return (
@@ -31,7 +30,7 @@ export function FriendsCard({ friends, className }: { friends?: Friend[]; classN
         <h2 id="friends-title" className="font-heading text-lg font-bold text-foreground md:text-xl">
           Barátaid
         </h2>
-        {friends && (
+        {friends ? (
           <span className="flex items-center gap-2 text-xs text-muted-foreground md:text-[13px]">
             {online > 0 && <span aria-hidden="true" className="ping size-2 rounded-full bg-ok" />}
             <strong className="text-foreground">{countFormat.format(online)}</strong> online
@@ -39,28 +38,28 @@ export function FriendsCard({ friends, className }: { friends?: Friend[]; classN
               · <strong className="text-foreground">{countFormat.format(friends.length)}</strong> barát
             </span>
           </span>
+        ) : (
+          <Skeleton className="h-4 w-28" />
         )}
       </div>
 
-      {sorted === undefined ? (
-        <div className="relative">
-          <ul aria-hidden="true" className="grid gap-3 opacity-50 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
-            {[24, 18, 28, 20, 22, 26].map((width, index) => (
-              <li key={index} className="flex items-center gap-3 rounded-xl border border-border bg-sunken px-3 py-2.5 max-lg:nth-[n+4]:hidden">
+      {friends === undefined ? (
+        <div aria-busy="true">
+          <ul aria-hidden="true" className="grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
+            {[24, 18, 28].map((width, index) => (
+              <li key={index} className="flex items-center gap-3 rounded-xl border border-border bg-sunken px-3 py-2.5">
                 <Skeleton className="size-8 rounded-sm" />
                 <Skeleton className="h-4" style={{ width: width * 4 }} />
               </li>
             ))}
           </ul>
-          <p className="absolute top-1/2 left-1/2 -translate-1/2 rounded-xl border border-line bg-sunken px-4 py-3 text-center text-sm font-bold text-foreground max-sm:w-[85%]">
-            Hamarosan itt látod a barátaidat a szerverről.
-          </p>
+          <span className="sr-only">A barátok betöltése…</span>
         </div>
-      ) : sorted.length === 0 ? (
+      ) : friends.length === 0 ? (
         <p className="text-sm text-muted-foreground">Még nincs barátod a szerveren.</p>
       ) : (
         <ul className="grid gap-x-3 gap-y-0.5 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] sm:gap-y-3">
-          {sorted.map((friend) => (
+          {friends.map((friend) => (
             <li
               key={friend.name}
               className="flex min-h-13 items-center gap-3 sm:min-h-0 sm:rounded-xl sm:border sm:border-border sm:bg-sunken sm:px-3 sm:py-2.5"

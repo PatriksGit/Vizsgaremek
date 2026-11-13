@@ -199,6 +199,29 @@ abstract class TestCase extends BaseTestCase
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
                 SQL,
         ],
+        // RuneFriends: one row per pair of friends, the smaller uuid in player_a.
+        'runefriends' => [
+            <<<'SQL'
+                CREATE TABLE friendships (
+                  player_a char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  player_b char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (player_a, player_b),
+                  KEY idx_player_b (player_b, player_a)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                SQL,
+            <<<'SQL'
+                CREATE TABLE known_players (
+                  uuid char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  username varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  username_lower varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  first_seen_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  last_seen_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (uuid),
+                  UNIQUE KEY idx_username_lower (username_lower)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                SQL,
+        ],
         // LiteBans: bans and mutes, two tables with the same columns.
         'litebans' => [
             <<<'SQL'

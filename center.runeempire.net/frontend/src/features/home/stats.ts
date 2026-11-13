@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAccount } from '@/features/auth/queries'
 import { http } from '@/lib/api'
 
+import type { Friend } from './FriendsCard'
 import type { Punishment } from './PunishmentCard'
 import type { Streak } from './StreakPanel'
 
@@ -40,6 +41,24 @@ export function useMyStats() {
   return useQuery({
     queryKey: ['stats', account?.uuid],
     queryFn: fetchMyStats,
+    enabled: Boolean(account),
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  })
+}
+
+async function fetchMyFriends(): Promise<Friend[]> {
+  const response = await http.get<{ data: Friend[] }>('/me/friends')
+  return response.data.data
+}
+
+/** The player's friends (GET /api/me/friends), online ones first; refreshed every minute like the stats. */
+export function useMyFriends() {
+  const { data: account } = useAccount()
+
+  return useQuery({
+    queryKey: ['friends', account?.uuid],
+    queryFn: fetchMyFriends,
     enabled: Boolean(account),
     staleTime: 60_000,
     refetchInterval: 60_000,

@@ -120,6 +120,7 @@ class ConfigDefaultsTest extends TestCase
             'DB_PLAYERPOINTS_DATABASE' => null,
             'DB_LUCKPERMS_DATABASE' => null,
             'DB_LITEBANS_DATABASE' => null,
+            'DB_RUNEFRIENDS_DATABASE' => null,
         ]);
 
         $this->assertSame([
@@ -128,6 +129,7 @@ class ConfigDefaultsTest extends TestCase
             'playerpoints' => 'PlayerPoints',
             'luckperms' => 'LuckPerms',
             'litebans' => 'LiteBans',
+            'runefriends' => 'RuneFriends',
         ], $config['plugins']);
     }
 

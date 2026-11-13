@@ -12,7 +12,7 @@ import { PlaytimeCard } from './PlaytimeCard'
 import { PunishmentCard } from './PunishmentCard'
 import { registeredWithin } from './registration'
 import { StatCard } from './StatCard'
-import { hoursFormat, runeCountFormat, shortDate, toPunishment, useMyStats } from './stats'
+import { hoursFormat, runeCountFormat, shortDate, toPunishment, useMyFriends, useMyStats } from './stats'
 
 /** How long a new player sees how to join the server. */
 const JOIN_HINT_DAYS = 7
@@ -20,12 +20,13 @@ const JOIN_HINT_DAYS = 7
 /**
  * The overview a player lands on after logging in: the hero with the streak,
  * how to join (for new players), four numbers, this week's playtime beside
- * the Discord, then the friends. The numbers come from GET /api/me/stats;
- * until it answers, the cards show skeletons.
+ * the Discord, then the friends. The numbers come from GET /api/me/stats,
+ * the friends from GET /api/me/friends; until they answer, skeletons.
  */
 export function HomePage() {
   const { data: account } = useAccount()
   const { data: stats } = useMyStats()
+  const { data: friends } = useMyFriends()
 
   return (
     <div className="flex flex-col gap-3.5 md:gap-5">
@@ -75,7 +76,7 @@ export function HomePage() {
         <DiscordCard className="flex-[1_1_320px]" />
       </div>
 
-      <FriendsCard />
+      <FriendsCard friends={friends} />
     </div>
   )
 }

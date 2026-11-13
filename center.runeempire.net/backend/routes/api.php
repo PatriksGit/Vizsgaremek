@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\StartRegistrationController;
 use App\Http\Controllers\Auth\VerifyPasswordResetCodeController;
 use App\Http\Controllers\Auth\VerifyRegistrationController;
 use App\Http\Controllers\DiscordWidgetController;
+use App\Http\Controllers\MyFriendsController;
 use App\Http\Controllers\MyStatsController;
 use App\Http\Controllers\PlayerSkinController;
 use Illuminate\Support\Facades\Route;
@@ -24,8 +25,9 @@ Route::get('/players/{name}/skin', PlayerSkinController::class)
     ->middleware('throttle:skins')
     ->name('players.skin');
 
-// The logged-in player's numbers for the overview.
+// The logged-in player's numbers and friends for the overview.
 Route::get('/me/stats', MyStatsController::class)->middleware('auth:sanctum')->name('me.stats');
+Route::get('/me/friends', MyFriendsController::class)->middleware('auth:sanctum')->name('me.friends');
 
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::post('/register', StartRegistrationController::class)
