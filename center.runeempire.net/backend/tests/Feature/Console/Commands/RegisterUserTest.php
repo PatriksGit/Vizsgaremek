@@ -25,7 +25,7 @@ class RegisterUserTest extends TestCase
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
             'email' => 'patrik@example.com',
-            'registered_ip' => '0.0.0.0',
+            'registered_ip' => null, // RuneAuth fills it on the first join
         ], 'global');
         $this->assertTrue(Hash::check('titkos-jelszo', Account::query()->sole()->password_hash));
         Notification::assertNothingSent();

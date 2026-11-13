@@ -14,7 +14,7 @@ class AccountResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * The registration date comes from PAxAuth's created_at, filled by the
+     * The registration date comes from accounts.created_at, filled by the
      * database when the account row is inserted.
      *
      * @return array{uuid: string, username: string, display_name: string, registered_at: string|null}

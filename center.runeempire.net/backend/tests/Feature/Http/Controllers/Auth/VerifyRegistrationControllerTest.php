@@ -54,7 +54,7 @@ class VerifyRegistrationControllerTest extends TestCase
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
             'email' => 'patrik@example.com',
-            'registered_ip' => '0.0.0.0',
+            'registered_ip' => null, // RuneAuth fills it on the first join
             'password_hash' => $pending->password_hash,
         ], 'global');
         $this->assertModelMissing($pending);

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 class VerifyRegistrationController extends Controller
 {
     /**
-     * Redeem the emailed code, create the PAxAuth account and, from the website, log the player in.
+     * Redeem the emailed code, create the account and, from the website, log the player in.
      *
      * The login happens only after the account transaction has committed, and
      * only for website requests (which carry a session). The session's owner

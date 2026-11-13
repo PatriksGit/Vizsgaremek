@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 class ChangePasswordController extends Controller
 {
     /**
-     * Change the logged-in player's password in PAxAuth's accounts table.
+     * Change the logged-in player's password in Auth.accounts.
      *
      * This browser stays logged in under a new session id (Sanctum stores the
      * new hash in it after the request), so a stolen copy of the old session

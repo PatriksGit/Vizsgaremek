@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Models\Account;
 use Closure;
 use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Foundation\Application;
@@ -27,37 +28,44 @@ abstract class TestCase extends BaseTestCase
     protected $connectionsToTransact = ['mysql', 'global'];
 
     /**
-     * The auth plugin's accounts table as it is on the server (SHOW CREATE
-     * TABLE, without the AUTO_INCREMENT counter). The plugin owns it, so no
-     * migration creates it. The exact copy matters: the stored procedures'
-     * parameters carry these columns' collations.
+     * The Auth database's two shared tables exactly as they are on the server
+     * (the owner's schema dump of 2026-11-13). No migration of ours creates
+     * them: accounts is changed by hand, account_locks belongs to RuneAuth.
+     * The exact copy matters: the stored procedures' parameters carry these
+     * columns' collations.
      */
-    private const ACCOUNTS_TABLE = <<<'SQL'
-        CREATE TABLE accounts (
-          id bigint NOT NULL AUTO_INCREMENT,
-          uuid char(36) NOT NULL,
-          username varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-          display_name varchar(16) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
-          password_hash varchar(255) NOT NULL,
-          email varchar(255) DEFAULT NULL,
-          twofa_enabled tinyint(1) NOT NULL DEFAULT '0',
-          twofa_secret varchar(255) DEFAULT NULL,
-          active tinyint(1) NOT NULL DEFAULT '0',
-          last_ip varchar(45) DEFAULT NULL,
-          registered_ip varchar(45) NOT NULL DEFAULT '0.0.0.0',
-          locked tinyint(1) NOT NULL DEFAULT '0',
-          lock_reason varchar(255) DEFAULT NULL,
-          locked_by varchar(64) DEFAULT NULL,
-          locked_at datetime DEFAULT NULL,
-          created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          last_login_at datetime DEFAULT NULL,
-          PRIMARY KEY (id),
-          UNIQUE KEY uq_accounts_uuid (uuid),
-          UNIQUE KEY uq_accounts_username (username),
-          UNIQUE KEY uq_accounts_email (email),
-          KEY idx_active_uuid (active, uuid)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-        SQL;
+    private const AUTH_TABLES = [
+        <<<'SQL'
+            CREATE TABLE accounts (
+              id bigint NOT NULL AUTO_INCREMENT,
+              uuid char(36) NOT NULL,
+              username varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+              display_name varchar(16) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT '',
+              password_hash varchar(255) NOT NULL,
+              email varchar(255) DEFAULT NULL,
+              twofa_enabled tinyint(1) NOT NULL DEFAULT '0',
+              twofa_secret varchar(255) DEFAULT NULL,
+              last_ip varchar(45) DEFAULT NULL,
+              registered_ip varchar(45) DEFAULT NULL,
+              created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              last_login_at datetime DEFAULT NULL,
+              active tinyint(1) NOT NULL DEFAULT '0',
+              PRIMARY KEY (id),
+              UNIQUE KEY uq_accounts_uuid (uuid),
+              UNIQUE KEY uq_accounts_username (username),
+              UNIQUE KEY uq_accounts_email (email)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+            SQL,
+        <<<'SQL'
+            CREATE TABLE account_locks (
+              uuid char(36) NOT NULL,
+              reason varchar(256) DEFAULT NULL,
+              locked_by varchar(32) NOT NULL,
+              locked_at datetime NOT NULL,
+              PRIMARY KEY (uuid)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+            SQL,
+    ];
 
     /**
      * Refuse to run against anything but the test databases, before the
@@ -79,17 +87,44 @@ abstract class TestCase extends BaseTestCase
 
         // The database traits run migrate:fresh once per test run, before the
         // first test's transaction. It only empties the default (web) test
-        // database, so the auth test database is emptied here, and the plugin's
-        // accounts table is created before the migrations (DDL cannot run inside
-        // a test: MySQL commits the open transaction on it). The migrations then
-        // add pending_registrations and the stored procedures. An event, not an
-        // override: the traits' own methods would replace this class's.
+        // database, so the auth test database is emptied here, and the shared
+        // accounts and account_locks tables are created before the migrations
+        // (DDL cannot run inside a test: MySQL commits the open transaction on
+        // it). The migrations then add pending_registrations and the stored
+        // procedures. An event, not an override: the traits' own methods would
+        // replace this class's.
         $app['events']->listen(MigrationsStarted::class, function (): void {
             Schema::connection('global')->dropAllTables();
-            DB::connection('global')->unprepared(self::ACCOUNTS_TABLE);
+
+            foreach (self::AUTH_TABLES as $table) {
+                DB::connection('global')->unprepared($table);
+            }
         });
 
         return $app;
+    }
+
+    /**
+     * Block an account the way it happens on the server: 'locked' adds a row
+     * to RuneAuth's account_locks (staff lock it in game), 'twofa_enabled'
+     * sets the accounts column.
+     *
+     * @param  array{locked?: bool, twofa_enabled?: bool}  $flags
+     */
+    protected function blockAccount(Account $account, array $flags): void
+    {
+        if ($flags['locked'] ?? false) {
+            DB::connection('global')->table('account_locks')->insert([
+                'uuid' => $account->uuid,
+                'reason' => null,
+                'locked_by' => 'Staff',
+                'locked_at' => now(),
+            ]);
+        }
+
+        if (array_key_exists('twofa_enabled', $flags)) {
+            DB::connection('global')->table('accounts')->where('id', $account->id)->update(['twofa_enabled' => $flags['twofa_enabled']]);
+        }
     }
 
     /**

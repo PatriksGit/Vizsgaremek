@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     /**
-     * The procedures work on the auth database: the plugin's accounts table
-     * and our pending_registrations.
+     * The procedures work on the auth database: the shared accounts table,
+     * RuneAuth's account_locks (read only) and our pending_registrations.
      */
     protected $connection = 'global';
 
@@ -57,16 +57,21 @@ return new class extends Migration
     {
         return [
             // ---------------------------------------------------------------
-            // accounts (owned by the auth plugin)
+            // accounts (its structure is changed by hand, never by a migration;
+            // the website creates the rows, RuneAuth keeps the login columns
+            // up to date) and account_locks (RuneAuth's, only read here)
             // ---------------------------------------------------------------
 
             // 1. The logged-in player, loaded on every request from the id in the session.
+            //    locked: whether staff locked the account (a row in RuneAuth's account_locks).
             'FindAccountById' => <<<'SQL'
                 CREATE PROCEDURE FindAccountById(IN p_id BIGINT)
                 BEGIN
-                    SELECT id, uuid, username, display_name, password_hash, email, twofa_enabled, locked, created_at
-                    FROM accounts
-                    WHERE id = p_id
+                    SELECT a.id, a.uuid, a.username, a.display_name, a.password_hash, a.email, a.twofa_enabled,
+                           EXISTS(SELECT 1 FROM account_locks l WHERE l.uuid = a.uuid) AS locked,
+                           a.created_at
+                    FROM accounts a
+                    WHERE a.id = p_id
                     LIMIT 1;
                 END
                 SQL,
@@ -77,9 +82,11 @@ return new class extends Migration
                     IN p_username VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin
                 )
                 BEGIN
-                    SELECT id, uuid, username, display_name, password_hash, email, twofa_enabled, locked, created_at
-                    FROM accounts
-                    WHERE username = p_username
+                    SELECT a.id, a.uuid, a.username, a.display_name, a.password_hash, a.email, a.twofa_enabled,
+                           EXISTS(SELECT 1 FROM account_locks l WHERE l.uuid = a.uuid) AS locked,
+                           a.created_at
+                    FROM accounts a
+                    WHERE a.username = p_username
                     LIMIT 1;
                 END
                 SQL,
@@ -117,7 +124,8 @@ return new class extends Migration
                 END
                 SQL,
 
-            // 6. A new account (the other columns keep the plugin's defaults). Returns its id.
+            // 6. A new account. The other columns keep their defaults: RuneAuth fills
+            //    registered_ip, last_ip and last_login_at on the first join. Returns its id.
             'CreateAccount' => <<<'SQL'
                 CREATE PROCEDURE CreateAccount(
                     IN p_uuid CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,

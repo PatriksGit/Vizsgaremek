@@ -180,7 +180,7 @@ class LoginControllerTest extends TestCase
     #[DataProvider('accountsKeptOffTheWebsite')]
     public function test_returns_422_for_a_blocked_account_with_the_right_password(array $flags, string $message): void
     {
-        $this->account()->forceFill($flags)->save();
+        $this->blockAccount($this->account(), $flags);
 
         $this->login()->assertUnprocessable()->assertJsonValidationErrors(['username' => $message]);
 
@@ -201,7 +201,7 @@ class LoginControllerTest extends TestCase
 
     public function test_a_locked_account_with_a_wrong_password_gets_the_usual_answer(): void
     {
-        $this->account()->forceFill(['locked' => true])->save();
+        $this->blockAccount($this->account(), ['locked' => true]);
 
         $this->login('PatrikT', 'rossz-jelszo')
             ->assertUnprocessable()

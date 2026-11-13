@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\DB;
 use SensitiveParameter;
 
 /**
- * Every read and write of the auth plugin's accounts table, each one a call
+ * Every read and write of Auth.accounts (and the read of RuneAuth's
+ * account_locks behind Account::$locked), each one a call
  * of a stored procedure (created by the create_auth_stored_procedures
  * migration); the backend builds no SQL of its own for this table.
  *

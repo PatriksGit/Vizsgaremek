@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Pending registrations live in the auth database, next to PAxAuth's accounts.
+     * Pending registrations live in the auth database, next to accounts.
      */
     protected $connection = 'global';
 

@@ -33,7 +33,7 @@ class ProcedureUserProvider implements UserProvider
     }
 
     /**
-     * "Remember me" is not offered (PAxAuth's table has no column for it).
+     * "Remember me" is not offered (the accounts table has no column for it).
      */
     public function retrieveByToken($identifier, #[SensitiveParameter] $token): null
     {
@@ -65,8 +65,9 @@ class ProcedureUserProvider implements UserProvider
     }
 
     /**
-     * Only runs with hashing.rehash_on_login, which is off: PAxAuth checks
-     * the same hashes in game, so the website does not change them on its own.
+     * Only runs with hashing.rehash_on_login, which is off: the Rune Gateway
+     * checks the same hashes at launcher login, so the website does not
+     * change them on its own.
      *
      * @param  array<string, mixed>  $credentials
      */

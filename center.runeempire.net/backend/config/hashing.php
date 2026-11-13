@@ -3,7 +3,8 @@
 /*
  * Only the overrides; Laravel merges the rest from its own config/hashing.php.
  *
- * Passwords are verified by the PAxAuth plugin too, so they must be argon2id.
+ * Passwords are verified by the Rune Gateway too (launcher login), so they
+ * must be argon2id.
  */
 return [
 
@@ -17,8 +18,8 @@ return [
     ],
 
     /*
-     * Never rewrite a hash on login: the accounts table belongs to PAxAuth,
-     * and logging in must not write to it.
+     * Never rewrite a hash on login: the accounts table is shared with the
+     * Rune Gateway, and logging in must not write to it.
      */
     'rehash_on_login' => false,
 

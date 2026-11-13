@@ -16,10 +16,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A player account in the PAxAuth plugin's table on the global database.
+ * A player account in the Auth database's accounts table (global connection).
  *
- * The schema is owned by the plugin: created_at is filled by the database
- * and there is no updated_at column. Only the columns the website uses are listed.
+ * The table is shared with the Rune Gateway and RuneAuth and changed by hand,
+ * never by a migration: created_at is filled by the database and there is no
+ * updated_at column. Only the columns the website uses are listed; locked
+ * comes from RuneAuth's account_locks table.
  * Rows are read and written through the stored procedures of
  * App\Repositories\AccountRepository, never through Eloquent queries.
  *
@@ -55,7 +57,7 @@ class Account extends Model implements AuthenticatableContract
     public const PASSWORD_INPUT_MAX_LENGTH = 128;
 
     /**
-     * The lowercase name PAxAuth looks accounts up by.
+     * The lowercase name accounts are looked up by (the website, the Rune Gateway and RuneAuth).
      */
     public static function usernameFor(string $displayName): string
     {
@@ -95,7 +97,7 @@ class Account extends Model implements AuthenticatableContract
     }
 
     /**
-     * The password lives in PAxAuth's password_hash column.
+     * The password lives in the password_hash column.
      */
     public function getAuthPasswordName(): string
     {
@@ -103,7 +105,7 @@ class Account extends Model implements AuthenticatableContract
     }
 
     /**
-     * PAxAuth's accounts table has no remember token column, and "remember me" is not offered.
+     * The accounts table has no remember token column, and "remember me" is not offered.
      */
     public function getRememberTokenName(): string
     {
@@ -127,7 +129,7 @@ class Account extends Model implements AuthenticatableContract
     /**
      * When the account was created, in UTC. MySQL fills created_at from its
      * own clock, which runs on the server's local time (the global
-     * connection's clock_timezone), unlike the UTC times the plugin writes
+     * connection's clock_timezone), unlike the UTC times RuneAuth writes
      * itself (last_login_at); read as UTC, an evening registration would show
      * the next day.
      *

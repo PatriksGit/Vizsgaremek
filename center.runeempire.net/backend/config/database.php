@@ -32,7 +32,9 @@ return [
         ],
 
         /*
-         * Shared network database, owned by the PAxAuth plugin (accounts table).
+         * The network's shared Auth database: accounts (created by the website,
+         * read by the Rune Gateway and RuneAuth), RuneAuth's account_locks,
+         * and the website's pending_registrations and stored procedures.
          */
         'global' => [
             'driver' => env('DB_GLOBAL_DRIVER', 'mysql'),

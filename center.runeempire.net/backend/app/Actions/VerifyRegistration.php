@@ -21,7 +21,7 @@ class VerifyRegistration
     ) {}
 
     /**
-     * Redeem an emailed code: turn the pending registration into a PAxAuth account.
+     * Redeem an emailed code: turn the pending registration into an account.
      *
      * A missing, expired or wrong code gets one shared message, so the endpoint
      * does not reveal whether an address has a pending registration.

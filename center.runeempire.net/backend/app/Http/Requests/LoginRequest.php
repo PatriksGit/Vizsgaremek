@@ -17,7 +17,7 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * bail + the name pattern run before any query: PAxAuth's username column
+     * bail + the name pattern run before any query: the accounts username column
      * is ascii, and non-ASCII input would make MySQL fail. The password cap
      * keeps oversized input away from argon2.
      *

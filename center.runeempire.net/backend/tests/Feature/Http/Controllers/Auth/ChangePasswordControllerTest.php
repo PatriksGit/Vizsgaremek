@@ -52,7 +52,7 @@ class ChangePasswordControllerTest extends TestCase
         $this->actingAs($account, 'web')->changePassword()->assertNoContent();
 
         $hash = $account->fresh()->password_hash;
-        $this->assertStringStartsWith('$argon2id$', $hash, 'PAxAuth verifies argon2id in game.');
+        $this->assertStringStartsWith('$argon2id$', $hash, 'The Rune Gateway verifies argon2id at launcher login.');
         $this->assertTrue(Hash::check('uj-titkos-jelszo', $hash));
         $this->assertFalse(Hash::check('regi-jelszo', $hash));
     }

@@ -34,7 +34,7 @@ class LogOutBlockedAccountsTest extends TestCase
     public function test_the_open_session_ends_on_the_next_request(array $flags): void
     {
         [$account, $session] = $this->loggedIn();
-        Account::query()->whereKey($account->getKey())->update($flags);
+        $this->blockAccount($account, $flags);
 
         $this->asBrowserWithSession($session)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertOk()->assertExactJson(['data' => null]);
 

@@ -33,7 +33,7 @@ class RegisterRequest extends FormRequest
      *
      * The name is checked through the display name only: a client-supplied
      * username is never read, and bail keeps an invalid name away from the
-     * database, since PAxAuth's username column is ascii. The terms (ÁSZF)
+     * database, since the accounts username column is ascii. The terms (ÁSZF)
      * must be accepted and the player must confirm being 16 or having a
      * parent's consent (GDPR article 8); neither answer is stored.
      *

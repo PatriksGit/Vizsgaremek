@@ -13,9 +13,9 @@ class RegisterAccount
     public function __construct(private AccountRepository $accounts) {}
 
     /**
-     * Create a player account in the PAxAuth accounts table from already validated input.
+     * Create a player account in Auth.accounts from already validated input.
      *
-     * registered_ip is left to the plugin, which records it on the first join.
+     * registered_ip is left to RuneAuth, which records it on the first join.
      * Callers pass an argon2id hash, never a plain password: it is stored as given.
      *
      * @throws ValidationException when the name was taken between validation and insert
