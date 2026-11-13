@@ -2,7 +2,6 @@ import { lazy, Suspense, useState } from 'react'
 
 import { skinUrl } from '@/components/app/skin'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/lib/utils'
 
 import { CubePlayer } from './CubePlayer'
 
@@ -21,37 +20,16 @@ function Stand() {
 }
 
 /**
- * The loading placeholder: a player's outline in Minecraft's proportions
- * (head 8, body and arms 12, legs 12 skin pixels; one skin pixel is --u),
- * shimmering like every other skeleton until the 3D figure is ready.
- */
-function Silhouette({ className }: { className?: string }) {
-  return (
-    <div aria-hidden="true" className={cn('flex flex-col items-center [--u:3.5px] md:[--u:6px]', className)}>
-      <div className="skeleton size-[calc(var(--u)*8)] rounded-sm" />
-      <div className="mt-0.5 flex gap-0.5">
-        <div className="skeleton h-[calc(var(--u)*12)] w-[calc(var(--u)*4)] rounded-sm" />
-        <div className="skeleton h-[calc(var(--u)*12)] w-[calc(var(--u)*8)] rounded-sm" />
-        <div className="skeleton h-[calc(var(--u)*12)] w-[calc(var(--u)*4)] rounded-sm" />
-      </div>
-      <div className="mt-0.5 flex gap-0.5">
-        <div className="skeleton h-[calc(var(--u)*12)] w-[calc(var(--u)*4)] rounded-sm" />
-        <div className="skeleton h-[calc(var(--u)*12)] w-[calc(var(--u)*4)] rounded-sm" />
-      </div>
-    </div>
-  )
-}
-
-/**
  * The player's own skin as a 3D figure in the hero: 150x250 on wide screens,
- * 84x150 on phones. A shimmering outline holds its place until the figure
- * with the real skin fades in (no Steve flashes up first). Falls back to the
- * CSS Steve without a name, without WebGL, or when the skin cannot be loaded.
+ * 84x150 on phones. Its place stays empty until the figure with the real skin
+ * fades in (owner, 2026-11-13: no skeleton for the skin; even a cached skin
+ * needs three.js and WebGL to start, so an outline would always flash up).
+ * Falls back to the CSS Steve without a name, without WebGL, or when the skin
+ * cannot be loaded.
  */
 export function SkinFigure({ name }: { name?: string }) {
   const isMobile = useIsMobile()
   const [failedName, setFailedName] = useState<string | null>(null)
-  const [readyName, setReadyName] = useState<string | null>(null)
   const [width, height] = isMobile ? [84, 150] : [150, 250]
 
   if (!name || failedName === name) {
@@ -64,24 +42,9 @@ export function SkinFigure({ name }: { name?: string }) {
 
   return (
     <div aria-hidden="true" className="relative grid h-37.5 w-21 shrink-0 place-items-center md:h-62.5 md:w-37.5">
-      <Silhouette
-        className={cn(
-          // Under the figure and never in the way of dragging it, even while fading out.
-          'pointer-events-none col-start-1 row-start-1 transition-opacity duration-500 motion-reduce:transition-none',
-          readyName === name && 'opacity-0',
-        )}
-      />
-      <div className="relative z-10 col-start-1 row-start-1">
-        <Suspense fallback={null}>
-          <SkinViewer3D
-            url={skinUrl(name)}
-            width={width}
-            height={height}
-            onReady={() => setReadyName(name)}
-            onError={() => setFailedName(name)}
-          />
-        </Suspense>
-      </div>
+      <Suspense fallback={null}>
+        <SkinViewer3D url={skinUrl(name)} width={width} height={height} onError={() => setFailedName(name)} />
+      </Suspense>
     </div>
   )
 }
