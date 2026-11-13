@@ -1,22 +1,20 @@
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
-  ArrowLeftRight,
-  Crown,
-  Gavel,
-  Gem,
-  History,
-  House,
-  type LucideIcon,
-  Search,
-  ShieldHalf,
-  ShoppingBag,
-  User,
-  Users,
-} from 'lucide-react'
+  faCartShopping,
+  faClockRotateLeft,
+  faCrown,
+  faGem,
+  faHouse,
+  faRightLeft,
+  faUser,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons'
 import { matchPath } from 'react-router'
 
 export type NavLinkItem = {
   label: string
-  icon: LucideIcon
+  /** A solid Font Awesome icon: the menu's one icon family (owner, 2026-11-13). */
+  icon: IconDefinition
   to: string
   /** The faint line under the label in a dropdown. */
   description?: string
@@ -30,52 +28,44 @@ export type NavItem = NavLinkItem & {
 }
 
 /** The account settings: the gear beside the player in the sidebar, on phones the tab bar's last tab. */
-export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: User, to: '/beallitasok', comingSoon: false }
+export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faUser, to: '/beallitasok', comingSoon: false }
 
-const LOG: NavLinkItem = { label: 'Napló', icon: History, to: '/naplo', comingSoon: true }
-
-/** The logged-in pages: the one list the sidebar and the phone tab bar are both built from. */
+/**
+ * The logged-in pages: the one list the sidebar and the phone tab bar are
+ * both built from. For now only these (owner, 2026-11-13): the runes with
+ * buying, sending and their log, the ranks, and the players.
+ */
 export const NAV: NavItem[] = [
-  { label: 'Áttekintés', icon: House, to: '/', comingSoon: false },
+  { label: 'Áttekintés', icon: faHouse, to: '/', comingSoon: false },
   {
-    // A group only: its pages are the player's own history; the settings sit behind the gear.
-    label: 'Fiók',
-    icon: User,
-    to: ACCOUNT_NAV.to,
-    comingSoon: false,
-    children: [LOG, { label: 'Átutalás', icon: ArrowLeftRight, to: '/atutalas', comingSoon: true }],
-  },
-  {
-    label: 'Bolt',
-    icon: ShoppingBag,
-    to: '/bolt',
-    comingSoon: false,
-    children: [
-      { label: 'Rangok', icon: Crown, to: '/rangok', description: 'Rangok és az előnyeik', comingSoon: false },
-      { label: 'Rúna-feltöltés', icon: Gem, to: '/runak', description: 'Rúnacsomagok a szerver pénzéhez', comingSoon: false },
-    ],
-  },
-  {
-    label: 'Közösség',
-    icon: Users,
-    to: '/kozosseg',
+    label: 'Rúnák',
+    icon: faGem,
+    to: '/runak',
     comingSoon: false,
     children: [
       {
-        label: 'Játékoskereső',
-        icon: Search,
-        to: '/jatekosok',
-        description: 'Bármelyik játékos adatlapja',
+        label: 'Vásárlás',
+        icon: faCartShopping,
+        to: '/runak/vasarlas',
+        description: 'Rúnacsomagok a szerver pénzéhez',
         comingSoon: false,
       },
-      { label: 'Szankciók', icon: Gavel, to: '/szankciok', description: 'Kitiltások és némítások', comingSoon: false },
-      { label: 'Csapat', icon: ShieldHalf, to: '/csapat', description: 'Akik a szervert viszik', comingSoon: false },
+      {
+        label: 'Átutalás',
+        icon: faRightLeft,
+        to: '/runak/atutalas',
+        description: 'Rúnák küldése egy másik játékosnak',
+        comingSoon: true,
+      },
+      { label: 'Napló', icon: faClockRotateLeft, to: '/runak/naplo', description: 'Hova mentek a rúnáid', comingSoon: true },
     ],
   },
+  { label: 'Rangok', icon: faCrown, to: '/rangok', comingSoon: false },
+  { label: 'Játékosok', icon: faUsers, to: '/jatekosok', comingSoon: false },
 ]
 
-/** The phone tab bar, five tabs in thumb reach: the overview, the shop, the community, the log and the account. */
-export const TAB_NAV: NavItem[] = [NAV[0], NAV[2], NAV[3], LOG, ACCOUNT_NAV]
+/** The phone tab bar, five tabs in thumb reach: every menu item, then the account. */
+export const TAB_NAV: NavItem[] = [...NAV, ACCOUNT_NAV]
 
 /** Whether the address is this page, matched as the router does (any case, a trailing slash allowed). */
 export function isPage(to: string, pathname: string) {

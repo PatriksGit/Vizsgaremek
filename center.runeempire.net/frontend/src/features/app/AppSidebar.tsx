@@ -1,5 +1,7 @@
 import { Menu as MenuPrimitive } from '@base-ui/react/menu'
-import { ChevronRight, LogOut, Settings } from 'lucide-react'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { faChevronRight, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 import { toast } from 'sonner'
 
@@ -11,8 +13,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
@@ -31,17 +31,44 @@ import { ACCOUNT_NAV, isActive, isPage, NAV, type NavItem, type NavLinkItem } fr
 /** Keyboard focus only: a mouse click lets go of the focus (blurAfterPointerClick), so no ring stays behind. */
 const focusRing = 'outline-none focus-visible:ring-2 focus-visible:ring-primary/60'
 
-/** A top-level row: an icon and a label, 40 px tall. */
-const row = cn('flex min-h-10 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm font-semibold transition-colors', focusRing)
+/** A top-level row: the icon on its tile and the label, 44 px tall. */
+const row = cn(
+  'group/row flex min-h-11 w-full items-center gap-3 rounded-xl px-1.5 text-left text-[15px] font-semibold transition-colors',
+  focusRing,
+)
 
-/** A page inside a group, 34 px tall. */
-const subRow = cn('flex min-h-8.5 items-center gap-2 rounded-md px-2.5 text-sm font-semibold transition-colors', focusRing)
+/** A page inside a group, 36 px tall; its text lines up with the labels above. */
+const subRow = cn('flex min-h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-semibold transition-colors', focusRing)
+
+type TileState = 'current' | 'inside' | 'idle'
+
+/**
+ * The menu icon on its own small tile, like the overview's stat cards: quiet
+ * by default, solid gold on the open page, gold-tinted on a group whose page
+ * is open.
+ */
+function IconTile({ icon, state }: { icon: IconDefinition; state: TileState }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
+        state === 'current' && 'bg-primary text-primary-foreground',
+        state === 'inside' && 'bg-primary/15 text-primary',
+        state === 'idle' &&
+          'bg-raised text-soft shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] group-hover/row:text-foreground',
+      )}
+    >
+      <FontAwesomeIcon icon={icon} className="size-3.75" />
+    </span>
+  )
+}
 
 /**
  * Wide screens: the menu down the left edge, always open, sticking while the
- * page scrolls. The logo on top, the pages under "Menü" (Fiók, Bolt and
- * Közösség open and close like folders, sliding), the player and a gear at
- * the bottom that opens the settings and logout. Phones get the tab bar instead (MobileTabBar).
+ * page scrolls. The logo on top, then the pages (Rúnák opens and closes like
+ * a folder, sliding), the player and a gear at the bottom that opens the
+ * settings and logout. Phones get the tab bar instead (MobileTabBar).
  */
 export function AppSidebar() {
   return (
@@ -58,20 +85,15 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="h-auto px-2.5 pb-1.5 text-[11px] font-bold tracking-[0.13em] text-faint uppercase">
-            Menü
-          </SidebarGroupLabel>
-          <nav aria-label="Főmenü">
-            <SidebarMenu className="gap-1">
-              {NAV.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  {item.children ? <NavGroup item={item} /> : <TopLink item={item} />}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </nav>
-        </SidebarGroup>
+        <nav aria-label="Főmenü">
+          <SidebarMenu className="gap-1">
+            {NAV.map((item) => (
+              <SidebarMenuItem key={item.label}>
+                {item.children ? <NavGroup item={item} /> : <TopLink item={item} />}
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </nav>
       </SidebarContent>
 
       <SidebarFooter className="p-0">
@@ -81,11 +103,10 @@ export function AppSidebar() {
   )
 }
 
-/** A page of its own on the top level (Áttekintés): gold, with a gold bar on the sidebar's edge, while it is open. */
+/** A page of its own on the top level: a gold tile and label, with a gold bar on the sidebar's edge, while it is open. */
 function TopLink({ item }: { item: NavItem }) {
   const { pathname } = useLocation()
   const current = isPage(item.to, pathname)
-  const Icon = item.icon
 
   return (
     <Link
@@ -98,8 +119,8 @@ function TopLink({ item }: { item: NavItem }) {
         current ? 'bg-primary/10 font-bold text-primary' : 'text-soft hover:bg-sidebar-accent hover:text-foreground',
       )}
     >
-      {current && <span aria-hidden="true" className="absolute top-2.25 bottom-2.25 -left-4 w-0.75 rounded-r-sm bg-primary" />}
-      <Icon className="size-4.5" aria-hidden="true" />
+      {current && <span aria-hidden="true" className="absolute top-2.5 bottom-2.5 -left-4 w-0.75 rounded-r-sm bg-primary" />}
+      <IconTile icon={item.icon} state={current ? 'current' : 'idle'} />
       {item.label}
     </Link>
   )
@@ -108,7 +129,7 @@ function TopLink({ item }: { item: NavItem }) {
 /** A folder of pages; open from the start, so every page is one click away. */
 function NavGroup({ item }: { item: NavItem }) {
   const { pathname } = useLocation()
-  const Icon = item.icon
+  const inside = isActive(item, pathname)
 
   return (
     <Collapsible defaultOpen>
@@ -116,20 +137,22 @@ function NavGroup({ item }: { item: NavItem }) {
         className={cn(
           row,
           'group/trigger cursor-pointer',
-          isActive(item, pathname) ? 'text-foreground' : 'text-soft',
+          inside ? 'text-foreground' : 'text-soft',
           'hover:bg-sidebar-accent hover:text-foreground',
         )}
       >
-        <Icon className="size-4.5" aria-hidden="true" />
+        <IconTile icon={item.icon} state={inside ? 'inside' : 'idle'} />
         <span className="flex-1">{item.label}</span>
-        <ChevronRight
-          className="size-3.5 text-faint transition-transform duration-200 group-data-panel-open/trigger:rotate-90 motion-reduce:transition-none"
+        <FontAwesomeIcon
+          icon={faChevronRight}
+          className="mr-1.5 size-2.75 text-faint transition-transform duration-200 group-data-panel-open/trigger:rotate-90 motion-reduce:transition-none"
           aria-hidden="true"
         />
       </CollapsibleTrigger>
       {/* Slides open and shut instead of jumping: Base UI measures the height into --collapsible-panel-height. */}
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0 motion-reduce:transition-none">
-        <SidebarMenuSub className="mx-0 mt-0.5 mb-1.5 ml-4.75 translate-x-0 gap-0.5 border-line py-0 pr-0 pl-3">
+        {/* The line runs down from the middle of the group's tile; the pages' text starts where the labels do. */}
+        <SidebarMenuSub className="mx-0 mt-0.5 mb-1.5 ml-[21.5px] translate-x-0 gap-0.5 border-line py-0 pr-0 pl-4">
           {item.children?.map((child) => (
             <SidebarMenuSubItem key={child.label}>
               <SubLink item={child} />
@@ -196,8 +219,9 @@ function PlayerCard() {
             focusRing,
           )}
         >
-          <Settings
-            className="size-4.75 transition-transform duration-300 group-data-popup-open/gear:rotate-60 motion-reduce:transition-none"
+          <FontAwesomeIcon
+            icon={faGear}
+            className="size-4.25 transition-transform duration-300 group-data-popup-open/gear:rotate-60 motion-reduce:transition-none"
             aria-hidden="true"
           />
         </DropdownMenuTrigger>
@@ -213,7 +237,7 @@ function PlayerCard() {
             render={<Link to={ACCOUNT_NAV.to} aria-current={current ? 'page' : undefined} />}
             className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
           >
-            <Settings className="size-4 text-muted-foreground" aria-hidden="true" />
+            <FontAwesomeIcon icon={faGear} className="size-3.75 text-muted-foreground" aria-hidden="true" />
             Beállítások
           </MenuPrimitive.LinkItem>
           {/* Logged out: the guard sends the player to the login page. */}
@@ -222,7 +246,7 @@ function PlayerCard() {
             disabled={logout.isPending}
             className={cn(menuRow, 'text-foreground data-disabled:opacity-60 data-highlighted:bg-danger/10 data-highlighted:text-danger')}
           >
-            <LogOut className="size-4" aria-hidden="true" />
+            <FontAwesomeIcon icon={faRightFromBracket} className="size-3.75" aria-hidden="true" />
             {logout.isPending ? 'Kijelentkezés…' : 'Kijelentkezés'}
           </MenuPrimitive.Item>
         </DropdownMenuContent>

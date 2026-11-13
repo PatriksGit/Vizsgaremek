@@ -8,8 +8,8 @@
  * Happens when: the player opens /rangok/ (a link pasted with a trailing slash).
  *
  * Harness only: a matchMedia stub (jsdom has none; SidebarProvider and
- * useIsMobile read it). The routes are App.tsx's: the layout route with the
- * menu page 'rangok' as its child.
+ * useIsMobile read it). The routes are App.tsx's: the layout route with a
+ * menu page as its child.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
@@ -42,23 +42,35 @@ beforeEach(() => {
 
 afterEach(cleanup)
 
-it('the open page is marked in the menu', async () => {
+function renderMenuOn(address: string, path: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/rangok/']}>
+      <MemoryRouter initialEntries={[address]}>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route path="rangok" element={<h1>Rangok oldal</h1>} />
+            <Route path={path} element={<h1>Megnyitott oldal</h1>} />
           </Route>
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   )
+}
+
+/** The labels of the menu links marked as the open page, sidebar first, then the phone tab bar. */
+const currentLinks = () => [...document.querySelectorAll('[aria-current="page"]')].map((link) => link.textContent)
+
+it('the open page is marked in the menu', async () => {
+  renderMenuOn('/rangok/', 'rangok')
 
   // The router opened the page either way.
-  expect(await screen.findByText('Rangok oldal')).toBeTruthy()
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  expect(currentLinks()).toEqual(['Rangok', 'Rangok'])
+})
 
-  const current = document.querySelectorAll('[aria-current="page"]')
-  expect([...current].map((link) => link.textContent)).toEqual(['Rangok', 'Bolt'])
+it('a page in the Rúnák group marks itself in the sidebar and Rúnák on the tab bar', async () => {
+  renderMenuOn('/runak/vasarlas/', 'runak/vasarlas')
+
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  expect(currentLinks()).toEqual(['Vásárlás', 'Rúnák'])
 })

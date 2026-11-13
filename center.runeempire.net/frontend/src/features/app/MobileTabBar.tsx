@@ -1,3 +1,4 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 
 import { PlayerHead } from '@/components/app/PlayerHead'
@@ -6,13 +7,16 @@ import { useAccount } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
-import { ACCOUNT_NAV, isActive, isPage, TAB_NAV } from './nav'
+import { ACCOUNT_NAV, isActive, TAB_NAV } from './nav'
 
 const tabBase = 'flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[11px] leading-none'
 
+/** The icon's pill: gold-tinted under the open page's icon, like the sidebar's tiles. */
+const pill = 'grid h-7 w-12 place-items-center rounded-full transition-colors'
+
 /**
- * Phones: the pages along the bottom edge, in thumb reach. Bolt and Közösség
- * lead to their own pages here instead of opening a group; the account tab
+ * Phones: the pages along the bottom edge, in thumb reach. Rúnák leads to
+ * its own page here instead of opening a group; the account tab
  * shows the player's head. Clear of the home indicator on phones that have one.
  */
 export function MobileTabBar() {
@@ -27,12 +31,11 @@ export function MobileTabBar() {
       {/* h-13 plus the padding: AppLayout keeps the same room free under the footer. */}
       <ul className="grid h-13 grid-cols-5">
         {TAB_NAV.map((item) => {
-          const Icon = item.icon
           const icon =
             item.to === ACCOUNT_NAV.to ? (
               <PlayerHead name={account?.display_name} className="size-6 rounded-[5px]" />
             ) : (
-              <Icon className="size-5.5" strokeWidth={2} aria-hidden="true" />
+              <FontAwesomeIcon icon={item.icon} className="size-4.75" aria-hidden="true" />
             )
 
           if (item.comingSoon) {
@@ -40,7 +43,7 @@ export function MobileTabBar() {
               <li key={item.label}>
                 <SoonTooltip>
                   <span aria-disabled="true" className={cn(tabBase, 'cursor-not-allowed font-semibold text-muted-foreground/45')}>
-                    {icon}
+                    <span className={pill}>{icon}</span>
                     {item.label}
                     <span className="sr-only"> (hamarosan)</span>
                   </span>
@@ -49,8 +52,7 @@ export function MobileTabBar() {
             )
           }
 
-          // The account tab is only the settings page; the Fiók group's history pages have their own tab.
-          const current = item.to === ACCOUNT_NAV.to ? isPage(item.to, pathname) : isActive(item, pathname)
+          const current = isActive(item, pathname)
           return (
             <li key={item.label}>
               <Link
@@ -63,7 +65,7 @@ export function MobileTabBar() {
                   current ? 'font-extrabold text-primary' : 'font-semibold text-muted-foreground hover:text-foreground',
                 )}
               >
-                {icon}
+                <span className={cn(pill, current && 'bg-primary/15')}>{icon}</span>
                 {item.label}
               </Link>
             </li>
