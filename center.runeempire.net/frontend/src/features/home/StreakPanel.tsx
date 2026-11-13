@@ -3,6 +3,8 @@ import { Check, Clock, Flame, X } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
+import { NO_DATA } from './stats'
+
 /** One day of this week's login streak, as GET /api/me/stats sends it. */
 export type StreakDayStatus = 'done' | 'missed' | 'pending' | 'future' | 'before'
 
@@ -39,8 +41,8 @@ function thisWeek(today = new Date()) {
 }
 
 type StreakPanelProps = {
-  /** Left out while the stats load: skeletons in its place. */
-  streak?: Streak
+  /** Left out while the stats load (skeletons); null when it could not be loaded (a dash, plain boxes). */
+  streak?: Streak | null
   className?: string
 }
 
@@ -64,6 +66,11 @@ export function StreakPanel({ streak, className }: StreakPanelProps) {
             <span className="text-[11px] font-bold tracking-[0.12em] text-faint uppercase">Napi sorozat</span>
             {streak ? (
               <span className="text-xl font-extrabold text-foreground md:text-2xl">{dayCount(streak.current)}</span>
+            ) : streak === null ? (
+              <span className="text-xl font-extrabold text-muted-foreground md:text-2xl">
+                {NO_DATA}
+                <span className="sr-only"> (most nem érhető el)</span>
+              </span>
             ) : (
               <Skeleton className="mt-1 h-6 w-16" />
             )}
@@ -72,7 +79,7 @@ export function StreakPanel({ streak, className }: StreakPanelProps) {
         {streak && <span className="text-xs text-faint">Rekord: {dayCount(streak.best)}</span>}
       </div>
 
-      <ol aria-label="Napi sorozat ezen a héten" aria-busy={!streak} className="grid grid-cols-7 gap-1.25 md:gap-1.5">
+      <ol aria-label="Napi sorozat ezen a héten" aria-busy={streak === undefined} className="grid grid-cols-7 gap-1.25 md:gap-1.5">
         {dates.map((date, index) => {
           const status = streak?.week[index]
           const today = index === todayIndex
@@ -92,6 +99,13 @@ export function StreakPanel({ streak, className }: StreakPanelProps) {
                   {status === 'missed' && <X className="size-3.25 text-danger md:size-3.75" strokeWidth={3} />}
                   {status === 'pending' && <Clock className="size-3.25 text-primary md:size-3.75" strokeWidth={2.5} />}
                   <span className={cn('text-[10px] leading-none font-bold md:text-[11px]', LOOK[status].date)}>{monthDay(date)}</span>
+                </span>
+              ) : streak === null ? (
+                <span
+                  aria-hidden="true"
+                  className="flex aspect-square w-full items-center justify-center rounded-lg border border-line bg-sunken text-[10px] leading-none font-bold text-faint md:rounded-[9px] md:text-[11px]"
+                >
+                  {monthDay(date)}
                 </span>
               ) : (
                 <Skeleton className="aspect-square w-full rounded-lg md:rounded-[9px]" />

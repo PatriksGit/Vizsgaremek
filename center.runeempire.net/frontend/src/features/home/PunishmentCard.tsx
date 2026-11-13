@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 import { StatIcon } from './StatCard'
-import { shortDate } from './stats'
+import { NO_DATA, shortDate } from './stats'
 
 /** The player's strongest active punishment, as the card shows it. */
 export type Punishment = {
@@ -28,8 +28,10 @@ const KIND = {
 const dateTime = new Intl.DateTimeFormat('hu-HU', { dateStyle: 'medium', timeStyle: 'short' })
 
 type PunishmentCardProps = {
-  /** undefined while unknown (a skeleton), null when the player has none. */
+  /** undefined while it loads (a skeleton), null when the player has none. */
   punishment?: Punishment | null
+  /** The punishments could not be loaded: a dash. */
+  unavailable?: boolean
   className?: string
   style?: CSSProperties
 }
@@ -39,8 +41,8 @@ type PunishmentCardProps = {
  * or ban (red), or "Zárolva" with a red edge. Hovering or focusing the value
  * shows when it was given, by whom and why.
  */
-export function PunishmentCard({ punishment, className, style }: PunishmentCardProps) {
-  const look = punishment ? KIND[punishment.kind] : null
+export function PunishmentCard({ punishment, unavailable = false, className, style }: PunishmentCardProps) {
+  const look = punishment && !unavailable ? KIND[punishment.kind] : null
 
   return (
     <li
@@ -54,7 +56,12 @@ export function PunishmentCard({ punishment, className, style }: PunishmentCardP
     >
       <div className="flex min-w-0 flex-col gap-1.5 md:gap-2.5">
         <p className="text-sm font-bold text-soft md:text-base">Büntetéseid</p>
-        {punishment === undefined ? (
+        {unavailable ? (
+          <p className="text-2xl leading-none font-extrabold text-muted-foreground md:text-3xl">
+            {NO_DATA}
+            <span className="sr-only"> (most nem érhető el)</span>
+          </p>
+        ) : punishment === undefined ? (
           <>
             <Skeleton className="h-6 w-20 md:h-7.5" />
             <span className="sr-only">betöltés…</span>

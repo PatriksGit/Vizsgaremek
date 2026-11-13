@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
+import { NO_DATA } from './stats'
+
 const DAY_SHORT = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V']
 const DAY_NAMES = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
 
@@ -27,8 +29,8 @@ function playedSoFar(week: number[]) {
 }
 
 type PlaytimeCardProps = {
-  /** Minutes played on each day of this week, Monday first; left out while the stats load (a skeleton). */
-  week?: number[]
+  /** Minutes played on each day of this week, Monday first; left out while the stats load (a skeleton), null when they could not be loaded (a dash). */
+  week?: number[] | null
   className?: string
 }
 
@@ -53,6 +55,8 @@ export function PlaytimeCard({ week, className }: PlaytimeCardProps) {
           <span className="text-[13px] text-muted-foreground">
             Összesen: <strong className="text-foreground">{duration(total)}</strong>
           </span>
+        ) : week === null ? (
+          <span className="text-[13px] text-muted-foreground">Összesen: {NO_DATA}</span>
         ) : (
           <Skeleton className="h-4 w-28" />
         )}
@@ -60,6 +64,11 @@ export function PlaytimeCard({ week, className }: PlaytimeCardProps) {
 
       {week ? (
         <WeekChart week={week} total={total} />
+      ) : week === null ? (
+        <div className="grid h-47 place-items-center rounded-xl border border-dashed border-line text-3xl font-extrabold text-muted-foreground md:h-62">
+          {NO_DATA}
+          <span className="sr-only">A játékidő most nem érhető el.</span>
+        </div>
       ) : (
         <div aria-busy="true">
           <Skeleton className="h-47 w-full rounded-xl md:h-62" />

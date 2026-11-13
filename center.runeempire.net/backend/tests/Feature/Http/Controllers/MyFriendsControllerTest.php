@@ -3,6 +3,7 @@
 namespace Tests\Feature\Http\Controllers;
 
 use App\Models\Account;
+use App\Support\PluginDatabase;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
@@ -33,7 +34,7 @@ class MyFriendsControllerTest extends TestCase
     {
         [$a, $b] = strcmp($uuid, $with) < 0 ? [$uuid, $with] : [$with, $uuid];
 
-        DB::connection('global')->table(config('database.plugins.runefriends').'.friendships')->insert([
+        PluginDatabase::table('runefriends', 'friendships')->insert([
             'player_a' => $a, 'player_b' => $b, 'created_at' => '2026-11-01 12:00:00',
         ]);
     }
@@ -73,7 +74,7 @@ class MyFriendsControllerTest extends TestCase
     public function test_a_friend_without_an_account_keeps_the_name_runefriends_knows(): void
     {
         $uuid = Account::offlineUuid('RegiJatekos');
-        DB::connection('global')->table(config('database.plugins.runefriends').'.known_players')->insert([
+        PluginDatabase::table('runefriends', 'known_players')->insert([
             'uuid' => $uuid, 'username' => 'RegiJatekos', 'username_lower' => 'regijatekos',
         ]);
         $this->befriend($this->account->uuid, $uuid);

@@ -3,11 +3,13 @@
 namespace Tests\Feature\Http\Controllers;
 
 use App\Models\Account;
+use App\Support\PluginDatabase;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -37,7 +39,7 @@ class MyStatsControllerTest extends TestCase
 
     private function plugin(string $plugin, string $table): Builder
     {
-        return DB::connection('global')->table(config("database.plugins.{$plugin}").'.'.$table);
+        return PluginDatabase::table($plugin, $table);
     }
 
     private function stats(): TestResponse
@@ -101,7 +103,45 @@ class MyStatsControllerTest extends TestCase
             'streak' => ['current' => 0, 'best' => 0, 'week' => ['missed', 'missed', 'missed', 'missed', 'pending', 'future', 'future']],
             'rank' => ['group' => 'default', 'name' => 'Játékos', 'expires_at' => null],
             'punishment' => null,
+            'unavailable' => [],
         ]]);
+    }
+
+    /**
+     * @return array<string, array{string, list<string>}>
+     */
+    public static function unreadablePlugins(): array
+    {
+        return [
+            'PlayerPoints' => ['playerpoints', ['runes']],
+            'RuneActivity' => ['runeactivity', ['playtime', 'streak']],
+            'LuckPerms' => ['luckperms', ['rank']],
+            'LiteBans' => ['litebans', ['punishment']],
+        ];
+    }
+
+    /**
+     * @param  list<string>  $parts
+     */
+    #[DataProvider('unreadablePlugins')]
+    public function test_a_plugin_that_cannot_be_read_leaves_only_its_own_numbers_out(string $plugin, array $parts): void
+    {
+        $this->plugin('playerpoints', 'playerpoints_points')->insert(['uuid' => $this->account->uuid, 'points' => 1250]);
+        // As on a server where the website's user was not granted that database yet.
+        config(["database.plugins.{$plugin}" => 'center_missing_test']);
+
+        $response = $this->stats()->assertOk()->assertJsonPath('data.unavailable', $parts);
+
+        foreach (['runes', 'playtime', 'streak', 'rank', 'punishment'] as $part) {
+            if (in_array($part, $parts, true)) {
+                $response->assertJsonPath("data.{$part}", null);
+            } elseif ($part !== 'punishment') {
+                $this->assertNotNull($response->json("data.{$part}"), "{$part} should still be there");
+            }
+        }
+        if ($plugin !== 'playerpoints') {
+            $response->assertJsonPath('data.runes', 1250);
+        }
     }
 
     public function test_the_rune_balance_comes_from_playerpoints(): void

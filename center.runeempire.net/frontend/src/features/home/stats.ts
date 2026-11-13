@@ -7,16 +7,23 @@ import type { Friend } from './FriendsCard'
 import type { Punishment } from './PunishmentCard'
 import type { Streak } from './StreakPanel'
 
-/** GET /api/me/stats: the logged-in player's numbers from the game plugins. Times are UTC ISO 8601. */
+/** The parts of the stats a plugin may leave out when it cannot be read. */
+export type StatPart = 'runes' | 'playtime' | 'streak' | 'rank' | 'punishment'
+
+/**
+ * GET /api/me/stats: the logged-in player's numbers from the game plugins.
+ * Times are UTC ISO 8601. A part whose plugin could not be read is null and
+ * named in `unavailable`.
+ */
 export type MyStats = {
-  runes: number
+  runes: number | null
   playtime: {
     total_seconds: number
     /** Seconds played on each day of this week, Monday first. */
     week: number[]
-  }
-  streak: Streak
-  rank: { group: string; name: string; expires_at: string | null }
+  } | null
+  streak: Streak | null
+  rank: { group: string; name: string; expires_at: string | null } | null
   punishment: {
     kind: 'ban' | 'mute'
     until: string | null
@@ -24,7 +31,11 @@ export type MyStats = {
     issued_by: string
     reason: string
   } | null
+  unavailable: StatPart[]
 }
+
+/** What the overview writes where a number could not be loaded. */
+export const NO_DATA = '—'
 
 async function fetchMyStats(): Promise<MyStats> {
   const response = await http.get<{ data: MyStats }>('/me/stats')
@@ -42,6 +53,8 @@ export function useMyStats() {
     queryKey: ['stats', account?.uuid],
     queryFn: fetchMyStats,
     enabled: Boolean(account),
+    // One more try, then the cards show a dash instead of loading for long.
+    retry: 1,
     staleTime: 60_000,
     refetchInterval: 60_000,
   })
@@ -60,6 +73,7 @@ export function useMyFriends() {
     queryKey: ['friends', account?.uuid],
     queryFn: fetchMyFriends,
     enabled: Boolean(account),
+    retry: 1,
     staleTime: 60_000,
     refetchInterval: 60_000,
   })

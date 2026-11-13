@@ -17,6 +17,11 @@ class MyStatsController extends Controller
      * plugins' databases: runes (PlayerPoints), playtime and the login streak
      * (RuneActivity), rank (LuckPerms) and the punishment in force (LiteBans).
      * Times are UTC ISO 8601; playtime is in seconds.
+     *
+     * A plugin that cannot be read (its database down, or the website's user
+     * not granted it yet) leaves only its own parts out: they are null and
+     * named in `unavailable`, so the overview shows a dash there and the rest
+     * as usual (owner, 2026-11-13). The error still goes to the log.
      */
     public function __invoke(
         Request $request,
@@ -27,14 +32,28 @@ class MyStatsController extends Controller
     ): JsonResponse {
         /** @var Account $account */
         $account = $request->user();
-        $played = $activity->handle($account);
+        $unavailable = [];
+
+        $read = function (array $parts, callable $find) use ($account, &$unavailable): mixed {
+            return rescue(fn () => $find($account), function () use ($parts, &$unavailable) {
+                array_push($unavailable, ...$parts);
+
+                return false;
+            });
+        };
+
+        $runesFound = $read(['runes'], $runes->handle(...));
+        $played = $read(['playtime', 'streak'], $activity->handle(...));
+        $rankFound = $read(['rank'], $rank->handle(...));
+        $punishmentFound = $read(['punishment'], $punishment->handle(...));
 
         return response()->json(['data' => [
-            'runes' => $runes->handle($account),
-            'playtime' => $played['playtime'],
-            'streak' => $played['streak'],
-            'rank' => $rank->handle($account),
-            'punishment' => $punishment->handle($account),
+            'runes' => $runesFound === false ? null : $runesFound,
+            'playtime' => $played === false ? null : $played['playtime'],
+            'streak' => $played === false ? null : $played['streak'],
+            'rank' => $rankFound === false ? null : $rankFound,
+            'punishment' => $punishmentFound === false ? null : $punishmentFound,
+            'unavailable' => $unavailable,
         ]]);
     }
 }

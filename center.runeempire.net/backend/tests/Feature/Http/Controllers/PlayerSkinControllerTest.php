@@ -4,10 +4,10 @@ namespace Tests\Feature\Http\Controllers;
 
 use App\Actions\FindPlayerSkin;
 use App\Models\Account;
+use App\Support\PluginDatabase;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\Client\Request as ClientRequest;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -53,7 +53,7 @@ class PlayerSkinControllerTest extends TestCase
 
     private function skins(string $table): Builder
     {
-        return DB::connection('global')->table(config('database.plugins.skinrestorer').'.'.$table);
+        return PluginDatabase::table('skinrestorer', $table);
     }
 
     private function premiumSkin(string $uuid, string $hash, string $name = 'Someone'): void

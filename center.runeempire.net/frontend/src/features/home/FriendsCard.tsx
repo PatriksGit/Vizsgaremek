@@ -4,6 +4,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
+import { NO_DATA } from './stats'
+
 /** A friend from RuneFriends, as GET /api/me/friends sends it. */
 export type Friend = {
   name: string
@@ -15,9 +17,9 @@ const countFormat = new Intl.NumberFormat('hu-HU')
 /**
  * The player's friends from the game: their heads with a green dot while
  * online, the online ones first (the server's order, like /fr in game).
- * While the list loads, shimmering rows.
+ * While the list loads, shimmering rows; a dash when it could not be loaded.
  */
-export function FriendsCard({ friends, className }: { friends?: Friend[]; className?: string }) {
+export function FriendsCard({ friends, className }: { friends?: Friend[] | null; className?: string }) {
   const online = friends?.filter((friend) => friend.online).length ?? 0
 
   return (
@@ -38,12 +40,19 @@ export function FriendsCard({ friends, className }: { friends?: Friend[]; classN
               · <strong className="text-foreground">{countFormat.format(friends.length)}</strong> barát
             </span>
           </span>
+        ) : friends === null ? (
+          <span className="text-xs text-muted-foreground md:text-[13px]">{NO_DATA}</span>
         ) : (
           <Skeleton className="h-4 w-28" />
         )}
       </div>
 
-      {friends === undefined ? (
+      {friends === null ? (
+        <p className="text-2xl font-extrabold text-muted-foreground">
+          {NO_DATA}
+          <span className="sr-only"> A barátlista most nem érhető el.</span>
+        </p>
+      ) : friends === undefined ? (
         <div aria-busy="true">
           <ul aria-hidden="true" className="grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
             {[24, 18, 28].map((width, index) => (

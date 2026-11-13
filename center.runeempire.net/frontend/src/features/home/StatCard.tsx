@@ -5,11 +5,13 @@ import { panelLook } from '@/components/app/Panel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
+import { NO_DATA } from './stats'
+
 type StatCardProps = {
   label: string
   icon: LucideIcon
-  /** The number or word; left out while there is none yet: a skeleton bar instead. */
-  value?: ReactNode
+  /** The number or word; left out while it loads (a skeleton bar), null when it could not be loaded (a dash). */
+  value?: ReactNode | null
   /** A smaller word after the value, such as "rúna" or "óra". */
   unit?: string
   /** Under the value, such as a rank's expiry. */
@@ -27,7 +29,12 @@ export function StatCard({ label, icon: Icon, value, unit, children, className, 
     >
       <div className="flex min-w-0 flex-col gap-1.5 md:gap-2.5">
         <p className="text-sm font-bold text-soft md:text-base">{label}</p>
-        {value !== undefined ? (
+        {value === null ? (
+          <p className="text-2xl leading-none font-extrabold text-muted-foreground md:text-3xl">
+            {NO_DATA}
+            <span className="sr-only"> (most nem érhető el)</span>
+          </p>
+        ) : value !== undefined ? (
           <p className="text-2xl leading-none font-extrabold text-foreground md:text-3xl">
             {value}
             {unit && <span className="text-sm font-bold text-muted-foreground md:text-base"> {unit}</span>}

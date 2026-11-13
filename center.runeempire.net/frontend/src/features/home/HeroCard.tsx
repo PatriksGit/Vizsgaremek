@@ -15,7 +15,7 @@ import { type Streak, StreakPanel } from './StreakPanel'
  * (under them on narrower screens). A player on their first day is
  * welcomed, not welcomed back.
  */
-export function HeroCard({ streak }: { streak?: Streak }) {
+export function HeroCard({ streak }: { streak?: Streak | null }) {
   const { data: account } = useAccount()
   const greeting = registeredWithin(account, 1) ? 'Üdv a birodalomban,' : 'Üdv újra a birodalomban,'
 
