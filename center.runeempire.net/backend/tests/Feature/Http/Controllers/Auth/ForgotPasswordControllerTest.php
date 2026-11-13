@@ -200,18 +200,6 @@ class ForgotPasswordControllerTest extends TestCase
         $this->actingAs($account, 'web')->forgot()->assertAccepted();
     }
 
-    public function test_is_refused_outside_the_website(): void
-    {
-        Notification::fake();
-        $this->account();
-
-        $this->forgot(headers: [])
-            ->assertForbidden()
-            ->assertJson(['message' => 'A jelszó-visszaállítás csak a weboldalról lehetséges.']);
-
-        Notification::assertNothingSent();
-    }
-
     public function test_is_rate_limited_per_ip(): void
     {
         Notification::fake();

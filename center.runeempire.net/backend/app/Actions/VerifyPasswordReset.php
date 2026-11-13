@@ -20,7 +20,7 @@ class VerifyPasswordReset
      * runs on the locked code row, so parallel guesses are counted one by
      * one: each wrong one counts on the code (5 per code) and on the
      * account's daily budget (10 across codes), and the budget is checked
-     * again under the lock so parallel guesses cannot overshoot it. Only
+     * under the lock so parallel guesses cannot overshoot it. Only
      * wrong guesses against a live code count. Errors are returned, not
      * thrown, inside the transaction: throwing would roll back the counts.
      *
@@ -34,10 +34,6 @@ class VerifyPasswordReset
         // Only the address itself, not an accent- or width-folded twin (ß = ss).
         if ($account === null || Account::normalizeEmail((string) $account->email) !== $email) {
             throw self::invalidCode();
-        }
-
-        if (PasswordResetGuesses::spent($account->id)) {
-            throw PasswordResetGuesses::exception($account->id);
         }
 
         $failure = DB::transaction(function () use ($account, $code): ValidationException|ThrottleRequestsException|null {

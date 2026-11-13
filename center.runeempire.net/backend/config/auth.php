@@ -19,10 +19,13 @@ return [
      * App\Rules\PlayablePassword). The maximum must not exceed 128, the
      * longest password the launcher and the Rune Gateway accept, otherwise
      * the player could not log in to the game with the password set here.
+     * A typo or an empty value would read as 0 (every password too long, or a
+     * 1-character one accepted): it falls back to the default instead, and
+     * both values stay within 8..128.
      */
     'password_length' => [
-        'min' => (int) env('PASSWORD_MIN_LENGTH', 8),
-        'max' => (int) env('PASSWORD_MAX_LENGTH', 64),
+        'min' => min(128, max(8, (int) env('PASSWORD_MIN_LENGTH', 8) ?: 8)),
+        'max' => min(128, max(8, (int) env('PASSWORD_MAX_LENGTH', 64) ?: 64)),
     ],
 
     /*

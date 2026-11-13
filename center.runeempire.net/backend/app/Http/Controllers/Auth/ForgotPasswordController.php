@@ -12,13 +12,12 @@ class ForgotPasswordController extends Controller
     /**
      * Forgotten password, step 1: mail a code to the account of this email.
      *
-     * Website only, like login: the verified code becomes a permission in the
-     * browser's session. A logged-in visitor may use it too.
+     * Needs no session (verifying the code does), so it is not limited to the
+     * website: that check would rest only on the Origin header, which any
+     * client can send. A logged-in visitor may use it too.
      */
     public function __invoke(ForgotPasswordRequest $request, StartPasswordReset $startPasswordReset): JsonResponse
     {
-        abort_unless($request->hasSession(), 403, 'A jelszó-visszaállítás csak a weboldalról lehetséges.');
-
         $email = $request->validated('email');
         $resetCode = $startPasswordReset->handle($email);
 

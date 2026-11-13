@@ -214,6 +214,25 @@ class VerifyRegistrationControllerTest extends TestCase
         ];
     }
 
+    /**
+     * The password is hashed when the code is mailed, the account saved when
+     * it is redeemed. An operator lowering a PASSWORD_ARGON2_* setting in
+     * between (phpunit.xml pins 1024 KiB; this hash used 2048) must not make
+     * the registration fail: Eloquent's hashed cast would refuse the hash.
+     */
+    public function test_a_registration_started_before_argon2_settings_were_lowered_can_still_be_finished(): void
+    {
+        PendingRegistration::factory()->withCode('123456')->create([
+            'display_name' => 'PatrikT',
+            'email' => 'patrik@example.com',
+            'password_hash' => Hash::driver('argon2id')->make('titkos-jelszo', ['memory' => 2048, 'time' => 1, 'threads' => 1]),
+        ]);
+
+        $this->verify('123456')->assertCreated();
+
+        $this->assertDatabaseHas('accounts', ['username' => 'patrikt'], 'global');
+    }
+
     public function test_returns_422_on_email_when_the_name_is_taken_at_the_moment_of_redeeming(): void
     {
         $pending = $this->pending();

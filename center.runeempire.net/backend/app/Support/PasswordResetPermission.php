@@ -32,11 +32,7 @@ class PasswordResetPermission
     {
         $permission = $session->get(self::KEY);
 
-        if (! is_array($permission) || ! is_int($permission['account_id'] ?? null) || ! is_int($permission['expires_at'] ?? null)) {
-            return null;
-        }
-
-        return $permission['expires_at'] > now()->getTimestamp() ? $permission['account_id'] : null;
+        return $permission !== null && $permission['expires_at'] > now()->getTimestamp() ? $permission['account_id'] : null;
     }
 
     public static function forget(Session $session): void

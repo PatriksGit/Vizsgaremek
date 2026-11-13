@@ -10,10 +10,12 @@ return [
 
     'driver' => 'argon2id',
 
+    // A typo or an empty value would read as 0, and argon2 refuses 0: every
+    // registration and password change would fail. It falls back to the default.
     'argon' => [
-        'memory' => (int) env('PASSWORD_ARGON2_MEMORY_KIB', 131072),
-        'threads' => (int) env('PASSWORD_ARGON2_PARALLELISM', 4),
-        'time' => (int) env('PASSWORD_ARGON2_ITERATIONS', 3),
+        'memory' => (int) env('PASSWORD_ARGON2_MEMORY_KIB', 131072) ?: 131072,
+        'threads' => (int) env('PASSWORD_ARGON2_PARALLELISM', 4) ?: 4,
+        'time' => (int) env('PASSWORD_ARGON2_ITERATIONS', 3) ?: 3,
         'verify' => true,
     ],
 
