@@ -1,4 +1,4 @@
-import { Ban, Lock, ShieldCheck, VolumeX } from 'lucide-react'
+import { Gavel } from 'lucide-react'
 import type { CSSProperties } from 'react'
 
 import { panelLook } from '@/components/app/Panel'
@@ -6,7 +6,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-import { StatIcon, type StatTone } from './StatCard'
+import { StatIcon } from './StatCard'
 
 /** The player's strongest active punishment, as the stats API will send it. */
 export type Punishment = {
@@ -19,10 +19,10 @@ export type Punishment = {
 }
 
 const KIND = {
-  mute: { icon: VolumeX, tone: 'warn', text: 'text-warn', title: 'Némítás', sr: 'Némítva eddig' },
-  ban: { icon: Ban, tone: 'danger', text: 'text-danger', title: 'Kitiltás', sr: 'Kitiltva eddig' },
-  lock: { icon: Lock, tone: 'lock', text: 'text-lock', title: 'Zárolás', sr: 'A fiók zárolva' },
-} satisfies Record<Punishment['kind'], { icon: typeof Ban; tone: StatTone; text: string; title: string; sr: string }>
+  mute: { text: 'text-warn', title: 'Némítás', sr: 'Némítva eddig' },
+  ban: { text: 'text-danger', title: 'Kitiltás', sr: 'Kitiltva eddig' },
+  lock: { text: 'text-lock', title: 'Zárolás', sr: 'A fiók zárolva' },
+} satisfies Record<Punishment['kind'], { text: string; title: string; sr: string }>
 
 const twoDigits = (value: number) => String(value).padStart(2, '0')
 
@@ -60,7 +60,7 @@ export function PunishmentCard({ punishment, className, style }: PunishmentCardP
       style={style}
     >
       <div className="flex min-w-0 flex-col gap-1.5 md:gap-2.5">
-        <p className="text-sm font-bold text-soft md:text-base">Büntetések</p>
+        <p className="text-sm font-bold text-soft md:text-base">Büntetéseid</p>
         {punishment === undefined ? (
           <>
             <Skeleton className="h-6 w-20 md:h-7.5" />
@@ -104,7 +104,7 @@ export function PunishmentCard({ punishment, className, style }: PunishmentCardP
           </HoverCard>
         )}
       </div>
-      <StatIcon icon={look?.icon ?? ShieldCheck} tone={look?.tone ?? (punishment === null ? 'ok' : 'neutral')} />
+      <StatIcon icon={Gavel} />
     </li>
   )
 }

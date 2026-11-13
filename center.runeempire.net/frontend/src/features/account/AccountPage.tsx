@@ -15,7 +15,7 @@ export function AccountPage() {
       <p className="text-muted-foreground">
         Itt tudod majd megváltoztatni a jelszavad és bekapcsolni a kétlépcsős azonosítást.
       </p>
-      {/* On phones the only way out: the avatar menu with its logout is a desktop thing. */}
+      {/* On phones the only way out: the sidebar's gear menu is a desktop thing. */}
       <Button
         variant="outline"
         size="lg"

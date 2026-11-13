@@ -1,9 +1,12 @@
-import { ChevronRight, Settings } from 'lucide-react'
+import { Menu as MenuPrimitive } from '@base-ui/react/menu'
+import { ChevronRight, LogOut, Settings } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
+import { toast } from 'sonner'
 
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +21,8 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { site } from '@/config/site'
-import { useAccount } from '@/features/auth/queries'
+import { formMessage } from '@/features/auth/errors'
+import { useAccount, useLogout } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
@@ -36,8 +40,8 @@ const subRow = cn('flex min-h-8.5 items-center gap-2 rounded-md px-2.5 text-sm f
 /**
  * Wide screens: the menu down the left edge, always open, sticking while the
  * page scrolls. The logo on top, the pages under "Menü" (Fiók, Bolt and
- * Közösség open and close like folders), the player and the settings gear at
- * the bottom. Phones get the tab bar instead (MobileTabBar).
+ * Közösség open and close like folders, sliding), the player and a gear at
+ * the bottom that opens the settings and logout. Phones get the tab bar instead (MobileTabBar).
  */
 export function AppSidebar() {
   return (
@@ -123,7 +127,8 @@ function NavGroup({ item }: { item: NavItem }) {
           aria-hidden="true"
         />
       </CollapsibleTrigger>
-      <CollapsibleContent>
+      {/* Slides open and shut instead of jumping: Base UI measures the height into --collapsible-panel-height. */}
+      <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0 motion-reduce:transition-none">
         <SidebarMenuSub className="mx-0 mt-0.5 mb-1.5 ml-4.75 translate-x-0 gap-0.5 border-line py-0 pr-0 pl-3">
           {item.children?.map((child) => (
             <SidebarMenuSubItem key={child.label}>
@@ -167,29 +172,61 @@ function SubLink({ item }: { item: NavLinkItem }) {
   )
 }
 
-/** The player at the bottom: their head and name, and the gear to the account settings. */
+/** A row in the gear's menu; highlighted by the pointer or the arrow keys. */
+const menuRow = 'flex h-10 cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none select-none'
+
+/** The player at the bottom: their head and name, and the gear that opens the settings and logout above it. */
 function PlayerCard() {
   const { data: account } = useAccount()
   const { pathname } = useLocation()
+  const logout = useLogout()
   const current = pathname === ACCOUNT_NAV.to
 
   return (
     <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card py-2 pr-2 pl-2.5">
       <PlayerHead className="size-8 shrink-0 rounded-sm" />
       <span className="min-w-0 flex-1 truncate font-bold text-foreground">{account?.display_name}</span>
-      <Link
-        to={ACCOUNT_NAV.to}
-        onClick={blurAfterPointerClick}
-        aria-label="Fiókbeállítások"
-        aria-current={current ? 'page' : undefined}
-        className={cn(
-          'grid size-10 shrink-0 place-items-center rounded-lg transition-colors',
-          current ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-raised hover:text-foreground',
-          focusRing,
-        )}
-      >
-        <Settings className="size-4.75" aria-hidden="true" />
-      </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label="Fiók menü"
+          className={cn(
+            'group/gear grid size-10 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors',
+            current ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-raised hover:text-foreground',
+            'data-popup-open:bg-raised data-popup-open:text-foreground',
+            focusRing,
+          )}
+        >
+          <Settings
+            className="size-4.75 transition-transform duration-300 group-data-popup-open/gear:rotate-60 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="top"
+          align="end"
+          alignOffset={-8}
+          sideOffset={14}
+          className="w-54 rounded-xl border border-[#2f2a21] p-1.5 shadow-[0_12px_32px_rgb(0_0_0/0.55)] ring-0"
+        >
+          <MenuPrimitive.LinkItem
+            closeOnClick
+            render={<Link to={ACCOUNT_NAV.to} aria-current={current ? 'page' : undefined} />}
+            className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
+          >
+            <Settings className="size-4 text-muted-foreground" aria-hidden="true" />
+            Beállítások
+          </MenuPrimitive.LinkItem>
+          {/* Logged out: the guard sends the player to the login page. */}
+          <MenuPrimitive.Item
+            onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
+            disabled={logout.isPending}
+            className={cn(menuRow, 'text-foreground data-disabled:opacity-60 data-highlighted:bg-danger/10 data-highlighted:text-danger')}
+          >
+            <LogOut className="size-4" aria-hidden="true" />
+            {logout.isPending ? 'Kijelentkezés…' : 'Kijelentkezés'}
+          </MenuPrimitive.Item>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }

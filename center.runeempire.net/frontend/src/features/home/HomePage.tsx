@@ -1,4 +1,4 @@
-import { Clock, Crown, Gem } from 'lucide-react'
+import { Clock, Gem, Medal } from 'lucide-react'
 
 import { site } from '@/config/site'
 import { runeCountFormat, useRuneBalance } from '@/features/app/runes'
@@ -37,16 +37,15 @@ export function HomePage() {
 
       <ul aria-label="Statisztikák" className="grid grid-cols-1 gap-2.5 sm:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] md:gap-5">
         <StatCard
-          label="Rúnaegyenleg"
+          label="Rúnáid"
           icon={Gem}
-          tone="rune"
           value={runes === undefined ? undefined : runeCountFormat.format(runes)}
           unit="rúna"
           className="content-in"
           style={enterAfter(560)}
         />
-        <StatCard label="Összes játékidő" icon={Clock} tone="neutral" unit="óra" className="content-in" style={enterAfter(620)} />
-        <StatCard label="Rang" icon={Crown} tone="gold" className="content-in" style={enterAfter(680)} />
+        <StatCard label="Játékidőd" icon={Clock} unit="óra" className="content-in" style={enterAfter(620)} />
+        <StatCard label="Rangod" icon={Medal} className="content-in" style={enterAfter(680)} />
         <PunishmentCard className="content-in" style={enterAfter(740)} />
       </ul>
 

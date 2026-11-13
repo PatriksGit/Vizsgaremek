@@ -5,23 +5,9 @@ import { panelLook } from '@/components/app/Panel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-/** The icon tile's colours: one per kind of number, status colours only for status. */
-const STAT_TONE = {
-  rune: 'bg-rune/10 text-rune',
-  neutral: 'bg-raised text-soft',
-  gold: 'bg-primary/10 text-primary',
-  ok: 'bg-ok/10 text-ok',
-  warn: 'bg-warn/10 text-warn',
-  danger: 'bg-danger/12 text-danger',
-  lock: 'bg-lock/18 text-lock',
-}
-
-export type StatTone = keyof typeof STAT_TONE
-
 type StatCardProps = {
   label: string
   icon: LucideIcon
-  tone: StatTone
   /** The number or word; left out while there is none yet: a skeleton bar instead. */
   value?: ReactNode
   /** A smaller word after the value, such as "rúna" or "óra". */
@@ -32,8 +18,8 @@ type StatCardProps = {
   style?: CSSProperties
 }
 
-/** One of the overview's four numbers: the label and the value on the left, a tinted icon tile on the right. */
-export function StatCard({ label, icon: Icon, tone, value, unit, children, className, style }: StatCardProps) {
+/** One of the overview's four numbers: the label and the value on the left, a quiet icon tile on the right. */
+export function StatCard({ label, icon: Icon, value, unit, children, className, style }: StatCardProps) {
   return (
     <li
       className={cn(panelLook, 'flex min-h-21 items-center justify-between gap-3.5 px-4.5 py-4 md:min-h-29 md:px-6 md:py-5', className)}
@@ -54,18 +40,18 @@ export function StatCard({ label, icon: Icon, tone, value, unit, children, class
         )}
         {children}
       </div>
-      <StatIcon icon={Icon} tone={tone} />
+      <StatIcon icon={Icon} />
     </li>
   )
 }
 
-export function StatIcon({ icon: Icon, tone }: { icon: LucideIcon; tone: StatTone }) {
+/** The same quiet tile on every card: colour is kept for the values that carry a status. */
+export function StatIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
     <span
       aria-hidden="true"
       className={cn(
-        'grid size-11 shrink-0 place-items-center rounded-xl shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] md:size-13 md:rounded-[14px]',
-        STAT_TONE[tone],
+        'grid size-11 shrink-0 place-items-center rounded-xl bg-raised text-soft shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] md:size-13 md:rounded-[14px]',
       )}
     >
       <Icon className="size-5.5 md:size-6.5" />
