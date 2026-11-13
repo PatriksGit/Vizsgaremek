@@ -7,8 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 import { StatIcon } from './StatCard'
+import { shortDate } from './stats'
 
-/** The player's strongest active punishment, as the stats API will send it. */
+/** The player's strongest active punishment, as the card shows it. */
 export type Punishment = {
   kind: 'mute' | 'ban' | 'lock'
   /** ISO time it ends; null when it never does. Unused for a lock. */
@@ -23,14 +24,6 @@ const KIND = {
   ban: { text: 'text-danger', title: 'Kitiltás', sr: 'Kitiltva eddig' },
   lock: { text: 'text-lock', title: 'Zárolás', sr: 'A fiók zárolva' },
 } satisfies Record<Punishment['kind'], { text: string; title: string; sr: string }>
-
-const twoDigits = (value: number) => String(value).padStart(2, '0')
-
-/** "2026.11.16.": fits the tile on one line. */
-function shortDate(iso: string) {
-  const date = new Date(iso)
-  return `${date.getFullYear()}.${twoDigits(date.getMonth() + 1)}.${twoDigits(date.getDate())}.`
-}
 
 const dateTime = new Intl.DateTimeFormat('hu-HU', { dateStyle: 'medium', timeStyle: 'short' })
 

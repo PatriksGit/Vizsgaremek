@@ -33,6 +33,12 @@
                   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
               CREATE USER 'center_test'@'%' IDENTIFIED BY 'center_test';
               GRANT ALL PRIVILEGES ON center_test.* (or auth_test.*) TO 'center_test'@'%';
+            The game plugins the website reads each get their own empty test
+            database on mysql-global, like on the server (two plugins both
+            have a players table), created once as root:
+              CREATE DATABASE center_<plugin>_test;  (skinrestorer, runeactivity,
+                  playerpoints, luckperms, litebans)
+              GRANT ALL PRIVILEGES ON center_<plugin>_test.* TO 'center_test'@'%';
         -->
         <env name="DB_CONNECTION" value="mysql" force="true"/>
         <env name="DB_URL" value="" force="true"/>
@@ -49,8 +55,13 @@
         <env name="DB_GLOBAL_PASSWORD" value="center_test" force="true"/>
         <!-- The MySQL containers' clock, like on the server. -->
         <env name="DB_GLOBAL_CLOCK_TIMEZONE" value="Europe/Budapest" force="true"/>
-        <!-- The plugins' tables live in the auth test database (TestCase::PLUGIN_TABLES). -->
-        <env name="DB_SKINRESTORER_DATABASE" value="auth_test" force="true"/>
+        <!-- The plugins' test databases; TestCase::PLUGIN_TABLES creates their tables. -->
+        <env name="DB_SKINRESTORER_DATABASE" value="center_skinrestorer_test" force="true"/>
+        <env name="DB_RUNEACTIVITY_DATABASE" value="center_runeactivity_test" force="true"/>
+        <env name="DB_PLAYERPOINTS_DATABASE" value="center_playerpoints_test" force="true"/>
+        <env name="DB_LUCKPERMS_DATABASE" value="center_luckperms_test" force="true"/>
+        <env name="DB_LITEBANS_DATABASE" value="center_litebans_test" force="true"/>
+        <env name="RUNEACTIVITY_TIMEZONE" value="Europe/Budapest" force="true"/>
         <env name="RATE_LIMITS_SKINS_PER_MINUTE" value="120" force="true"/>
         <env name="PASSWORD_ARGON2_MEMORY_KIB" value="1024" force="true"/>
         <env name="PASSWORD_ARGON2_ITERATIONS" value="1" force="true"/>

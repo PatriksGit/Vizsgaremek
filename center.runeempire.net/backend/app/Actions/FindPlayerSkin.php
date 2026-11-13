@@ -3,8 +3,8 @@
 namespace App\Actions;
 
 use App\Models\Account;
+use App\Support\PluginDatabase;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\DB;
 
 class FindPlayerSkin
 {
@@ -69,11 +69,8 @@ class FindPlayerSkin
         return null;
     }
 
-    /**
-     * A SkinRestorer table, through the global connection with the plugin's database name in front.
-     */
     private function table(string $table): Builder
     {
-        return DB::connection('global')->table(config('database.plugins.skinrestorer').'.'.$table);
+        return PluginDatabase::table('skinrestorer', $table);
     }
 }

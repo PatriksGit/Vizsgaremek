@@ -70,13 +70,16 @@ return [
     | The game plugins' databases the website reads, on the same MySQL server
     | as Auth. They are read through the global connection with the database
     | name in front of the table (SkinRestorer.players), so one request opens
-    | one connection however many plugins it reads, and tests can point them
-    | all at the auth test database.
+    | one connection however many plugins it reads.
     |
     */
 
     'plugins' => [
         'skinrestorer' => env('DB_SKINRESTORER_DATABASE', 'SkinRestorer'),
+        'runeactivity' => env('DB_RUNEACTIVITY_DATABASE', 'RuneActivity'),
+        'playerpoints' => env('DB_PLAYERPOINTS_DATABASE', 'PlayerPoints'),
+        'luckperms' => env('DB_LUCKPERMS_DATABASE', 'LuckPerms'),
+        'litebans' => env('DB_LITEBANS_DATABASE', 'LiteBans'),
     ],
 
     /*

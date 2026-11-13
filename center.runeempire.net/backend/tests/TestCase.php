@@ -67,60 +67,191 @@ abstract class TestCase extends BaseTestCase
     ];
 
     /**
-     * The game plugins' tables the website reads, as on the server (taken
-     * from the production copy on 2026-11-13, SkinRestorer 15). On the server
-     * each plugin has its own database; in the tests they all sit in the auth
-     * test database (phpunit.xml points every DB_*_DATABASE of a plugin at it).
+     * The game plugins' tables the website reads, by plugin, as on the server
+     * (taken from the production copy on 2026-11-13). Each plugin has its own
+     * database there and its own test database here (phpunit.xml), since two
+     * of them both have a players table.
      */
     private const PLUGIN_TABLES = [
-        // SkinRestorer: the skin each player chose (players), and the textures by premium uuid, image URL or custom name.
-        <<<'SQL'
-            CREATE TABLE players (
-              uuid varchar(36) NOT NULL,
-              skin_identifier varchar(2083) DEFAULT NULL,
-              skin_variant varchar(20) DEFAULT NULL,
-              skin_type varchar(20) DEFAULT NULL,
-              offline_mode_warning_dismissed tinyint(1) NOT NULL DEFAULT '0',
-              PRIMARY KEY (uuid)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
-            SQL,
-        <<<'SQL'
-            CREATE TABLE player_skins (
-              uuid varchar(36) NOT NULL,
-              last_known_name varchar(16) DEFAULT NULL,
-              value text NOT NULL,
-              signature text NOT NULL,
-              timestamp bigint NOT NULL,
-              PRIMARY KEY (uuid)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
-            SQL,
-        <<<'SQL'
-            CREATE TABLE url_skins (
-              url varchar(266) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-              mine_skin_id varchar(36) DEFAULT NULL,
-              value text NOT NULL,
-              signature text NOT NULL,
-              skin_variant varchar(20) NOT NULL,
-              PRIMARY KEY (url, skin_variant)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
-            SQL,
-        <<<'SQL'
-            CREATE TABLE custom_skins (
-              name varchar(36) NOT NULL,
-              display_name text,
-              value text NOT NULL,
-              signature text NOT NULL,
-              PRIMARY KEY (name)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
-            SQL,
-        <<<'SQL'
-            CREATE TABLE cache (
-              name varchar(16) NOT NULL,
-              uuid varchar(36) DEFAULT NULL,
-              timestamp bigint NOT NULL,
-              PRIMARY KEY (name)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
-            SQL,
+        // SkinRestorer 15: the skin each player chose (players), and the textures by premium uuid, image URL or custom name.
+        'skinrestorer' => [
+            <<<'SQL'
+                CREATE TABLE players (
+                  uuid varchar(36) NOT NULL,
+                  skin_identifier varchar(2083) DEFAULT NULL,
+                  skin_variant varchar(20) DEFAULT NULL,
+                  skin_type varchar(20) DEFAULT NULL,
+                  offline_mode_warning_dismissed tinyint(1) NOT NULL DEFAULT '0',
+                  PRIMARY KEY (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+                SQL,
+            <<<'SQL'
+                CREATE TABLE player_skins (
+                  uuid varchar(36) NOT NULL,
+                  last_known_name varchar(16) DEFAULT NULL,
+                  value text NOT NULL,
+                  signature text NOT NULL,
+                  timestamp bigint NOT NULL,
+                  PRIMARY KEY (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+                SQL,
+            <<<'SQL'
+                CREATE TABLE url_skins (
+                  url varchar(266) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+                  mine_skin_id varchar(36) DEFAULT NULL,
+                  value text NOT NULL,
+                  signature text NOT NULL,
+                  skin_variant varchar(20) NOT NULL,
+                  PRIMARY KEY (url, skin_variant)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+                SQL,
+            <<<'SQL'
+                CREATE TABLE custom_skins (
+                  name varchar(36) NOT NULL,
+                  display_name text,
+                  value text NOT NULL,
+                  signature text NOT NULL,
+                  PRIMARY KEY (name)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+                SQL,
+            <<<'SQL'
+                CREATE TABLE cache (
+                  name varchar(16) NOT NULL,
+                  uuid varchar(36) DEFAULT NULL,
+                  timestamp bigint NOT NULL,
+                  PRIMARY KEY (name)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+                SQL,
+        ],
+        // RuneActivity (the owner's plugin): total playtime, this week's seconds per day and the login streak.
+        'runeactivity' => [
+            <<<'SQL'
+                CREATE TABLE players (
+                  uuid char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  name varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  name_lower varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  total_seconds bigint NOT NULL DEFAULT '0',
+                  week_start date NOT NULL,
+                  monday int NOT NULL DEFAULT '0',
+                  tuesday int NOT NULL DEFAULT '0',
+                  wednesday int NOT NULL DEFAULT '0',
+                  thursday int NOT NULL DEFAULT '0',
+                  friday int NOT NULL DEFAULT '0',
+                  saturday int NOT NULL DEFAULT '0',
+                  sunday int NOT NULL DEFAULT '0',
+                  current_streak int NOT NULL DEFAULT '0',
+                  best_streak int NOT NULL DEFAULT '0',
+                  last_login_day date DEFAULT NULL,
+                  last_seen_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  last_batch bigint NOT NULL DEFAULT '0',
+                  PRIMARY KEY (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                SQL,
+        ],
+        // PlayerPoints: the rune balance.
+        'playerpoints' => [
+            <<<'SQL'
+                CREATE TABLE playerpoints_points (
+                  id int NOT NULL AUTO_INCREMENT,
+                  uuid varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  points int NOT NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uuid (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                SQL,
+        ],
+        // LuckPerms: the player's groups (primary, and by permission, maybe expiring) and each group's weight.
+        'luckperms' => [
+            <<<'SQL'
+                CREATE TABLE luckperms_players (
+                  uuid varchar(36) NOT NULL,
+                  username varchar(16) NOT NULL,
+                  primary_group varchar(36) NOT NULL,
+                  PRIMARY KEY (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+                SQL,
+            <<<'SQL'
+                CREATE TABLE luckperms_user_permissions (
+                  id int NOT NULL AUTO_INCREMENT,
+                  uuid varchar(36) NOT NULL,
+                  permission varchar(200) NOT NULL,
+                  value tinyint(1) NOT NULL,
+                  server varchar(36) NOT NULL,
+                  world varchar(64) NOT NULL,
+                  expiry bigint NOT NULL,
+                  contexts varchar(200) NOT NULL,
+                  PRIMARY KEY (id),
+                  KEY luckperms_user_permissions_uuid (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+                SQL,
+            <<<'SQL'
+                CREATE TABLE luckperms_group_permissions (
+                  id int NOT NULL AUTO_INCREMENT,
+                  name varchar(36) NOT NULL,
+                  permission varchar(200) NOT NULL,
+                  value tinyint(1) NOT NULL,
+                  server varchar(36) NOT NULL,
+                  world varchar(64) NOT NULL,
+                  expiry bigint NOT NULL,
+                  contexts varchar(200) NOT NULL,
+                  PRIMARY KEY (id),
+                  KEY luckperms_group_permissions_name (name)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+                SQL,
+        ],
+        // LiteBans: bans and mutes, two tables with the same columns.
+        'litebans' => [
+            <<<'SQL'
+                CREATE TABLE litebans_bans (
+                  id bigint unsigned NOT NULL AUTO_INCREMENT,
+                  uuid varchar(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+                  ip varchar(45) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+                  reason varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  banned_by_uuid varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  banned_by_name varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  removed_by_uuid varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  removed_by_name varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  removed_by_reason varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  removed_by_date timestamp NULL DEFAULT NULL,
+                  time bigint NOT NULL,
+                  until bigint NOT NULL,
+                  template tinyint unsigned NOT NULL DEFAULT '255',
+                  server_scope varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  server_origin varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  silent bit(1) NOT NULL,
+                  ipban bit(1) NOT NULL,
+                  ipban_wildcard bit(1) NOT NULL DEFAULT b'0',
+                  active bit(1) NOT NULL,
+                  PRIMARY KEY (id),
+                  KEY idx_uuid (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                SQL,
+            <<<'SQL'
+                CREATE TABLE litebans_mutes (
+                  id bigint unsigned NOT NULL AUTO_INCREMENT,
+                  uuid varchar(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+                  ip varchar(45) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+                  reason varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  banned_by_uuid varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                  banned_by_name varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  removed_by_uuid varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  removed_by_name varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  removed_by_reason varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  removed_by_date timestamp NULL DEFAULT NULL,
+                  time bigint NOT NULL,
+                  until bigint NOT NULL,
+                  template tinyint unsigned NOT NULL DEFAULT '255',
+                  server_scope varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  server_origin varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                  silent bit(1) NOT NULL,
+                  ipban bit(1) NOT NULL,
+                  ipban_wildcard bit(1) NOT NULL DEFAULT b'0',
+                  active bit(1) NOT NULL,
+                  PRIMARY KEY (id),
+                  KEY idx_uuid (uuid)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                SQL,
+        ],
     ];
 
     /**
@@ -150,15 +281,29 @@ abstract class TestCase extends BaseTestCase
         // The database traits run migrate:fresh once per test run, before the
         // first test's transaction. It only empties the default (web) test
         // database, so the auth test database is emptied here and gets the
-        // shared accounts and account_locks tables and the plugins' tables
-        // (no migration of ours creates them; DDL cannot run inside a test: MySQL commits the open
+        // shared accounts and account_locks tables, and each plugin's test
+        // database its tables (no migration of ours creates them; DDL cannot run inside a test: MySQL commits the open
         // transaction on it). An event, not an override: the traits' own
         // methods would replace this class's.
         $app['events']->listen(MigrationsStarted::class, function (): void {
             Schema::connection('global')->dropAllTables();
 
-            foreach ([...self::AUTH_TABLES, ...self::PLUGIN_TABLES] as $table) {
+            foreach (self::AUTH_TABLES as $table) {
                 DB::connection('global')->unprepared($table);
+            }
+
+            // Each plugin's test database: emptied, then its tables, named with the database in front.
+            foreach (self::PLUGIN_TABLES as $plugin => $tables) {
+                $database = (string) config("database.plugins.{$plugin}");
+                $existing = DB::connection('global')->select('SELECT table_name AS name FROM information_schema.tables WHERE table_schema = ?', [$database]);
+
+                foreach ($existing as $table) {
+                    DB::connection('global')->unprepared("DROP TABLE `{$database}`.`{$table->name}`");
+                }
+
+                foreach ($tables as $table) {
+                    DB::connection('global')->unprepared((string) preg_replace('/^\s*CREATE TABLE /', "CREATE TABLE `{$database}`.", $table, 1));
+                }
             }
         });
 

@@ -112,11 +112,34 @@ class ConfigDefaultsTest extends TestCase
      * A limit of 0 would lock the endpoint for everyone, so a zero, an empty
      * value or a typo in .env becomes the strictest working limit, 1.
      */
-    public function test_skins_are_read_from_the_skinrestorer_database_by_default(): void
+    public function test_the_plugins_are_read_from_their_production_databases_by_default(): void
     {
-        $config = $this->configWith('database.php', ['DB_SKINRESTORER_DATABASE' => null]);
+        $config = $this->configWith('database.php', [
+            'DB_SKINRESTORER_DATABASE' => null,
+            'DB_RUNEACTIVITY_DATABASE' => null,
+            'DB_PLAYERPOINTS_DATABASE' => null,
+            'DB_LUCKPERMS_DATABASE' => null,
+            'DB_LITEBANS_DATABASE' => null,
+        ]);
 
-        $this->assertSame('SkinRestorer', $config['plugins']['skinrestorer']);
+        $this->assertSame([
+            'skinrestorer' => 'SkinRestorer',
+            'runeactivity' => 'RuneActivity',
+            'playerpoints' => 'PlayerPoints',
+            'luckperms' => 'LuckPerms',
+            'litebans' => 'LiteBans',
+        ], $config['plugins']);
+    }
+
+    public function test_runeactivity_days_are_cut_in_budapest_time_by_default(): void
+    {
+        $this->assertSame('Europe/Budapest', $this->configWith('runeactivity.php', ['RUNEACTIVITY_TIMEZONE' => null])['timezone']);
+    }
+
+    public function test_a_mistyped_runeactivity_time_zone_falls_back_to_budapest(): void
+    {
+        $this->assertSame('Europe/Budapest', $this->configWith('runeactivity.php', ['RUNEACTIVITY_TIMEZONE' => 'Europe/Budapset'])['timezone']);
+        $this->assertSame('UTC', $this->configWith('runeactivity.php', ['RUNEACTIVITY_TIMEZONE' => 'UTC'])['timezone']);
     }
 
     #[DataProvider('brokenRateLimits')]
