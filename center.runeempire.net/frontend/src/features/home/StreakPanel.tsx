@@ -45,24 +45,16 @@ type StreakPanelProps = {
 }
 
 /**
- * This week's daily logins inside the hero: the streak and the record on
- * top, seven boxes (a check for a day logged in, a cross for a missed one,
- * today pulsing gold with a clock until the login), and a line of encouragement.
+ * This week's daily logins, a small table in the hero: the streak and the
+ * record on top, then seven boxes (a check for a day logged in, a cross for
+ * a missed one, today pulsing gold with a clock until the login).
  */
 export function StreakPanel({ streak, className }: StreakPanelProps) {
   const todayIndex = (new Date().getDay() + 6) % 7
   const dates = thisWeek()
 
-  const message = !streak
-    ? null
-    : streak.week[todayIndex] === 'done'
-      ? 'Ma már beléptél, így tovább!'
-      : streak.current > 0
-        ? 'Lépj be ma is, és nő a sorozatod.'
-        : 'Lépj be ma, és elindul a sorozatod.'
-
   return (
-    <div className={cn('flex flex-col gap-3 md:gap-3.5', className)}>
+    <div className={cn('flex flex-col gap-3', className)}>
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2.5 md:gap-3">
           <span aria-hidden="true" className="grid size-9.5 place-items-center rounded-[10px] bg-primary/10 md:size-11 md:rounded-xl">
@@ -112,8 +104,6 @@ export function StreakPanel({ streak, className }: StreakPanelProps) {
           )
         })}
       </ol>
-
-      {message ? <p className="text-xs text-muted-foreground">{message}</p> : <Skeleton className="h-4 w-56" />}
     </div>
   )
 }

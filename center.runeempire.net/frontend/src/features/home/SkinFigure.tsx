@@ -27,7 +27,7 @@ function Stand() {
  */
 function Silhouette({ className }: { className?: string }) {
   return (
-    <div aria-hidden="true" className={cn('flex flex-col items-center [--u:3px] md:[--u:5px]', className)}>
+    <div aria-hidden="true" className={cn('flex flex-col items-center [--u:3.5px] md:[--u:6px]', className)}>
       <div className="skeleton size-[calc(var(--u)*8)] rounded-sm" />
       <div className="mt-0.5 flex gap-0.5">
         <div className="skeleton h-[calc(var(--u)*12)] w-[calc(var(--u)*4)] rounded-sm" />
@@ -43,8 +43,8 @@ function Silhouette({ className }: { className?: string }) {
 }
 
 /**
- * The player's own skin as a 3D figure in the hero: 120x200 on wide screens,
- * 72x128 on phones. A shimmering outline holds its place until the figure
+ * The player's own skin as a 3D figure in the hero: 150x250 on wide screens,
+ * 84x150 on phones. A shimmering outline holds its place until the figure
  * with the real skin fades in (no Steve flashes up first). Falls back to the
  * CSS Steve without a name, without WebGL, or when the skin cannot be loaded.
  */
@@ -52,18 +52,18 @@ export function SkinFigure({ name }: { name?: string }) {
   const isMobile = useIsMobile()
   const [failedName, setFailedName] = useState<string | null>(null)
   const [readyName, setReadyName] = useState<string | null>(null)
-  const [width, height] = isMobile ? [72, 128] : [120, 200]
+  const [width, height] = isMobile ? [84, 150] : [150, 250]
 
   if (!name || failedName === name) {
     return (
-      <div aria-hidden="true" className="relative h-32 w-18 shrink-0 md:h-50 md:w-30">
+      <div aria-hidden="true" className="relative h-37.5 w-21 shrink-0 md:h-62.5 md:w-37.5">
         <Stand />
       </div>
     )
   }
 
   return (
-    <div aria-hidden="true" className="relative grid h-32 w-18 shrink-0 place-items-center md:h-50 md:w-30">
+    <div aria-hidden="true" className="relative grid h-37.5 w-21 shrink-0 place-items-center md:h-62.5 md:w-37.5">
       <Silhouette
         className={cn(
           // Under the figure and never in the way of dragging it, even while fading out.
