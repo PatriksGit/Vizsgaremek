@@ -24,7 +24,7 @@ class StartRegistration
      * replacing this email's pending registration, and mail the code.
      *
      * The mail is sent after the transaction commits, so a slow SMTP server
-     * never holds locks in the auth database. At most one code is mailed to an
+     * never holds locks in the database. At most one code is mailed to an
      * address per rate_limits.registration_mail.cooldown_seconds.
      *
      * $ownerToken identifies the browser session that starts the registration
@@ -100,7 +100,7 @@ class StartRegistration
         ?string $ownerHash,
     ): PendingRegistration {
         try {
-            return DB::connection('global')->transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes, $ownerHash): PendingRegistration {
+            return DB::transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes, $ownerHash): PendingRegistration {
                 PendingRegistration::query()->where('expires_at', '<=', now())->delete();
 
                 $held = PendingRegistration::query()

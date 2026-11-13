@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Database\Migrations;
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -11,19 +10,10 @@ class CreatePendingRegistrationsTableTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    public function test_table_is_created_on_the_auth_connection(): void
+    public function test_table_is_created_in_the_website_database(): void
     {
-        $this->assertTrue(Schema::connection('global')->hasTable('pending_registrations'));
-        $this->assertFalse(Schema::hasTable('pending_registrations'), 'The web database must not get the table.');
-    }
-
-    public function test_running_again_against_an_existing_table_is_a_no_op(): void
-    {
-        /** @var Migration $migration */
-        $migration = require collect(glob(database_path('migrations/*_create_pending_registrations_table.php')))->sole();
-
-        $migration->up();
-
-        $this->assertTrue(Schema::connection('global')->hasTable('pending_registrations'));
+        $this->assertTrue(Schema::hasTable('pending_registrations'));
+        $this->assertTrue(Schema::hasColumn('pending_registrations', 'owner_hash'));
+        $this->assertFalse(Schema::connection('global')->hasTable('pending_registrations'), 'The shared auth database must not get the table.');
     }
 }

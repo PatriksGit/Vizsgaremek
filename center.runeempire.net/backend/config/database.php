@@ -11,7 +11,8 @@ return [
 
         /*
          * The website's own database (the default connection): Laravel's tables
-         * (cache, rate limits, migrations, API tokens), later the shop's data.
+         * (cache, rate limits, migrations, API tokens), the pending
+         * registrations, later the shop's data.
          * Declared whole, since Laravel merges connections by name: the
          * framework's mysql connection plus the same 5 s timeout as global.
          */
@@ -33,8 +34,9 @@ return [
 
         /*
          * The network's shared Auth database: accounts (created by the website,
-         * read by the Rune Gateway and RuneAuth), RuneAuth's account_locks,
-         * and the website's pending_registrations.
+         * read by the Rune Gateway and RuneAuth) and RuneAuth's account_locks.
+         * The website creates no tables here; its user needs only SELECT,
+         * INSERT and UPDATE on accounts and SELECT on account_locks.
          */
         'global' => [
             'driver' => env('DB_GLOBAL_DRIVER', 'mysql'),

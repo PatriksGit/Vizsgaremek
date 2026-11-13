@@ -100,7 +100,7 @@ class VerifyRegistrationControllerTest extends TestCase
 
         $this->verify($code)->assertUnprocessable()->assertJsonValidationErrors(['code' => $message]);
 
-        $this->assertDatabaseHas('pending_registrations', ['id' => $pending->id, 'attempts' => 0], 'global');
+        $this->assertDatabaseHas('pending_registrations', ['id' => $pending->id, 'attempts' => 0]);
     }
 
     /**
@@ -125,7 +125,7 @@ class VerifyRegistrationControllerTest extends TestCase
 
         $this->verify('654321')->assertUnprocessable()->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
 
-        $this->assertDatabaseHas('pending_registrations', ['id' => $pending->id, 'attempts' => 1], 'global');
+        $this->assertDatabaseHas('pending_registrations', ['id' => $pending->id, 'attempts' => 1]);
         $this->assertDatabaseCount('accounts', 0, 'global');
     }
 
@@ -326,7 +326,7 @@ class VerifyRegistrationControllerTest extends TestCase
                 ->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
         }
 
-        $this->assertDatabaseHas('pending_registrations', ['email' => 'patrik@example.com', 'attempts' => 0], 'global');
+        $this->assertDatabaseHas('pending_registrations', ['email' => 'patrik@example.com', 'attempts' => 0]);
         $this->asBrowserWithSession($session)->verify($code, headers: self::FROM_WEBSITE)->assertCreated();
     }
 
@@ -365,7 +365,7 @@ class VerifyRegistrationControllerTest extends TestCase
             $this->asBrowserWithSession($session)->verify(self::wrongCode($code), headers: self::FROM_WEBSITE)->assertUnprocessable();
         }
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
     }
 
     public function test_returns_429_after_the_per_minute_limit_from_config(): void

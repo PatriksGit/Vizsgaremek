@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Database\Factories\PendingRegistrationFactory;
-use Illuminate\Database\Eloquent\Attributes\Connection;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,8 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
- * A registration waiting for its emailed code, in the auth database.
- * It becomes an Account when the code is redeemed.
+ * A registration waiting for its emailed code, in the website's own database
+ * (Center, the default connection). It becomes an Account in the shared auth
+ * database when the code is redeemed.
  *
  * @property int $id
  * @property string $username
@@ -25,7 +25,6 @@ use Illuminate\Support\Carbon;
  * @property Carbon $expires_at
  * @property Carbon $created_at
  */
-#[Connection('global')]
 #[Fillable(['username', 'display_name', 'email', 'password_hash', 'code_hash', 'owner_hash', 'expires_at'])]
 #[Hidden(['password_hash', 'code_hash', 'owner_hash'])]
 class PendingRegistration extends Model

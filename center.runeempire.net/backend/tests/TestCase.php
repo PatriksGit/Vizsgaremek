@@ -86,11 +86,11 @@ abstract class TestCase extends BaseTestCase
 
         // The database traits run migrate:fresh once per test run, before the
         // first test's transaction. It only empties the default (web) test
-        // database, so the auth test database is emptied here, and the shared
-        // accounts and account_locks tables are created before the migrations
-        // (DDL cannot run inside a test: MySQL commits the open transaction on
-        // it). The migrations then add pending_registrations. An event, not an
-        // override: the traits' own methods would replace this class's.
+        // database, so the auth test database is emptied here and gets the
+        // shared accounts and account_locks tables (no migration of ours
+        // creates them; DDL cannot run inside a test: MySQL commits the open
+        // transaction on it). An event, not an override: the traits' own
+        // methods would replace this class's.
         $app['events']->listen(MigrationsStarted::class, function (): void {
             Schema::connection('global')->dropAllTables();
 

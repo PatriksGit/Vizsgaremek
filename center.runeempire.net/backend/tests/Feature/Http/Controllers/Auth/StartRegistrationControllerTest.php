@@ -112,7 +112,7 @@ class StartRegistrationControllerTest extends TestCase
             'display_name' => 'PatrikT',
             'email' => 'patrik@example.com',
             'attempts' => 0,
-        ], 'global');
+        ]);
         $pending = PendingRegistration::query()->sole();
         $this->assertStringStartsWith('$argon2id$v=19$m=1024,t=1,p=1$', $pending->password_hash);
         $this->assertTrue(Hash::check('titkos-jelszo', $pending->password_hash));
@@ -148,7 +148,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['display_name' => 'Ezt a játékosnevet már regisztrálták.']);
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
         Notification::assertNothingSent();
     }
 
@@ -167,7 +167,7 @@ class StartRegistrationControllerTest extends TestCase
     {
         $this->register(['username' => 'masvalaki'])->assertAccepted();
 
-        $this->assertDatabaseHas('pending_registrations', ['username' => 'patrikt'], 'global');
+        $this->assertDatabaseHas('pending_registrations', ['username' => 'patrikt']);
     }
 
     public function test_returns_422_when_another_email_holds_the_name(): void
@@ -179,8 +179,8 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['display_name' => self::NAME_PENDING]);
 
-        $this->assertDatabaseCount('pending_registrations', 1, 'global');
-        $this->assertDatabaseHas('pending_registrations', ['email' => 'masik@example.com'], 'global');
+        $this->assertDatabaseCount('pending_registrations', 1);
+        $this->assertDatabaseHas('pending_registrations', ['email' => 'masik@example.com']);
         Notification::assertNothingSent();
         $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
     }
@@ -189,7 +189,7 @@ class StartRegistrationControllerTest extends TestCase
     {
         PendingRegistration::creating(function (PendingRegistration $pending): void {
             if ($pending->email === 'patrik@example.com') {
-                DB::connection('global')->table('pending_registrations')->insert([
+                DB::table('pending_registrations')->insert([
                     'username' => 'patrikt',
                     'display_name' => 'PatrikT',
                     'email' => 'masik@example.com',
@@ -211,7 +211,7 @@ class StartRegistrationControllerTest extends TestCase
     {
         PendingRegistration::creating(function (PendingRegistration $pending): void {
             if ($pending->display_name === 'PatrikT') {
-                DB::connection('global')->table('pending_registrations')->insert([
+                DB::table('pending_registrations')->insert([
                     'username' => 'masvalaki',
                     'display_name' => 'Masvalaki',
                     'email' => 'patrik@example.com',
@@ -238,7 +238,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email' => 'Ez az e-mail cím már használatban van.']);
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
         Notification::assertNothingSent();
     }
 
@@ -251,7 +251,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['terms' => 'A regisztrációhoz el kell fogadnod az ÁSZF-et.']);
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
         Notification::assertNothingSent();
         $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
     }
@@ -265,7 +265,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['age_confirmed' => 'A regisztrációhoz 16 évesnek kell lenned, vagy a szülőd hozzájárulása kell.']);
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
         Notification::assertNothingSent();
     }
 
@@ -287,7 +287,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email' => $message]);
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
     }
 
     /**
@@ -319,7 +319,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertJsonValidationErrors(['display_name' => $message]);
 
         $this->assertNoQueryMentions('global', 'username', 'Invalid names must not reach the ascii username column.');
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
     }
 
     /**
@@ -350,7 +350,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'Jelszó csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.']);
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
     }
 
     public function test_returns_422_when_the_confirmation_does_not_match(): void
@@ -359,7 +359,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['password' => 'A két jelszó nem egyezik.']);
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
     }
 
     public function test_re_registering_the_same_name_and_email_replaces_the_pending_registration(): void
@@ -369,7 +369,7 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->registerFromBrowser(['password' => 'uj-titkos-jelszo', 'password_confirmation' => 'uj-titkos-jelszo'])->assertAccepted();
 
-        $this->assertDatabaseCount('pending_registrations', 1, 'global');
+        $this->assertDatabaseCount('pending_registrations', 1);
         $this->assertTrue(Hash::check('uj-titkos-jelszo', PendingRegistration::query()->sole()->password_hash));
     }
 
@@ -380,8 +380,8 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->registerFromBrowser(['display_name' => 'UjNev'])->assertAccepted();
 
-        $this->assertDatabaseCount('pending_registrations', 1, 'global');
-        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'UjNev'], 'global');
+        $this->assertDatabaseCount('pending_registrations', 1);
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'UjNev']);
     }
 
     public function test_the_same_browser_can_correct_a_mistyped_email(): void
@@ -391,8 +391,8 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->registerFromBrowser()->assertAccepted();
 
-        $this->assertDatabaseCount('pending_registrations', 1, 'global');
-        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'PatrikT', 'email' => 'patrik@example.com'], 'global');
+        $this->assertDatabaseCount('pending_registrations', 1);
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'PatrikT', 'email' => 'patrik@example.com']);
         $this->postJson('/api/auth/register/verify', ['email' => 'patrik@example.com', 'code' => $this->mailedCode()])->assertCreated();
     }
 
@@ -407,8 +407,8 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email' => self::EMAIL_PENDING]);
 
-        $this->assertDatabaseCount('pending_registrations', 1, 'global');
-        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Aldozat', 'email' => 'patrik@example.com'], 'global');
+        $this->assertDatabaseCount('pending_registrations', 1);
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Aldozat', 'email' => 'patrik@example.com']);
         Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 1);
         $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
     }
@@ -424,7 +424,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email' => self::EMAIL_PENDING]);
 
-        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Aldozat'], 'global');
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Aldozat']);
         Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 1);
     }
 
@@ -447,8 +447,8 @@ class StartRegistrationControllerTest extends TestCase
         $this->register()->assertAccepted();
 
         $this->assertModelMissing($stranger);
-        $this->assertDatabaseCount('pending_registrations', 1, 'global');
-        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'PatrikT'], 'global');
+        $this->assertDatabaseCount('pending_registrations', 1);
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'PatrikT']);
     }
 
     public function test_returns_503_and_keeps_nothing_when_the_mail_cannot_be_sent(): void
@@ -460,7 +460,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertServiceUnavailable()
             ->assertJson(['message' => 'A megerősítő e-mailt most nem sikerült elküldeni, próbáld újra később.']);
 
-        $this->assertDatabaseCount('pending_registrations', 0, 'global');
+        $this->assertDatabaseCount('pending_registrations', 0);
         $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A failed send must not start the cooldown.');
         Exceptions::assertReported(TransportException::class);
     }

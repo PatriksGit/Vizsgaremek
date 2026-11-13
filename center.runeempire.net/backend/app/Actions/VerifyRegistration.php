@@ -31,13 +31,22 @@ class VerifyRegistration
      * counter of their own, so they cannot use up the attempts and cancel
      * someone else's registration. The right code works from anywhere.
      *
+     * The pending row (website database) and the account (shared auth
+     * database) live on two MySQL servers, so they cannot share a
+     * transaction. The account is created inside the pending row's
+     * transaction, before it commits: if the account cannot be created, the
+     * row's deletion rolls back and the code still works; if the commit fails
+     * after the account was created, the next try finds the name taken and
+     * clears the row. Neither way creates two accounts (the accounts table's
+     * unique indexes make sure of that).
+     *
      * @throws ValidationException
      */
     public function handle(string $email, #[SensitiveParameter] string $code, #[SensitiveParameter] ?string $ownerToken = null): Account
     {
         $ownerHash = PendingRegistration::ownerHashFor($ownerToken);
 
-        $result = DB::connection('global')->transaction(function () use ($email, $code, $ownerHash): Account|ValidationException {
+        $result = DB::transaction(function () use ($email, $code, $ownerHash): Account|ValidationException {
             $pending = PendingRegistration::query()->where('email', $email)->lockForUpdate()->first();
 
             if ($pending === null || $pending->expires_at->isPast()) {
