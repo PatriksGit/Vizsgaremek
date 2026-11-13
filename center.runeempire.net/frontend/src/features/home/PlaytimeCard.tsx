@@ -61,9 +61,10 @@ export function PlaytimeCard({ week, className }: PlaytimeCardProps) {
       {week ? (
         <WeekChart week={week} total={total} />
       ) : (
-        <Skeleton className="h-47 w-full rounded-xl md:h-62">
+        <div aria-busy="true">
+          <Skeleton className="h-47 w-full rounded-xl md:h-62" />
           <span className="sr-only">A játékidő betöltése…</span>
-        </Skeleton>
+        </div>
       )}
     </section>
   )

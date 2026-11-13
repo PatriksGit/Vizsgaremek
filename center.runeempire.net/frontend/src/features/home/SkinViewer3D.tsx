@@ -7,6 +7,8 @@ type SkinViewer3DProps = {
   url: string
   width: number
   height: number
+  /** The skin is on the figure. */
+  onReady: () => void
   /** The viewer could not start (no WebGL) or the skin did not load. */
   onError: () => void
 }
@@ -18,10 +20,11 @@ type SkinViewer3DProps = {
  * Hidden until the skin is on it, then faded in, so no blank or default
  * figure shows first.
  */
-export default function SkinViewer3D({ url, width, height, onError }: SkinViewer3DProps) {
+export default function SkinViewer3D({ url, width, height, onReady, onError }: SkinViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // The latest callback, without rebuilding the viewer when the parent passes a new one.
   const fail = useEffectEvent(onError)
+  const ready = useEffectEvent(onReady)
   // Which skin is on the figure, so a new name hides it again until its skin arrives.
   const [shownUrl, setShownUrl] = useState<string | null>(null)
 
@@ -46,7 +49,10 @@ export default function SkinViewer3D({ url, width, height, onError }: SkinViewer
 
     viewer
       .loadSkin(url, { model: 'auto-detect' })
-      .then(() => setShownUrl(url))
+      .then(() => {
+        setShownUrl(url)
+        ready()
+      })
       .catch(() => fail())
 
     // StrictMode mounts twice in development: every viewer frees its WebGL context.

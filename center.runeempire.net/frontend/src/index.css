@@ -234,6 +234,41 @@
     animation: ping-ring 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
+/*
+ * Loading placeholders: the raised surface with a soft, slanted band of light
+ * sweeping left to right (a sweep reads as a shorter wait than a pulse). The
+ * band is fixed to the window, so every skeleton on the page shimmers as one
+ * wave instead of each on its own. Low contrast on purpose; under reduced
+ * motion it stands still.
+ */
+@keyframes skeleton-sweep {
+    from {
+        background-position: -130vw 0;
+    }
+    to {
+        background-position: 30vw 0;
+    }
+}
+
+@utility skeleton {
+    background-color: var(--raised);
+    background-image: linear-gradient(
+        105deg,
+        transparent 42%,
+        rgb(242 237 228 / 0.07) 50%,
+        transparent 58%
+    );
+    background-size: 200vw 100%;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    animation: skeleton-sweep 1.8s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+        background-image: none;
+    }
+}
+
 .backdrop-reveal {
     animation: backdrop-reveal 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }

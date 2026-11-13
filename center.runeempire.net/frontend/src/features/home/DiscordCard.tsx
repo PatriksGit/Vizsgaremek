@@ -57,11 +57,13 @@ export function DiscordCard({ className }: { className?: string }) {
           </h2>
           <span className="text-xs text-muted-foreground">{site.name} közösség</span>
         </span>
-        {widget && (
+        {widget ? (
           <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
             <span aria-hidden="true" className="ping size-2 rounded-full bg-ok" />
             <strong className="text-foreground">{countFormat.format(widget.presence_count)}</strong> online
           </span>
+        ) : (
+          isPending && <Skeleton className="h-4 w-16" />
         )}
       </div>
 

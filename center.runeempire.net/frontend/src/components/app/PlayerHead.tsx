@@ -28,6 +28,8 @@ export function PlayerHead({ name, className }: { name?: string; className?: str
   const url = name ? skinUrl(name) : null
   // Remembers which skin failed, so another name gets its own try.
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  // Shimmers until the skin is in, so no empty square shows first.
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null)
 
   if (url === null || failedUrl === url) {
     return (
@@ -40,9 +42,19 @@ export function PlayerHead({ name, className }: { name?: string; className?: str
   }
 
   return (
-    <span aria-hidden="true" className={cn('relative inline-block shrink-0 overflow-hidden rounded-md bg-raised', className)}>
-      <img src={url} alt="" draggable={false} onError={() => setFailedUrl(url)} className={cn(layer, 'left-[-100%]')} />
-      <img src={url} alt="" draggable={false} className={cn(layer, 'left-[-500%]')} />
+    <span
+      aria-hidden="true"
+      className={cn('relative inline-block shrink-0 overflow-hidden rounded-md', loadedUrl !== url && 'skeleton', className)}
+    >
+      <img
+        src={url}
+        alt=""
+        draggable={false}
+        onLoad={() => setLoadedUrl(url)}
+        onError={() => setFailedUrl(url)}
+        className={cn(layer, 'left-[-100%]', loadedUrl !== url && 'opacity-0')}
+      />
+      <img src={url} alt="" draggable={false} className={cn(layer, 'left-[-500%]', loadedUrl !== url && 'opacity-0')} />
     </span>
   )
 }
