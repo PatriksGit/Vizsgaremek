@@ -6,7 +6,7 @@ import { useAccount } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
-import { ACCOUNT_NAV, isActive, TAB_NAV } from './nav'
+import { ACCOUNT_NAV, isActive, isPage, TAB_NAV } from './nav'
 
 const tabBase = 'flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[11px] leading-none'
 
@@ -50,7 +50,7 @@ export function MobileTabBar() {
           }
 
           // The account tab is only the settings page; the Fiók group's history pages have their own tab.
-          const current = item.to === ACCOUNT_NAV.to ? pathname === item.to : isActive(item, pathname)
+          const current = item.to === ACCOUNT_NAV.to ? isPage(item.to, pathname) : isActive(item, pathname)
           return (
             <li key={item.label}>
               <Link

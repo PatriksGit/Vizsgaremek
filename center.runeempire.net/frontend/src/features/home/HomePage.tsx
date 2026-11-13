@@ -77,7 +77,7 @@ export function HomePage() {
 
       <div className="flex flex-wrap gap-3.5 md:gap-5">
         <PlaytimeCard
-          week={shown('playtime', (loaded) => loaded.playtime?.week.map((seconds) => Math.round(seconds / 60)) ?? null)}
+          week={shown('playtime', (loaded) => loaded.playtime?.week.map((seconds) => (seconds > 0 ? Math.max(1, Math.round(seconds / 60)) : 0)) ?? null)}
           className="min-w-0 flex-[2_1_480px]"
         />
         <DiscordCard className="flex-[1_1_320px]" />

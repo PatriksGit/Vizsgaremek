@@ -3,7 +3,7 @@ import { Check, Clock, Flame, X } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-import { NO_DATA } from './stats'
+import { NO_DATA, serverToday, serverTodayIndex } from './stats'
 
 /** One day of this week's login streak, as GET /api/me/stats sends it. */
 export type StreakDayStatus = 'done' | 'missed' | 'pending' | 'future' | 'before'
@@ -34,8 +34,8 @@ function monthDay(date: Date) {
   return `${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 }
 
-/** The dates of this week, Monday first, at local midnight. */
-function thisWeek(today = new Date()) {
+/** The dates of the server's week, Monday first, at local midnight. */
+function thisWeek(today = serverToday()) {
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7))
   return Array.from({ length: 7 }, (_, index) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + index))
 }
@@ -52,7 +52,7 @@ type StreakPanelProps = {
  * a missed one, today pulsing gold with a clock until the login).
  */
 export function StreakPanel({ streak, className }: StreakPanelProps) {
-  const todayIndex = (new Date().getDay() + 6) % 7
+  const todayIndex = serverTodayIndex()
   const dates = thisWeek()
 
   return (

@@ -30,7 +30,7 @@ export const site = {
   /** Where the RuneEmpire client can be downloaded; null until it is public. */
   clientDownloadUrl: null as string | null,
 
-  /** The game server's address, copyable from the sidebar; null hides it until it is decided. */
+  /** The game server's address, for a later "copy the server IP" button; null until it is decided (nothing reads it yet). */
   serverAddress: null as string | null,
 
   logoUrl: '/RuneLogo.webp',
@@ -56,7 +56,7 @@ export const site = {
     {
       icon: faCompass,
       title: 'Mi az a Center?',
-      text: 'A szerver weboldala: itt kezeled a fiókod, és itt látod, ki van fent a Discordon. Hamarosan a webshop és a statisztikáid is ide költöznek.',
+      text: 'A szerver weboldala: itt kezeled a fiókod, és itt látod, ki van fent a Discordon. Itt látod a statisztikáidat és a barátaidat is, hamarosan pedig a webshop is ide költözik.',
     },
     {
       icon: faDesktop,

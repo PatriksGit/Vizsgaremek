@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react'
 
 /*
- * Stand-in for the player's own skin until the skin endpoint and the 3D
- * viewer (skinview3d) arrive: a Steve-coloured figure built from CSS 3D boxes.
+ * The stand-in figure when the 3D skin viewer cannot run or the skin cannot
+ * be loaded: a Steve-coloured figure built from CSS 3D boxes.
  */
 
 type BoxProps = {

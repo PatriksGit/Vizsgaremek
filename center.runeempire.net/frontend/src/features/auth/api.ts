@@ -52,8 +52,12 @@ export type RegistrationRequest = {
 
 export type PendingRegistration = {
   email: string
-  /** How long the emailed code works, counted when the response arrived. */
-  expiresInMinutes: number
+  /**
+   * How long the emailed code works, counted when the response arrived; null
+   * when the player opens the code step for a code mailed earlier (after a
+   * reload), whose time is not known here.
+   */
+  expiresInMinutes: number | null
 }
 
 /** Parks the registration and emails the code that creates the account. */
@@ -66,7 +70,9 @@ export async function startRegistration(request: RegistrationRequest): Promise<P
     terms: request.termsAccepted,
     age_confirmed: request.ageConfirmed,
   })
-  const millisecondsLeft = Date.parse(response.data.data.expires_at) - Date.now()
+  // Counted on the server's clock (its Date header): the visitor's clock can be hours off.
+  const serverNow = Date.parse(String(response.headers.date))
+  const millisecondsLeft = Date.parse(response.data.data.expires_at) - (Number.isNaN(serverNow) ? Date.now() : serverNow)
   return { email: response.data.data.email, expiresInMinutes: Math.max(1, Math.round(millisecondsLeft / 60_000)) }
 }
 

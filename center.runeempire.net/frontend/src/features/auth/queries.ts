@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
-import { fetchCurrentAccount, login, logout, startRegistration, verifyRegistration } from './api'
+import { fetchCurrentAccount, login, logout, startRegistration, verifyRegistration, type Account } from './api'
 
 /** The logged-in account (null for a guest); every login, logout and 401 updates it. */
 export const accountQueryKey = ['account'] as const
@@ -19,12 +19,21 @@ export function useAccount() {
   })
 }
 
+/**
+ * Sets the account a login, registration or logout just decided. A session
+ * check sent before it would answer for the old session, so it is dropped first.
+ */
+async function setAccount(queryClient: QueryClient, account: Account | null) {
+  await queryClient.cancelQueries({ queryKey: accountQueryKey })
+  queryClient.setQueryData(accountQueryKey, account)
+}
+
 export function useLogin() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: login,
-    onSuccess: (account) => queryClient.setQueryData(accountQueryKey, account),
+    onSuccess: (account) => setAccount(queryClient, account),
   })
 }
 
@@ -33,7 +42,7 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: logout,
-    onSuccess: () => queryClient.setQueryData(accountQueryKey, null),
+    onSuccess: () => setAccount(queryClient, null),
   })
 }
 
@@ -46,6 +55,6 @@ export function useVerifyRegistration() {
 
   return useMutation({
     mutationFn: verifyRegistration,
-    onSuccess: (account) => queryClient.setQueryData(accountQueryKey, account),
+    onSuccess: (account) => setAccount(queryClient, account),
   })
 }

@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-import { NO_DATA } from './stats'
+import { NO_DATA, serverTodayIndex } from './stats'
 
 const DAY_SHORT = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V']
 const DAY_NAMES = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
@@ -24,8 +24,7 @@ function duration(minutes: number) {
 
 /** The days of this week up to today; the rest of the week stays empty. */
 function playedSoFar(week: number[]) {
-  const todayIndex = (new Date().getDay() + 6) % 7
-  return week.slice(0, todayIndex + 1)
+  return week.slice(0, serverTodayIndex() + 1)
 }
 
 type PlaytimeCardProps = {
@@ -80,7 +79,7 @@ export function PlaytimeCard({ week, className }: PlaytimeCardProps) {
 }
 
 function WeekChart({ week, total }: { week: number[]; total: number }) {
-  const todayIndex = (new Date().getDay() + 6) % 7
+  const todayIndex = serverTodayIndex()
   const shown = playedSoFar(week)
 
   // Three equal steps of whole hours, high enough for the best day.

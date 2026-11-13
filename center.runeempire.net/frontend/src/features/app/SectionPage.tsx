@@ -24,7 +24,7 @@ export function SectionPage({ item }: { item: NavItem }) {
         {item.children?.map((child) => {
           const content = (
             <>
-              <IconBadge icon={child.icon} tone="gold" />
+              <IconBadge icon={child.icon} />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="font-heading text-xl text-foreground">{child.label}</span>
                 {child.description && <span className="text-sm text-muted-foreground">{child.description}</span>}

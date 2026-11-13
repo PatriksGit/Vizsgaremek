@@ -15,16 +15,14 @@ import { applyApiError, formMessage } from './errors'
 import { FormAlert } from './FormAlert'
 import { useVerifyRegistration } from './queries'
 import { CODE_LENGTH, codeSchema, type CodeValues } from './schemas'
+import { linkButtonClass } from './styles'
 
 type RegisterCodeStepProps = {
   pending: PendingRegistration
-  /** Sends a fresh code to the same address. */
-  onResend: () => Promise<void>
+  /** Sends a fresh code to the same address; false when the details went back to be fixed. */
+  onResend: () => Promise<boolean>
   onBack: () => void
 }
-
-const linkButtonClass =
-  'rounded-sm font-medium text-foreground underline underline-offset-4 outline-none hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60'
 
 export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStepProps) {
   const verify = useVerifyRegistration()
@@ -53,7 +51,8 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
     form.clearErrors()
     setResending(true)
     try {
-      await onResend()
+      // Refused details took the player back to the details step: no code went out.
+      if (!(await onResend())) return
       form.reset({ code: '' })
       toast.success('Új kódot küldtünk. A korábbi kód már nem érvényes.')
     } catch (error) {
@@ -74,7 +73,9 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
           <span className="font-medium wrap-anywhere text-foreground">{pending.email}</span>
         </p>
         <p className="mt-1 text-sm text-pretty text-muted-foreground">
-          {pending.expiresInMinutes} percig érvényes. Ha nem látod, nézd meg a spam mappát is.
+          {pending.expiresInMinutes === null
+            ? 'Írd be a nemrég kapott kódot: a fiók azokkal az adatokkal jön létre, amelyekkel a kódot kérted.'
+            : `${pending.expiresInMinutes} percig érvényes. Ha nem látod, nézd meg a spam mappát is.`}
         </p>
       </div>
 

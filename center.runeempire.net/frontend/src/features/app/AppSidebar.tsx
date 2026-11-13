@@ -26,7 +26,7 @@ import { useAccount, useLogout } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
-import { ACCOUNT_NAV, isActive, NAV, type NavItem, type NavLinkItem } from './nav'
+import { ACCOUNT_NAV, isActive, isPage, NAV, type NavItem, type NavLinkItem } from './nav'
 
 /** Keyboard focus only: a mouse click lets go of the focus (blurAfterPointerClick), so no ring stays behind. */
 const focusRing = 'outline-none focus-visible:ring-2 focus-visible:ring-primary/60'
@@ -84,7 +84,7 @@ export function AppSidebar() {
 /** A page of its own on the top level (Áttekintés): gold, with a gold bar on the sidebar's edge, while it is open. */
 function TopLink({ item }: { item: NavItem }) {
   const { pathname } = useLocation()
-  const current = item.to === pathname
+  const current = isPage(item.to, pathname)
   const Icon = item.icon
 
   return (
@@ -156,7 +156,7 @@ function SubLink({ item }: { item: NavLinkItem }) {
     )
   }
 
-  const current = item.to === pathname
+  const current = isPage(item.to, pathname)
   return (
     <Link
       to={item.to}
@@ -180,7 +180,7 @@ function PlayerCard() {
   const { data: account } = useAccount()
   const { pathname } = useLocation()
   const logout = useLogout()
-  const current = pathname === ACCOUNT_NAV.to
+  const current = isPage(ACCOUNT_NAV.to, pathname)
 
   return (
     <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card py-2 pr-2 pl-2.5">

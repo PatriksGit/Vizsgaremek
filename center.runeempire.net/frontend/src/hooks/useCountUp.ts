@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -11,10 +11,13 @@ function prefersReducedMotion() {
  */
 export function useCountUp(target: number, { durationMs = 1200, delayMs = 0 } = {}) {
   const [value, setValue] = useState(() => (prefersReducedMotion() ? target : 0))
+  // Where a count starts: 0 the first time, the number on screen when the target changes later.
+  const shown = useRef(value)
 
   useEffect(() => {
     if (prefersReducedMotion()) return
 
+    const from = shown.current
     let frame = 0
     // Taken from the first frame: a frame's timestamp can be slightly earlier
     // than performance.now() here, which would make the progress negative.
@@ -23,7 +26,8 @@ export function useCountUp(target: number, { durationMs = 1200, delayMs = 0 } = 
     const tick = (now: number) => {
       start ??= now
       const progress = Math.min((now - start) / durationMs, 1)
-      setValue(Math.round(target * (1 - (1 - progress) ** 3)))
+      shown.current = Math.round(from + (target - from) * (1 - (1 - progress) ** 3))
+      setValue(shown.current)
       if (progress < 1) frame = requestAnimationFrame(tick)
     }
 

@@ -1,29 +1,35 @@
 import { faEnvelope, faPaperPlane, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useEffect, useId, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field, FieldContent, FieldError, FieldGroup } from '@/components/ui/field'
+import { ApiError } from '@/lib/api'
 
 import { applyApiError } from './errors'
 import { PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
 import { LegalDialog } from './LegalDialog'
 import { PASSWORD_MIN_LENGTH, registerFieldForKey, type RegisterValues } from './schemas'
+import { linkButtonClass } from './styles'
 
 type RegisterDetailsStepProps = {
   /** Sends the details; resolves once the code is on its way. */
   onSubmit: (values: RegisterValues) => Promise<void>
   /** Back from the code step to fix the address: focus lands on the e-mail field. */
   focusEmail?: boolean
+  /** Opens the code step for a code already mailed to this address (after a reload, within the cooldown). */
+  onEnterCode: (email: string) => void
 }
 
 /** The details form; its values live in the parent's form, so they survive the code step. */
-export function RegisterDetailsStep({ onSubmit, focusEmail = false }: RegisterDetailsStepProps) {
+export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode }: RegisterDetailsStepProps) {
   const form = useFormContext<RegisterValues>()
   const { errors, isSubmitting } = form.formState
+  // A 429: a code went to this address a moment ago (or too many tries); that code may still be in the mailbox.
+  const [codeMayBeOut, setCodeMayBeOut] = useState(false)
 
   useEffect(() => {
     if (focusEmail) form.setFocus('email')
@@ -32,8 +38,10 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false }: RegisterDe
   const submit = form.handleSubmit(async (values) => {
     try {
       // On success the parent moves on to the code step, which unmounts this form.
+      setCodeMayBeOut(false)
       await onSubmit(values)
     } catch (error) {
+      setCodeMayBeOut(error instanceof ApiError && error.status === 429)
       applyApiError(error, form.setError, registerFieldForKey)
     }
   })
@@ -42,6 +50,14 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false }: RegisterDe
     <form onSubmit={submit} noValidate>
       <FieldGroup className="gap-4">
         <FormAlert message={errors.root?.server?.message} />
+        {codeMayBeOut && (
+          <p className="text-sm text-muted-foreground">
+            Már megkaptad a kódot?{' '}
+            <button type="button" onClick={() => onEnterCode(form.getValues('email'))} className={linkButtonClass}>
+              Írd be
+            </button>
+          </p>
+        )}
         <TextField
           label="Játékosnév"
           icon={faUser}

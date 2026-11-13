@@ -34,6 +34,25 @@ export type MyStats = {
   unavailable: StatPart[]
 }
 
+/**
+ * The zone RuneActivity counts its days in (the backend's runeactivity.timezone):
+ * the stats' week and today are Budapest's, whatever zone the browser is in.
+ */
+const SERVER_ZONE = 'Europe/Budapest'
+
+const serverDate = new Intl.DateTimeFormat('en-CA', { timeZone: SERVER_ZONE, year: 'numeric', month: 'numeric', day: 'numeric' })
+
+/** Today in the server's zone, as a local-midnight Date with that year, month and day. */
+export function serverToday(now = new Date()) {
+  const part = (type: 'year' | 'month' | 'day') => Number(serverDate.formatToParts(now).find((entry) => entry.type === type)?.value)
+  return new Date(part('year'), part('month') - 1, part('day'))
+}
+
+/** Today's place in the stats' week, Monday first (0-6). */
+export function serverTodayIndex() {
+  return (serverToday().getDay() + 6) % 7
+}
+
 /** What the overview writes where a number could not be loaded. */
 export const NO_DATA = '—'
 
@@ -92,7 +111,7 @@ export function toPunishment(punishment: MyStats['punishment']): Punishment | nu
 
 export const runeCountFormat = new Intl.NumberFormat('hu-HU')
 
-/** Whole hours from ten up, one decimal below ("2,5"). */
+/** Hours with at most one decimal ("2,5"). */
 export const hoursFormat = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 1 })
 
 /** "2026.11.20.": fits a pill on one line. */

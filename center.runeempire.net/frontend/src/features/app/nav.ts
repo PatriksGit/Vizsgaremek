@@ -12,6 +12,7 @@ import {
   User,
   Users,
 } from 'lucide-react'
+import { matchPath } from 'react-router'
 
 export type NavLinkItem = {
   label: string
@@ -76,13 +77,12 @@ export const NAV: NavItem[] = [
 /** The phone tab bar, five tabs in thumb reach: the overview, the shop, the community, the log and the account. */
 export const TAB_NAV: NavItem[] = [NAV[0], NAV[2], NAV[3], LOG, ACCOUNT_NAV]
 
-/** Whether the current page is this item, or one of the pages in its group. */
-export function isActive(item: NavItem, pathname: string) {
-  return item.to === pathname || (item.children?.some((child) => child.to === pathname) ?? false)
+/** Whether the address is this page, matched as the router does (any case, a trailing slash allowed). */
+export function isPage(to: string, pathname: string) {
+  return matchPath(to, pathname) !== null
 }
 
-/** Where a page lives, if it is built; for links outside the menu, such as the overview's tiles. */
-export function builtPage(to: string) {
-  const items = NAV.flatMap((item) => [item, ...(item.children ?? [])])
-  return items.some((item) => item.to === to && !item.comingSoon) ? to : undefined
+/** Whether the current page is this item, or one of the pages in its group. */
+export function isActive(item: NavItem, pathname: string) {
+  return isPage(item.to, pathname) || (item.children?.some((child) => isPage(child.to, pathname)) ?? false)
 }

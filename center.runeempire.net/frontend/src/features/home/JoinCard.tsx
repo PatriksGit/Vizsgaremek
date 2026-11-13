@@ -25,7 +25,7 @@ export function JoinCard() {
       style={enterAfter(500)}
     >
       <div className="flex items-start gap-3">
-        <IconBadge icon={faGamepad} tone="gold" />
+        <IconBadge icon={faGamepad} />
         <div>
           <h2 id="join-title" className="font-heading text-xl text-foreground">
             Így csatlakozol a szerverhez

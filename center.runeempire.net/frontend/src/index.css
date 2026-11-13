@@ -20,7 +20,6 @@
     --color-raised: var(--raised);
     --color-sunken: var(--sunken);
     --color-line: var(--line);
-    --color-rune: var(--rune);
     --color-ok: var(--ok);
     --color-warn: var(--warn);
     --color-danger: var(--danger);
@@ -35,9 +34,6 @@
     --color-sidebar-ring: var(--sidebar-ring);
     --color-bedrock: var(--bedrock);
     --color-xp: var(--xp);
-    --color-enchant: var(--enchant);
-    --color-ember: var(--ember);
-    --color-diamond: var(--diamond);
     --color-redstone: var(--redstone);
     --color-discord: var(--discord);
     --color-ring: var(--ring);
@@ -75,9 +71,9 @@
  *   foreground #F2EDE4 text       soft     #C9C2B5 labels   muted #A39C8F secondary
  *   faint      #8C8577 captions   primary  #E9B44C gold: current page, today, rank
  * Status: ok #5FBF7A (online, done, no punishment), warn #F5D04A (mute),
- * danger #E5675A (ban, missed), lock #FF3B3B (locked account); rune #5CC8F2.
- * Older material tones (xp, enchant, ember, diamond, redstone) stay for the
- * pages that still use IconBadge.
+ * danger #E5675A (ban, missed), lock #FF3B3B (locked account).
+ * Older material tones: xp (the login page's status dot) and redstone (the
+ * account page's logout button).
  */
 :root {
     color-scheme: dark;
@@ -105,7 +101,6 @@
     --raised: #1e1b15;
     --sunken: #1a1813;
     --line: #2a251d;
-    --rune: #5cc8f2;
     --ok: #5fbf7a;
     --warn: #f5d04a;
     --danger: #e5675a;
@@ -120,9 +115,6 @@
     --sidebar-ring: #e9b44c;
     --bedrock: #090806;
     --xp: #7ed957;
-    --enchant: #b48cff;
-    --ember: #ff8a3d;
-    --diamond: #5ee0d4;
     --redstone: #ff5e57;
     --discord: #5865f2;
 }
@@ -152,12 +144,6 @@
         scrollbar-width: thin;
         scrollbar-color: rgb(255 255 255 / 0.16) var(--bedrock);
     }
-}
-
-/* A scroll area inside a panel (the sidebar menu): a barely visible thumb, no track. */
-@utility scrollbar-slim {
-    scrollbar-width: thin;
-    scrollbar-color: rgb(255 255 255 / 0.1) transparent;
 }
 
 /*
