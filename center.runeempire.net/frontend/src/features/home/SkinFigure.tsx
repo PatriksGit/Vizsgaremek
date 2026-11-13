@@ -1,11 +1,21 @@
-import { lazy, Suspense, useState } from 'react'
+import { type ComponentProps, type ComponentType, lazy, Suspense, useEffect, useState } from 'react'
 
 import { skinUrl } from '@/components/app/skin'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 import { CubePlayer } from './CubePlayer'
+import type SkinViewer3DView from './SkinViewer3D'
 
-const SkinViewer3D = lazy(() => import('./SkinViewer3D'))
+/** The viewer's code could not be downloaded: report it like a viewer that cannot start, so the CSS Steve stands in. */
+function ViewerUnavailable({ onError }: { onError: () => void }) {
+  useEffect(onError, [onError])
+  return null
+}
+
+// A failed download (a dropped request, or a deploy that replaced the chunk) must not take the whole page down.
+const SkinViewer3D = lazy<ComponentType<ComponentProps<typeof SkinViewer3DView>>>(() =>
+  import('./SkinViewer3D').catch(() => ({ default: ViewerUnavailable })),
+)
 
 /** The stand-in Steve made of CSS boxes, for when the 3D viewer cannot run or the skin cannot load. */
 function Stand() {

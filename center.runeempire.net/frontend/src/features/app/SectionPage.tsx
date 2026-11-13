@@ -11,8 +11,8 @@ import { cn } from '@/lib/utils'
 import type { NavItem } from './nav'
 
 /**
- * The landing page of a menu item with a dropdown (Rúnák): its pages
- * as cards. On phones the tab bar leads here, since it has no dropdowns.
+ * The landing page of a menu group (Rúnák): its pages as cards. On
+ * phones the tab bar leads here, since it has no groups.
  */
 export function SectionPage({ item }: { item: NavItem }) {
   return (

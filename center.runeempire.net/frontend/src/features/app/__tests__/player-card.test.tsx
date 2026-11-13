@@ -12,6 +12,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { AppLayout } from '@/features/app/AppLayout'
+import { stubBrowserApis } from '@/test/fakeBackend'
 
 const getMock = vi.hoisted(() => vi.fn())
 
@@ -21,12 +22,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 })
 
 beforeEach(() => {
-  window.matchMedia = ((query: string) => ({
-    matches: false,
-    media: query,
-    addEventListener() {},
-    removeEventListener() {},
-  })) as unknown as typeof window.matchMedia
+  stubBrowserApis()
   getMock.mockImplementation(async (url: string) => {
     if (url === '/auth/me') {
       return { data: { data: { uuid: 'u', username: 'cardplayer', display_name: 'CardPlayer', registered_at: null } } }
@@ -44,7 +40,7 @@ it('clicking the player\'s name opens the account menu', async () => {
       <MemoryRouter initialEntries={['/']}>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route index element={<h1>Áttekintés oldal</h1>} />
+            <Route index element={<h1>Főoldal</h1>} />
           </Route>
         </Routes>
       </MemoryRouter>

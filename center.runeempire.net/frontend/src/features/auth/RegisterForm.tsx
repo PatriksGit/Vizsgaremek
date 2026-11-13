@@ -64,7 +64,10 @@ export function RegisterForm() {
    */
   async function resendCode(): Promise<boolean> {
     try {
-      await requestCode(form.getValues(), true)
+      // Trimmed like a submit, so going back and sending the same details still
+      // matches; details edited into an invalid shape go as typed, for the backend to answer.
+      const parsed = registerSchema.safeParse(form.getValues())
+      await requestCode(parsed.success ? parsed.data : form.getValues(), true)
       return true
     } catch (error) {
       if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {

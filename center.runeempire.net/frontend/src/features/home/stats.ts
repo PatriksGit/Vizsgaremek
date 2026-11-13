@@ -12,11 +12,6 @@ import type { Streak } from './StreakPanel'
 export type StatPart = 'runes' | 'playtime' | 'streak' | 'rank' | 'punishment'
 
 /**
- * GET /api/me/stats: the logged-in player's numbers from the game plugins.
- * Times are UTC ISO 8601. A part whose plugin could not be read is null and
- * named in `unavailable`.
- */
-/**
  * The text colour of a rank: the #RRGGBB set in game with
  * `/lp group <group> meta set color`, or none (the neutral text colour).
  */
@@ -24,6 +19,11 @@ export function rankColor(color: string | null): CSSProperties | undefined {
   return color ? { color } : undefined
 }
 
+/**
+ * GET /api/me/stats: the logged-in player's numbers from the game plugins.
+ * Times are UTC ISO 8601. A part whose plugin could not be read is null and
+ * named in `unavailable`.
+ */
 export type MyStats = {
   runes: number | null
   playtime: {
@@ -56,6 +56,10 @@ export function serverToday(now = new Date()) {
   const part = (type: 'year' | 'month' | 'day') => Number(serverDate.formatToParts(now).find((entry) => entry.type === type)?.value)
   return new Date(part('year'), part('month') - 1, part('day'))
 }
+
+/** The week's days, Monday first: short for the streak boxes and the chart, whole for screen readers and the tooltip. */
+export const DAY_SHORT = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V']
+export const DAY_NAMES = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
 
 /** Today's place in the stats' week, Monday first (0-6). */
 export function serverTodayIndex() {

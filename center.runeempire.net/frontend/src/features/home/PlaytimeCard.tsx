@@ -7,10 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-import { NO_DATA, serverTodayIndex } from './stats'
-
-const DAY_SHORT = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V']
-const DAY_NAMES = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
+import { DAY_NAMES, DAY_SHORT, NO_DATA, serverTodayIndex } from './stats'
 
 const chartConfig = { minutes: { label: 'Játékidő', color: 'var(--primary)' } } satisfies ChartConfig
 

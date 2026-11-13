@@ -3,7 +3,7 @@ import { Check, Clock, Flame, X } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-import { NO_DATA, serverToday, serverTodayIndex } from './stats'
+import { DAY_NAMES, DAY_SHORT, NO_DATA, serverToday, serverTodayIndex } from './stats'
 
 /** One day of this week's login streak, as GET /api/me/stats sends it. */
 export type StreakDayStatus = 'done' | 'missed' | 'pending' | 'future' | 'before'
@@ -15,9 +15,6 @@ export type Streak = {
   /** This week, Monday first: seven days. */
   week: StreakDayStatus[]
 }
-
-const DAY_SHORT = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V']
-const DAY_NAMES = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
 
 const LOOK: Record<StreakDayStatus, { box: string; date: string; text: string }> = {
   done: { box: 'border border-ok/35 bg-ok/12', date: 'text-[#A9D9B5]', text: 'beléptél' },

@@ -14,6 +14,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { HomePage } from '@/features/home/HomePage'
+import { stubBrowserApis } from '@/test/fakeBackend'
 
 const getMock = vi.hoisted(() => vi.fn())
 
@@ -32,17 +33,7 @@ const account = {
 
 beforeEach(() => {
   vi.stubEnv('TZ', 'Europe/Budapest')
-  window.matchMedia = ((query: string) => ({
-    matches: false,
-    media: query,
-    addEventListener() {},
-    removeEventListener() {},
-  })) as unknown as typeof window.matchMedia
-  globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
+  stubBrowserApis()
   vi.useFakeTimers({ toFake: ['Date'] })
   // Wednesday 2026-11-11 20:00 in Budapest.
   vi.setSystemTime(new Date('2026-11-11T19:00:00Z'))

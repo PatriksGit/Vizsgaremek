@@ -1,4 +1,4 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 /*
  * Axios client for the Laravel API. Session login: axios already echoes the
@@ -26,6 +26,8 @@ export const http = axios.create({
   headers: { Accept: 'application/json' },
   // A hanging backend ends in an error the page can show, not in an endless wait.
   timeout: 15_000,
+  // A timeout gets its own code (ETIMEDOUT), apart from an aborted request (ECONNABORTED).
+  transitional: { clarifyTimeoutError: true },
 })
 
 function hasXsrfCookie(): boolean {
@@ -62,6 +64,8 @@ type ErrorBody = { message?: unknown; errors?: Record<string, unknown> }
 
 function toApiError(error: AxiosError): ApiError {
   const response = error.response
+  // The request may well have arrived (a registration mails its code before it answers): the answer did not.
+  if (!response && error.code === AxiosError.ETIMEDOUT) return new ApiError(0, 'A szerver nem válaszolt időben, próbáld újra később.')
   if (!response) return new ApiError(0, 'Nem sikerült elérni a szervert. Ellenőrizd az internetkapcsolatod.')
 
   // The dev proxy answers with an empty or HTML body while the backend is down.

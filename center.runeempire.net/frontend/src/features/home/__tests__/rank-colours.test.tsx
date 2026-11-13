@@ -13,6 +13,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { HomePage } from '@/features/home/HomePage'
+import { stubBrowserApis } from '@/test/fakeBackend'
 
 const getMock = vi.hoisted(() => vi.fn())
 
@@ -33,17 +34,7 @@ const account = {
 const MANAGER_RED = 'rgb(229, 103, 90)'
 
 beforeEach(() => {
-  window.matchMedia = ((query: string) => ({
-    matches: false,
-    media: query,
-    addEventListener() {},
-    removeEventListener() {},
-  })) as unknown as typeof window.matchMedia
-  globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
+  stubBrowserApis()
 
   getMock.mockImplementation(async (url: string) => {
     if (url === '/auth/me') return { data: { data: account } }

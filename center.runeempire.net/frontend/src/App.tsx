@@ -41,7 +41,7 @@ function RootLayout() {
 
 /**
  * The menu's pages that have no content of their own yet, so their links do
- * not fall through to the overview: a page with a dropdown lists its pages,
+ * not fall through to the overview: a group's page lists its pages,
  * the rest say they are on the way. Pages marked coming soon get no route.
  */
 const menuPages = NAV.flatMap((item): NavItem[] => [item, ...(item.children ?? [])])

@@ -17,6 +17,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { AppLayout } from '@/features/app/AppLayout'
+import { stubBrowserApis } from '@/test/fakeBackend'
 
 const getMock = vi.hoisted(() => vi.fn())
 
@@ -26,12 +27,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 })
 
 beforeEach(() => {
-  window.matchMedia = ((query: string) => ({
-    matches: false,
-    media: query,
-    addEventListener() {},
-    removeEventListener() {},
-  })) as unknown as typeof window.matchMedia
+  stubBrowserApis()
   getMock.mockImplementation(async (url: string) => {
     if (url === '/auth/me') {
       return { data: { data: { uuid: 'u', username: 'reprouser', display_name: 'ReproUser', registered_at: null } } }

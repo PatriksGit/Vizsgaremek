@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useLocation } from 'react-router'
+import { matchPath, useLocation } from 'react-router'
 
 import { ServerBackdrop } from '@/components/ServerBackdrop'
 import { site } from '@/config/site'
@@ -18,7 +18,8 @@ import { RegisterForm } from './RegisterForm'
  */
 export function AuthPage() {
   const { pathname } = useLocation()
-  const mode: AuthMode = pathname === '/register' ? 'register' : 'login'
+  // Matched like the route itself: /register/ and /Register open the registration form too.
+  const mode: AuthMode = matchPath('/register', pathname) ? 'register' : 'login'
 
   return (
     <div className="relative isolate flex min-h-dvh items-center justify-center bg-background px-4 py-10 sm:px-6">

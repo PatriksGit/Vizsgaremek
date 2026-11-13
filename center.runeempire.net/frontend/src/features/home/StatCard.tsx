@@ -59,9 +59,7 @@ export function StatIcon({ icon }: { icon: IconDefinition }) {
   return (
     <span
       aria-hidden="true"
-      className={cn(
-        'grid size-11 shrink-0 place-items-center rounded-xl bg-raised text-soft shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] md:size-13 md:rounded-[14px]',
-      )}
+      className="grid size-11 shrink-0 place-items-center rounded-xl bg-raised text-soft shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] md:size-13 md:rounded-[14px]"
     >
       <FontAwesomeIcon icon={icon} className="size-5 md:size-5.75" />
     </span>

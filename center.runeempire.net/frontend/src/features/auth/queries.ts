@@ -19,12 +19,26 @@ export function useAccount() {
   })
 }
 
+/** Whether the session ended with the player's own logout (not a 401, not a guest's first visit). */
+let loggedOutOnPurpose = false
+
 /**
- * Sets the account a login, registration or logout just decided. A session
- * check sent before it would answer for the old session, so it is dropped first.
+ * Whether the last session ended with the player's own logout. RequireAccount
+ * then sends them to log in without the page they were on: the next login,
+ * maybe another account, starts at home.
  */
-async function setAccount(queryClient: QueryClient, account: Account | null) {
-  await queryClient.cancelQueries({ queryKey: accountQueryKey })
+export function endedByLogout() {
+  return loggedOutOnPurpose
+}
+
+/**
+ * Sets the account a login, registration or logout just decided. Any request
+ * still on its way answers for the old session (a session check, or a 401 that
+ * would log the new account out), so every one of them is dropped first.
+ */
+async function setAccount(queryClient: QueryClient, account: Account | null, byLogout = false) {
+  await queryClient.cancelQueries()
+  loggedOutOnPurpose = byLogout
   queryClient.setQueryData(accountQueryKey, account)
 }
 
@@ -42,7 +56,7 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: logout,
-    onSuccess: () => setAccount(queryClient, null),
+    onSuccess: () => setAccount(queryClient, null, true),
   })
 }
 

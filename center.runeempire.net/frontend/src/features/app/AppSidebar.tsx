@@ -67,7 +67,7 @@ function IconTile({ icon, state }: { icon: IconDefinition; state: TileState }) {
 /**
  * Wide screens: the menu down the left edge, always open, sticking while the
  * page scrolls. The logo on top, then the pages (Rúnák opens and closes like
- * a folder, sliding), the player and a gear at the bottom that opens the
+ * a folder, sliding), and at the bottom the player's card, which opens the
  * settings and logout. Phones get the tab bar instead (MobileTabBar).
  */
 export function AppSidebar() {
@@ -84,7 +84,8 @@ export function AppSidebar() {
         <SidebarSeparator className="mx-0" />
       </SidebarHeader>
 
-      <SidebarContent>
+      {/* Out to the sidebar's edge, so the open page's gold bar is inside the scrolling box and not cut off. */}
+      <SidebarContent className="-mx-4 px-4">
         <nav aria-label="Főmenü">
           <SidebarMenu className="gap-1">
             {NAV.map((item) => (
@@ -195,10 +196,10 @@ function SubLink({ item }: { item: NavLinkItem }) {
   )
 }
 
-/** A row in the gear's menu; highlighted by the pointer or the arrow keys. */
+/** A row in the account menu; highlighted by the pointer or the arrow keys. */
 const menuRow = 'flex h-10 cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none select-none'
 
-/** The player at the bottom: their head and name, and the gear that opens the settings and logout above it. */
+/** The player at the bottom: their head, name and a gear; the whole card opens the settings and logout above it. */
 function PlayerCard() {
   const { data: account } = useAccount()
   const { pathname } = useLocation()

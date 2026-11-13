@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/manrope";
 @import "@fontsource-variable/fraunces/opsz.css";
+/* Under the utilities, so a size-* class sets an icon's size (main.tsx turns off the runtime copy). */
+@import "@fortawesome/fontawesome-svg-core/styles.css" layer(base);
 
 /*
  * Deliberately inactive: no element has .dark. The site is dark through its own
@@ -133,7 +135,7 @@
 }
 
 
-/* The black glass of the login card and the menus. */
+/* The black glass of the login card and the error page. */
 @utility glass {
     @apply rounded-3xl border border-white/10 bg-black/55 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl;
 }

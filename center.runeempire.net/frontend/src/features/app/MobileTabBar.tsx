@@ -2,7 +2,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 
 import { PlayerHead } from '@/components/app/PlayerHead'
-import { SoonTooltip } from '@/components/app/SoonTooltip'
 import { useAccount } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
@@ -37,20 +36,6 @@ export function MobileTabBar() {
             ) : (
               <FontAwesomeIcon icon={item.icon} className="size-4.75" aria-hidden="true" />
             )
-
-          if (item.comingSoon) {
-            return (
-              <li key={item.label}>
-                <SoonTooltip>
-                  <span aria-disabled="true" className={cn(tabBase, 'cursor-not-allowed font-semibold text-muted-foreground/45')}>
-                    <span className={pill}>{icon}</span>
-                    {item.label}
-                    <span className="sr-only"> (hamarosan)</span>
-                  </span>
-                </SoonTooltip>
-              </li>
-            )
-          }
 
           const current = isActive(item, pathname)
           return (

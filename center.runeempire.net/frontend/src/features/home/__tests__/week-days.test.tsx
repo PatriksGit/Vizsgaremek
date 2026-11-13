@@ -14,6 +14,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { HomePage } from '@/features/home/HomePage'
+import { stubBrowserApis } from '@/test/fakeBackend'
 
 const getMock = vi.hoisted(() => vi.fn())
 
@@ -60,17 +61,7 @@ async function readWeek() {
 }
 
 beforeEach(() => {
-  window.matchMedia = ((query: string) => ({
-    matches: false,
-    media: query,
-    addEventListener() {},
-    removeEventListener() {},
-  })) as unknown as typeof window.matchMedia
-  globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
+  stubBrowserApis()
   vi.useFakeTimers({ toFake: ['Date'] })
 })
 

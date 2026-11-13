@@ -16,9 +16,9 @@ export type NavLinkItem = {
   /** A solid Font Awesome icon: the menu's one icon family (owner, 2026-11-13). */
   icon: IconDefinition
   to: string
-  /** The faint line under the label in a dropdown. */
+  /** The faint line under the label on its group's page (SectionPage). */
   description?: string
-  /** Not built yet: shown faded, not clickable, with a "Hamarosan" tooltip. */
+  /** Not built yet: shown faded, not clickable, marked "Hamarosan". */
   comingSoon: boolean
 }
 
@@ -27,7 +27,7 @@ export type NavItem = NavLinkItem & {
   children?: NavLinkItem[]
 }
 
-/** The account settings: the gear beside the player in the sidebar, on phones the tab bar's last tab. */
+/** The account settings: in the menu of the player card at the bottom of the sidebar, on phones the tab bar's last tab. */
 export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faUser, to: '/beallitasok', comingSoon: false }
 
 /**
