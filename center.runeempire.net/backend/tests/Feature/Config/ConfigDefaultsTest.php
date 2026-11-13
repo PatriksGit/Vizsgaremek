@@ -112,6 +112,13 @@ class ConfigDefaultsTest extends TestCase
      * A limit of 0 would lock the endpoint for everyone, so a zero, an empty
      * value or a typo in .env becomes the strictest working limit, 1.
      */
+    public function test_skins_are_read_from_the_skinrestorer_database_by_default(): void
+    {
+        $config = $this->configWith('database.php', ['DB_SKINRESTORER_DATABASE' => null]);
+
+        $this->assertSame('SkinRestorer', $config['plugins']['skinrestorer']);
+    }
+
     #[DataProvider('brokenRateLimits')]
     public function test_a_broken_rate_limit_is_at_least_one(string $variable, string $value, string $limiter, string $key): void
     {
@@ -137,6 +144,7 @@ class ConfigDefaultsTest extends TestCase
             'RATE_LIMITS_PASSWORD_FORGOT_PER_HOUR' => ['password_forgot', 'per_hour'],
             'RATE_LIMITS_PASSWORD_RESET_PER_MINUTE' => ['password_reset', 'per_minute'],
             'RATE_LIMITS_PASSWORD_RESET_GUESSES_PER_DAY' => ['password_reset_guesses', 'per_day'],
+            'RATE_LIMITS_SKINS_PER_MINUTE' => ['skins', 'per_minute'],
         ];
 
         $cases = [];

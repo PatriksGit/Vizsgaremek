@@ -1,9 +1,10 @@
+import { useState } from 'react'
+
 import { cn } from '@/lib/utils'
 
-/*
- * Stand-in for the front of the player's own head until the skin endpoint
- * arrives: Steve's 8×8 face, in the same colours as the hero's CubePlayer.
- */
+import { skinUrl } from './skin'
+
+/** Steve's 8x8 face: shown without a name, and when the skin cannot be loaded. */
 const FACE = ['HHHHHHHH', 'HHHHHHHH', 'HSSSSSSH', 'SSSSSSSS', 'SWESSEWS', 'SSSNNSSS', 'SSMSSMSS', 'SSMMMMSS']
 
 const COLOR: Record<string, string> = {
@@ -15,12 +16,33 @@ const COLOR: Record<string, string> = {
   M: '#6b3f28',
 }
 
-export function PlayerHead({ className }: { className?: string }) {
+/** One layer of the head cut out of the skin: the image eight times the box, shifted so the 8x8 square sits in it. */
+const layer = 'pointer-events-none absolute top-[-100%] w-[800%] max-w-none select-none [image-rendering:pixelated]'
+
+/**
+ * The front of a player's head, cut out of their skin: the face (skin pixels
+ * 8-15) with the hat layer (40-47) on top, crisp at any size. Works for the
+ * old 64x32 skins too, since the face sits at the same place there.
+ */
+export function PlayerHead({ name, className }: { name?: string; className?: string }) {
+  const url = name ? skinUrl(name) : null
+  // Remembers which skin failed, so another name gets its own try.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+
+  if (url === null || failedUrl === url) {
+    return (
+      <svg viewBox="0 0 8 8" shapeRendering="crispEdges" aria-hidden="true" className={cn('rounded-md', className)}>
+        {FACE.flatMap((row, y) =>
+          [...row].map((pixel, x) => <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={COLOR[pixel]} />),
+        )}
+      </svg>
+    )
+  }
+
   return (
-    <svg viewBox="0 0 8 8" shapeRendering="crispEdges" aria-hidden="true" className={cn('rounded-md', className)}>
-      {FACE.flatMap((row, y) =>
-        [...row].map((pixel, x) => <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={COLOR[pixel]} />),
-      )}
-    </svg>
+    <span aria-hidden="true" className={cn('relative inline-block shrink-0 overflow-hidden rounded-md bg-raised', className)}>
+      <img src={url} alt="" draggable={false} onError={() => setFailedUrl(url)} className={cn(layer, 'left-[-100%]')} />
+      <img src={url} alt="" draggable={false} className={cn(layer, 'left-[-500%]')} />
+    </span>
   )
 }

@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router'
 
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { SoonTooltip } from '@/components/app/SoonTooltip'
+import { useAccount } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +17,7 @@ const tabBase = 'flex h-full min-h-11 flex-col items-center justify-center gap-1
  */
 export function MobileTabBar() {
   const { pathname } = useLocation()
+  const { data: account } = useAccount()
 
   return (
     <nav
@@ -28,7 +30,7 @@ export function MobileTabBar() {
           const Icon = item.icon
           const icon =
             item.to === ACCOUNT_NAV.to ? (
-              <PlayerHead className="size-6 rounded-[5px]" />
+              <PlayerHead name={account?.display_name} className="size-6 rounded-[5px]" />
             ) : (
               <Icon className="size-5.5" strokeWidth={2} aria-hidden="true" />
             )

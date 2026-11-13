@@ -66,7 +66,7 @@ export function FriendsCard({ friends, className }: { friends?: Friend[]; classN
               className="flex min-h-13 items-center gap-3 sm:min-h-0 sm:rounded-xl sm:border sm:border-border sm:bg-sunken sm:px-3 sm:py-2.5"
             >
               <span className="relative shrink-0">
-                <PlayerHead className="size-8 rounded-sm" />
+                <PlayerHead name={friend.name} className="size-8 rounded-sm" />
                 <span
                   aria-hidden="true"
                   className={cn(

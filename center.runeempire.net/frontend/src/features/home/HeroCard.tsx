@@ -3,16 +3,16 @@ import { Clock } from 'lucide-react'
 import { useAccount } from '@/features/auth/queries'
 import { enterAfter } from '@/lib/motion'
 
-import { CubePlayer } from './CubePlayer'
 import { registeredWithin, registrationDate } from './registration'
+import { SkinFigure } from './SkinFigure'
 import { type Streak, StreakPanel } from './StreakPanel'
 
 /**
  * The top of the overview, on a banner of the server's spawn: the greeting
  * and the player's name with the day they joined, this week's login streak,
- * and their figure. Wide screens (xl, beside the sidebar) keep the three side
- * by side; narrower ones put the streak under the name and the figure. A
- * player on their first day is welcomed, not welcomed back.
+ * and their skin as a 3D figure. Wide screens (xl, beside the sidebar)
+ * keep the three side by side; narrower ones put the streak under the name
+ * and the figure. A player on their first day is welcomed, not welcomed back.
  */
 export function HeroCard({ streak }: { streak?: Streak }) {
   const { data: account } = useAccount()
@@ -62,13 +62,7 @@ export function HeroCard({ streak }: { streak?: Streak }) {
         className="content-in order-last basis-full border-t border-line pt-4 xl:order-0 xl:mr-12 xl:shrink xl:grow-0 xl:basis-100 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-8"
       />
 
-      {/* 32 skin pixels at 6 px: 192 px on wide screens, 112 px on phones. */}
-      <div aria-hidden="true" className="relative h-28 w-14 shrink-0 perspective-distant md:h-48 md:w-24">
-        {/* Tipped a little towards the viewer, so the top of the head shows too. */}
-        <div className="absolute bottom-1 left-1/2 origin-bottom transform-[rotateX(-14deg)] transform-3d max-md:scale-[0.58]">
-          <CubePlayer scale={6} />
-        </div>
-      </div>
+      <SkinFigure name={account?.display_name} />
     </section>
   )
 }

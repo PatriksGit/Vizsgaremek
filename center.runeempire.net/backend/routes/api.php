@@ -10,10 +10,18 @@ use App\Http\Controllers\Auth\StartRegistrationController;
 use App\Http\Controllers\Auth\VerifyPasswordResetCodeController;
 use App\Http\Controllers\Auth\VerifyRegistrationController;
 use App\Http\Controllers\DiscordWidgetController;
+use App\Http\Controllers\PlayerSkinController;
 use Illuminate\Support\Facades\Route;
 
 // Public, like Discord's own widget; cached, so Discord is asked at most once a minute.
 Route::get('/discord-widget', DiscordWidgetController::class)->name('discord-widget');
+
+// Public, like skins in game: a player's skin as a PNG, for heads and the 3D figure.
+// The name follows Account::NAME_PATTERN; anything else is a 404 before the controller.
+Route::get('/players/{name}/skin', PlayerSkinController::class)
+    ->where('name', '[A-Za-z0-9_]{3,16}')
+    ->middleware('throttle:skins')
+    ->name('players.skin');
 
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::post('/register', StartRegistrationController::class)

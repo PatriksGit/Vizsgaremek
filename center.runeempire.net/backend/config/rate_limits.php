@@ -74,4 +74,12 @@ return [
         'per_day' => max(1, (int) env('RATE_LIMITS_PASSWORD_RESET_GUESSES_PER_DAY', 10)),
     ],
 
+    /*
+     * GET /api/players/{name}/skin, per IP. A page with a friends list asks
+     * for one skin per friend; the browser keeps each for five minutes.
+     */
+    'skins' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_SKINS_PER_MINUTE', 120)),
+    ],
+
 ];

@@ -184,7 +184,7 @@ function PlayerCard() {
 
   return (
     <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card py-2 pr-2 pl-2.5">
-      <PlayerHead className="size-8 shrink-0 rounded-sm" />
+      <PlayerHead name={account?.display_name} className="size-8 shrink-0 rounded-sm" />
       <span className="min-w-0 flex-1 truncate font-bold text-foreground">{account?.display_name}</span>
       <DropdownMenu>
         <DropdownMenuTrigger

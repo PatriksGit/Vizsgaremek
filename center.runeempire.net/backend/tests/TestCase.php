@@ -67,6 +67,63 @@ abstract class TestCase extends BaseTestCase
     ];
 
     /**
+     * The game plugins' tables the website reads, as on the server (taken
+     * from the production copy on 2026-11-13, SkinRestorer 15). On the server
+     * each plugin has its own database; in the tests they all sit in the auth
+     * test database (phpunit.xml points every DB_*_DATABASE of a plugin at it).
+     */
+    private const PLUGIN_TABLES = [
+        // SkinRestorer: the skin each player chose (players), and the textures by premium uuid, image URL or custom name.
+        <<<'SQL'
+            CREATE TABLE players (
+              uuid varchar(36) NOT NULL,
+              skin_identifier varchar(2083) DEFAULT NULL,
+              skin_variant varchar(20) DEFAULT NULL,
+              skin_type varchar(20) DEFAULT NULL,
+              offline_mode_warning_dismissed tinyint(1) NOT NULL DEFAULT '0',
+              PRIMARY KEY (uuid)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+            SQL,
+        <<<'SQL'
+            CREATE TABLE player_skins (
+              uuid varchar(36) NOT NULL,
+              last_known_name varchar(16) DEFAULT NULL,
+              value text NOT NULL,
+              signature text NOT NULL,
+              timestamp bigint NOT NULL,
+              PRIMARY KEY (uuid)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+            SQL,
+        <<<'SQL'
+            CREATE TABLE url_skins (
+              url varchar(266) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+              mine_skin_id varchar(36) DEFAULT NULL,
+              value text NOT NULL,
+              signature text NOT NULL,
+              skin_variant varchar(20) NOT NULL,
+              PRIMARY KEY (url, skin_variant)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+            SQL,
+        <<<'SQL'
+            CREATE TABLE custom_skins (
+              name varchar(36) NOT NULL,
+              display_name text,
+              value text NOT NULL,
+              signature text NOT NULL,
+              PRIMARY KEY (name)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+            SQL,
+        <<<'SQL'
+            CREATE TABLE cache (
+              name varchar(16) NOT NULL,
+              uuid varchar(36) DEFAULT NULL,
+              timestamp bigint NOT NULL,
+              PRIMARY KEY (name)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
+            SQL,
+    ];
+
+    /**
      * Refuse to run against anything but the test databases, before the
      * database traits migrate or empty anything. phpunit.xml pins them, but a
      * cached config (php artisan config:cache) would ignore those pins and
@@ -84,17 +141,23 @@ abstract class TestCase extends BaseTestCase
             }
         }
 
+        foreach ((array) $app['config']->get('database.plugins') as $plugin => $database) {
+            if (! str_ends_with((string) $database, '_test')) {
+                throw new RuntimeException("The tests must run on a *_test database, the [{$plugin}] plugin database is [{$database}]. Run php artisan config:clear.");
+            }
+        }
+
         // The database traits run migrate:fresh once per test run, before the
         // first test's transaction. It only empties the default (web) test
         // database, so the auth test database is emptied here and gets the
-        // shared accounts and account_locks tables (no migration of ours
-        // creates them; DDL cannot run inside a test: MySQL commits the open
+        // shared accounts and account_locks tables and the plugins' tables
+        // (no migration of ours creates them; DDL cannot run inside a test: MySQL commits the open
         // transaction on it). An event, not an override: the traits' own
         // methods would replace this class's.
         $app['events']->listen(MigrationsStarted::class, function (): void {
             Schema::connection('global')->dropAllTables();
 
-            foreach (self::AUTH_TABLES as $table) {
+            foreach ([...self::AUTH_TABLES, ...self::PLUGIN_TABLES] as $table) {
                 DB::connection('global')->unprepared($table);
             }
         });

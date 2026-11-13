@@ -63,6 +63,23 @@ return [
     ],
 
     /*
+    |--------------------------------------------------------------------------
+    | Plugin Databases
+    |--------------------------------------------------------------------------
+    |
+    | The game plugins' databases the website reads, on the same MySQL server
+    | as Auth. They are read through the global connection with the database
+    | name in front of the table (SkinRestorer.players), so one request opens
+    | one connection however many plugins it reads, and tests can point them
+    | all at the auth test database.
+    |
+    */
+
+    'plugins' => [
+        'skinrestorer' => env('DB_SKINRESTORER_DATABASE', 'SkinRestorer'),
+    ],
+
+    /*
      * Redis holds the sessions. Laravel merges only "connections" for this file,
      * so the whole redis block is declared here; two things differ from the
      * framework's: the session index defaults to 3 (the instance is shared with

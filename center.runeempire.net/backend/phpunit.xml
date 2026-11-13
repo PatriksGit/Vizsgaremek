@@ -49,6 +49,9 @@
         <env name="DB_GLOBAL_PASSWORD" value="center_test" force="true"/>
         <!-- The MySQL containers' clock, like on the server. -->
         <env name="DB_GLOBAL_CLOCK_TIMEZONE" value="Europe/Budapest" force="true"/>
+        <!-- The plugins' tables live in the auth test database (TestCase::PLUGIN_TABLES). -->
+        <env name="DB_SKINRESTORER_DATABASE" value="auth_test" force="true"/>
+        <env name="RATE_LIMITS_SKINS_PER_MINUTE" value="120" force="true"/>
         <env name="PASSWORD_ARGON2_MEMORY_KIB" value="1024" force="true"/>
         <env name="PASSWORD_ARGON2_ITERATIONS" value="1" force="true"/>
         <env name="PASSWORD_ARGON2_PARALLELISM" value="1" force="true"/>
