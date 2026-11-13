@@ -107,4 +107,42 @@ class ConfigDefaultsTest extends TestCase
             'attempts over the column' => ['REGISTRATION_CODE_MAX_ATTEMPTS', '1000', 'max_attempts', 255],
         ];
     }
+
+    /**
+     * A limit of 0 would lock the endpoint for everyone, so a zero, an empty
+     * value or a typo in .env becomes the strictest working limit, 1.
+     */
+    #[DataProvider('brokenRateLimits')]
+    public function test_a_broken_rate_limit_is_at_least_one(string $variable, string $value, string $limiter, string $key): void
+    {
+        $config = $this->configWith('rate_limits.php', [$variable => $value]);
+
+        $this->assertSame(1, $config[$limiter][$key]);
+    }
+
+    /**
+     * @return array<string, array{string, string, string, string}>
+     */
+    public static function brokenRateLimits(): array
+    {
+        $limits = [
+            'RATE_LIMITS_REGISTER_PER_MINUTE' => ['register', 'per_minute'],
+            'RATE_LIMITS_REGISTER_PER_HOUR' => ['register', 'per_hour'],
+            'RATE_LIMITS_REGISTER_VERIFY_PER_MINUTE' => ['register_verify', 'per_minute'],
+            'RATE_LIMITS_LOGIN_PER_MINUTE' => ['login', 'per_minute'],
+            'RATE_LIMITS_LOGIN_PER_MINUTE_PER_IP' => ['login', 'per_minute_per_ip'],
+            'RATE_LIMITS_PASSWORD_CHANGE_PER_MINUTE' => ['password_change', 'per_minute'],
+            'RATE_LIMITS_REGISTRATION_MAIL_COOLDOWN_SECONDS' => ['registration_mail', 'cooldown_seconds'],
+        ];
+
+        $cases = [];
+
+        foreach ($limits as $variable => [$limiter, $key]) {
+            foreach (['zero' => '0', 'negative' => '-5', 'empty' => '', 'typo' => 'abc'] as $kind => $value) {
+                $cases["{$variable} {$kind}"] = [$variable, $value, $limiter, $key];
+            }
+        }
+
+        return $cases;
+    }
 }
