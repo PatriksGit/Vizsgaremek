@@ -14,8 +14,10 @@ type SkinViewer3DProps = {
 }
 
 /**
- * The player's skin as a 3D figure (skinview3d on three.js), turned a little
- * towards the greeting and breathing idly; it can be turned by dragging.
+ * The player's skin as a 3D figure (skinview3d on three.js), slowly turning
+ * round and breathing idly; dragging turns it by hand (it carries on turning
+ * when let go). Under reduced motion it stands still, turned a little
+ * towards the greeting.
  * Loaded on its own, so three.js only downloads with the overview's hero.
  * Hidden until the skin is on it, then faded in, so no blank or default
  * figure shows first.
@@ -45,6 +47,8 @@ export default function SkinViewer3D({ url, width, height, onReady, onError }: S
     viewer.playerWrapper.rotation.y = -0.45
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       viewer.animation = new IdleAnimation()
+      viewer.autoRotate = true
+      viewer.autoRotateSpeed = 0.6
     }
 
     viewer

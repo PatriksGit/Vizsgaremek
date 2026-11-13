@@ -66,11 +66,12 @@ export function SkinFigure({ name }: { name?: string }) {
     <div aria-hidden="true" className="relative grid h-32 w-18 shrink-0 place-items-center md:h-50 md:w-30">
       <Silhouette
         className={cn(
-          'col-start-1 row-start-1 transition-opacity duration-500 motion-reduce:transition-none',
+          // Under the figure and never in the way of dragging it, even while fading out.
+          'pointer-events-none col-start-1 row-start-1 transition-opacity duration-500 motion-reduce:transition-none',
           readyName === name && 'opacity-0',
         )}
       />
-      <div className="col-start-1 row-start-1">
+      <div className="relative z-10 col-start-1 row-start-1">
         <Suspense fallback={null}>
           <SkinViewer3D
             url={skinUrl(name)}
