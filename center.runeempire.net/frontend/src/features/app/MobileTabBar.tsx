@@ -1,18 +1,18 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 
+import { PlayerHead } from '@/components/app/PlayerHead'
 import { SoonTooltip } from '@/components/app/SoonTooltip'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
-import { isActive, TAB_NAV } from './nav'
+import { ACCOUNT_NAV, isActive, TAB_NAV } from './nav'
 
-const tabBase = 'flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[11px] leading-none font-medium'
+const tabBase = 'flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[11px] leading-none'
 
 /**
  * Phones: the pages along the bottom edge, in thumb reach. Bolt and Közösség
- * lead to their own pages here instead of opening a dropdown. Clear of the
- * home indicator on phones that have one.
+ * lead to their own pages here instead of opening a group; the account tab
+ * shows the player's head. Clear of the home indicator on phones that have one.
  */
 export function MobileTabBar() {
   const { pathname } = useLocation()
@@ -20,18 +20,24 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Főmenü"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-background/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-sidebar-border bg-sidebar px-2 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
     >
-      {/* h-16: AppLayout keeps the same room free under the footer. */}
-      <ul className="grid h-16 grid-cols-5">
+      {/* h-13 plus the padding: AppLayout keeps the same room free under the footer. */}
+      <ul className="grid h-13 grid-cols-5">
         {TAB_NAV.map((item) => {
-          const icon = <FontAwesomeIcon icon={item.icon} className="size-5" aria-hidden="true" />
+          const Icon = item.icon
+          const icon =
+            item.to === ACCOUNT_NAV.to ? (
+              <PlayerHead className="size-6 rounded-[5px]" />
+            ) : (
+              <Icon className="size-5.5" strokeWidth={2} aria-hidden="true" />
+            )
 
           if (item.comingSoon) {
             return (
               <li key={item.label}>
                 <SoonTooltip>
-                  <span aria-disabled="true" className={cn(tabBase, 'cursor-not-allowed text-muted-foreground/45')}>
+                  <span aria-disabled="true" className={cn(tabBase, 'cursor-not-allowed font-semibold text-muted-foreground/45')}>
                     {icon}
                     {item.label}
                     <span className="sr-only"> (hamarosan)</span>
@@ -41,7 +47,8 @@ export function MobileTabBar() {
             )
           }
 
-          const current = isActive(item, pathname)
+          // The account tab is only the settings page; the Fiók group's history pages have their own tab.
+          const current = item.to === ACCOUNT_NAV.to ? pathname === item.to : isActive(item, pathname)
           return (
             <li key={item.label}>
               <Link
@@ -50,8 +57,8 @@ export function MobileTabBar() {
                 aria-current={current ? 'page' : undefined}
                 className={cn(
                   tabBase,
-                  'transition-colors outline-none focus-visible:bg-white/6',
-                  current ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+                  'rounded-lg transition-colors outline-none focus-visible:bg-white/6',
+                  current ? 'font-extrabold text-primary' : 'font-semibold text-muted-foreground hover:text-foreground',
                 )}
               >
                 {icon}

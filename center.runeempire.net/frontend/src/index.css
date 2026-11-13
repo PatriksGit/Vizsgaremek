@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/figtree";
-@import "@fontsource/grenze/600.css";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/fraunces/opsz.css";
 
 /*
  * Deliberately inactive: no element has .dark. The site is dark through its own
@@ -13,8 +13,26 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-sans: 'Figtree Variable', sans-serif;
-    --font-heading: 'Grenze', serif;
+    --font-sans: 'Manrope Variable', system-ui, sans-serif;
+    --font-heading: 'Fraunces Variable', Georgia, serif;
+    --color-faint: var(--faint);
+    --color-soft: var(--soft);
+    --color-raised: var(--raised);
+    --color-sunken: var(--sunken);
+    --color-line: var(--line);
+    --color-rune: var(--rune);
+    --color-ok: var(--ok);
+    --color-warn: var(--warn);
+    --color-danger: var(--danger);
+    --color-lock: var(--lock);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
     --color-bedrock: var(--bedrock);
     --color-xp: var(--xp);
     --color-enchant: var(--enchant);
@@ -48,41 +66,59 @@
 }
 
 /*
- * RuneEmpire palette, built from Minecraft materials. The site is dark only,
- * close to black so the server screenshots behind the glass carry the colour.
- *   obsidian  #16161A  dialogs, solid panels   void           #0E0E11  page
- *   vein      #2E2D34  borders                  bedrock        #09090B  footer
- *   bone      #E9E4D8  text                     ash            #A8A39A  secondary text
- *   rune gold #F2B544  CTA, focus, rank         xp green       #7ED957  online, playtime
- *
- * Each kind of player data has its own material colour, used only in that
- * data's icon badge (components/app/tones.ts), never on card surfaces:
- *   enchant   #B48CFF  runes                    ember          #FF8A3D  streak
- *   diamond   #5EE0D4  server                   redstone       #FF5E57  punishments
- *   discord   #5865F2  the Discord card
+ * RuneEmpire palette (the owner's Claude Design dashboard, 2026-11-13): warm
+ * near-black surfaces, one gold accent, status colours used only for status.
+ *   background #0C0B09 page       sidebar  #100F0C side menu, bars
+ *   card       #15130F cards      sunken   #1A1813 rows inside a card
+ *   raised     #1E1B15 pills      popover  #1F1C16 tooltips, menus
+ *   border     #221E18 card edge  line     #2A251D dashed grid, sub-menu rail
+ *   foreground #F2EDE4 text       soft     #C9C2B5 labels   muted #A39C8F secondary
+ *   faint      #8C8577 captions   primary  #E9B44C gold: current page, today, rank
+ * Status: ok #5FBF7A (online, done, no punishment), warn #F5D04A (mute),
+ * danger #E5675A (ban, missed), lock #FF3B3B (locked account); rune #5CC8F2.
+ * Older material tones (xp, enchant, ember, diamond, redstone) stay for the
+ * pages that still use IconBadge.
  */
 :root {
     color-scheme: dark;
-    --background: #0e0e11;
-    --foreground: #e9e4d8;
-    --card: #16161a;
-    --card-foreground: #e9e4d8;
-    --popover: #16161a;
-    --popover-foreground: #e9e4d8;
-    --primary: #f2b544;
+    --background: #0c0b09;
+    --foreground: #f2ede4;
+    --card: #15130f;
+    --card-foreground: #f2ede4;
+    --popover: #1f1c16;
+    --popover-foreground: #f2ede4;
+    --primary: #e9b44c;
     --primary-foreground: #2b1d05;
-    --secondary: #222227;
-    --secondary-foreground: #e9e4d8;
-    --muted: #222227;
-    --muted-foreground: #a8a39a;
-    --accent: #222227;
-    --accent-foreground: #e9e4d8;
-    --destructive: #f28b74;
-    --border: #2e2d34;
-    --input: #2e2d34;
-    --ring: #f2b544;
+    --secondary: #1e1b15;
+    --secondary-foreground: #f2ede4;
+    --muted: #1e1b15;
+    --muted-foreground: #a39c8f;
+    --accent: #1a1813;
+    --accent-foreground: #f2ede4;
+    --destructive: #e5675a;
+    --border: #221e18;
+    --input: #2a251d;
+    --ring: #e9b44c;
     --radius: 0.25rem;
-    --bedrock: #09090b;
+    --faint: #8c8577;
+    --soft: #c9c2b5;
+    --raised: #1e1b15;
+    --sunken: #1a1813;
+    --line: #2a251d;
+    --rune: #5cc8f2;
+    --ok: #5fbf7a;
+    --warn: #f5d04a;
+    --danger: #e5675a;
+    --lock: #ff3b3b;
+    --sidebar: #100f0c;
+    --sidebar-foreground: #c9c2b5;
+    --sidebar-primary: #e9b44c;
+    --sidebar-primary-foreground: #2b1d05;
+    --sidebar-accent: #1a1813;
+    --sidebar-accent-foreground: #f2ede4;
+    --sidebar-border: #221e18;
+    --sidebar-ring: #e9b44c;
+    --bedrock: #090806;
     --xp: #7ed957;
     --enchant: #b48cff;
     --ember: #ff8a3d;
@@ -97,6 +133,7 @@
     }
     body {
         @apply bg-background text-foreground antialiased;
+        font-variant-numeric: tabular-nums;
     }
     html {
         @apply font-sans;
@@ -159,6 +196,44 @@
     }
 }
 
+/* Today's streak day, still waiting for a login: a slow gold pulse around it. */
+@keyframes today-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgb(233 180 76 / 0.45);
+    }
+    70%,
+    100% {
+        box-shadow: 0 0 0 9px rgb(233 180 76 / 0);
+    }
+}
+
+/* An online dot: a ring that grows out of it and fades. */
+@keyframes ping-ring {
+    80%,
+    100% {
+        transform: scale(2.6);
+        opacity: 0;
+    }
+}
+
+.today-pulse {
+    animation: today-pulse 2.2s ease-out infinite;
+}
+
+.ping {
+    position: relative;
+}
+
+.ping::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: inherit;
+    opacity: 0.75;
+    animation: ping-ring 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 .backdrop-reveal {
     animation: backdrop-reveal 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -175,7 +250,9 @@
 @media (prefers-reduced-motion: reduce) {
     .backdrop-reveal,
     .card-rise,
-    .content-in {
+    .content-in,
+    .today-pulse,
+    .ping::after {
         animation: none;
     }
 }

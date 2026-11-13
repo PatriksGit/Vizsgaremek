@@ -1,104 +1,74 @@
-import { faCartShopping, faCheck, faCopy } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
-import { Link } from 'react-router'
-import { toast } from 'sonner'
+import { Clock } from 'lucide-react'
 
-import { Panel } from '@/components/app/Panel'
-import { SoonButton } from '@/components/app/SoonButton'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { site } from '@/config/site'
-import { builtPage } from '@/features/app/nav'
 import { useAccount } from '@/features/auth/queries'
-import { blurAfterPointerClick } from '@/lib/focus'
 import { enterAfter } from '@/lib/motion'
 
 import { CubePlayer } from './CubePlayer'
 import { registeredWithin, registrationDate } from './registration'
+import { type Streak, StreakPanel } from './StreakPanel'
 
 /**
- * The greeting with the player's name and registration date, the way to the
- * shop and the server's address to copy, and their figure on the right. The page's warmest
- * card: a faint gold light from the top-left corner on top of the panel's own
- * sheen. A player on their first day is welcomed, not welcomed back.
+ * The top of the overview, on a banner of the server's spawn: the greeting
+ * and the player's name with the day they joined, this week's login streak,
+ * and their figure. Wide screens (xl, beside the sidebar) keep the three side
+ * by side; narrower ones put the streak under the name and the figure. A
+ * player on their first day is welcomed, not welcomed back.
  */
-export function HeroCard() {
+export function HeroCard({ streak }: { streak?: Streak }) {
   const { data: account } = useAccount()
   const greeting = registeredWithin(account, 1) ? 'Üdv a birodalomban,' : 'Üdv újra a birodalomban,'
-  const shop = builtPage('/bolt')
 
   return (
-    <Panel
-      as="section"
+    <section
       aria-label="Üdvözlés"
-      // Phones: name and figure side by side, the buttons on their own row below, so nothing overlaps.
-      // From sm up the figure spans both rows and the buttons sit under the name.
-      className="card-rise grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-4 bg-[radial-gradient(120%_140%_at_0%_0%,color-mix(in_oklab,var(--primary)_13%,transparent),transparent_60%),linear-gradient(to_bottom,rgb(255_255_255/0.03),transparent)] py-5 sm:gap-x-6"
+      className="card-rise relative isolate flex flex-wrap items-center justify-between gap-x-3 gap-y-4 overflow-hidden rounded-2xl border border-border bg-card p-5.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_1px_2px_rgb(0_0_0/0.35)] md:p-8 xl:min-h-57.5 xl:gap-6 xl:px-10"
     >
-      <div className="content-in flex min-w-0 flex-col gap-2 sm:self-end" style={enterAfter(400)}>
-        <p className="text-sm text-muted-foreground">{greeting}</p>
-        <h1 className="font-heading text-4xl leading-none wrap-break-word text-foreground sm:text-5xl">{account?.display_name}</h1>
+      <picture>
+        <source media="(min-width: 768px)" srcSet="/backgrounds/hero-banner.webp" />
+        <img
+          src="/backgrounds/hero-banner-mobile.webp"
+          alt=""
+          className="pointer-events-none absolute inset-0 -z-20 size-full object-cover md:object-[center_40%]"
+        />
+      </picture>
+      {/* Darkest behind the text: from the top on phones, from the left on wide screens. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-b from-background/55 via-background/60 to-background/90 xl:bg-linear-to-r xl:from-background/92 xl:via-background/60 xl:to-background/15"
+      />
+
+      <div className="content-in flex min-w-0 flex-[1_1_0] flex-col gap-1 md:gap-2 xl:basis-65" style={enterAfter(400)}>
+        <p className="text-[13px] font-semibold text-muted-foreground">{greeting}</p>
+        <h1 className="font-heading text-4xl leading-[1.05] font-bold tracking-tight wrap-break-word text-foreground md:text-[52px]">
+          {account?.display_name}
+        </h1>
         {account?.registered_at && (
-          <p className="text-sm text-muted-foreground">
-            Regisztráltál: <span className="text-foreground">{registrationDate.format(new Date(account.registered_at))}</span>
-          </p>
+          <>
+            {/* Narrow: a plain line. */}
+            <p className="text-xs text-muted-foreground xl:hidden">
+              Csatlakozott: <strong className="text-foreground">{registrationDate.format(new Date(account.registered_at))}</strong>
+            </p>
+            <p className="mt-2 hidden h-7 items-center gap-1.5 self-start rounded-full bg-raised px-2.5 text-xs font-semibold text-soft xl:inline-flex">
+              <Clock className="size-3.25" aria-hidden="true" />
+              Csatlakozott: {registrationDate.format(new Date(account.registered_at))}
+            </p>
+          </>
         )}
       </div>
 
-      {/* 32 skin pixels at 5.25 px: 168 px, about nine tenths of the card (three quarters of that on phones), standing on the box's bottom edge. */}
-      <div aria-hidden="true" className="relative h-32 w-20 shrink-0 perspective-distant sm:row-span-2 sm:h-45 sm:w-28">
+      <StreakPanel
+        streak={streak}
+        registeredAt={account?.registered_at}
+        className="content-in order-last basis-full border-t border-line pt-4 xl:order-0 xl:mr-12 xl:shrink xl:grow-0 xl:basis-100 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-8"
+      />
+
+      {/* 32 skin pixels at 6 px: 192 px on wide screens, 112 px on phones. */}
+      <div aria-hidden="true" className="relative h-28 w-14 shrink-0 perspective-distant md:h-48 md:w-24">
         {/* Tipped a little towards the viewer, so the top of the head shows too. */}
-        <div className="absolute bottom-1.5 left-1/2 origin-bottom transform-[rotateX(-14deg)] transform-3d max-sm:scale-70">
-          <CubePlayer scale={5.25} />
+        <div className="absolute bottom-1 left-1/2 origin-bottom transform-[rotateX(-14deg)] transform-3d max-md:scale-[0.58]">
+          <CubePlayer scale={6} />
         </div>
       </div>
-
-      <div className="content-in col-span-2 flex flex-wrap gap-2 sm:col-span-1 sm:self-start" style={enterAfter(450)}>
-        {shop ? (
-          <Link to={shop} className={buttonVariants({ size: 'lg', className: 'h-11 px-4' })}>
-            <FontAwesomeIcon icon={faCartShopping} aria-hidden="true" />
-            Bolt megnyitása
-          </Link>
-        ) : (
-          <SoonButton icon={faCartShopping}>Bolt megnyitása</SoonButton>
-        )}
-        {site.serverAddress ? (
-          <CopyAddressButton address={site.serverAddress} />
-        ) : (
-          <SoonButton icon={faCopy}>Szerver IP másolása</SoonButton>
-        )}
-      </div>
-    </Panel>
-  )
-}
-
-/** Copies the server's address for the game's server list; the toast says it worked, or shows the address to copy by hand. */
-function CopyAddressButton({ address }: { address: string }) {
-  const [copied, setCopied] = useState(false)
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(address)
-      setCopied(true)
-      toast.success(`Kimásoltad a szerver címét: ${address}`)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      toast.error(`Nem sikerült a vágólapra másolni. A szerver címe: ${address}`)
-    }
-  }
-
-  return (
-    <Button
-      variant="outline"
-      size="lg"
-      className="h-11 px-4"
-      onClick={(event) => {
-        blurAfterPointerClick(event)
-        void copy()
-      }}
-    >
-      <FontAwesomeIcon icon={copied ? faCheck : faCopy} className={copied ? 'text-xp' : undefined} aria-hidden="true" />
-      Szerver IP másolása
-    </Button>
+    </section>
   )
 }

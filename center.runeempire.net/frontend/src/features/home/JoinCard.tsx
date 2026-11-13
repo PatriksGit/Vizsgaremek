@@ -21,7 +21,7 @@ export function JoinCard() {
     <Panel
       as="section"
       aria-labelledby="join-title"
-      className="content-in flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+      className="content-in flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
       style={enterAfter(500)}
     >
       <div className="flex items-start gap-3">

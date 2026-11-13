@@ -8,7 +8,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { Toaster } from '@/components/ui/sonner'
 import { AccountPage } from '@/features/account/AccountPage'
 import { AppLayout } from '@/features/app/AppLayout'
-import { NAV, type NavItem } from '@/features/app/nav'
+import { ACCOUNT_NAV, NAV, type NavItem } from '@/features/app/nav'
 import { PagePlaceholder } from '@/features/app/PagePlaceholder'
 import { SectionPage } from '@/features/app/SectionPage'
 import { AuthPage } from '@/features/auth/AuthPage'
@@ -42,10 +42,11 @@ function RootLayout() {
 /**
  * The menu's pages that have no content of their own yet, so their links do
  * not fall through to the overview: a page with a dropdown lists its pages,
- * the rest say they are on the way. Pages marked coming soon get no route.
+ * the rest say they are on the way. Pages marked coming soon get no route,
+ * and the Fiók group's own page is the settings page below.
  */
 const menuPages = NAV.flatMap((item): NavItem[] => [item, ...(item.children ?? [])])
-  .filter((item) => item.to !== '/' && !item.comingSoon)
+  .filter((item) => item.to !== '/' && item.to !== ACCOUNT_NAV.to && !item.comingSoon)
   .map((item) => ({
     path: item.to.slice(1),
     element: item.children ? (
@@ -102,9 +103,9 @@ export default function App() {
       <Toaster position="top-center" />
       {/*
        * Rendered only in development; production builds replace it with nothing.
-       * Top left: at the bottom it would sit on the phone tab bar's tabs.
+       * Top right: at the bottom it would sit on the phone tab bar's tabs, top left on the sidebar's logo.
        */}
-      <ReactQueryDevtools buttonPosition="top-left" />
+      <ReactQueryDevtools buttonPosition="top-right" />
     </QueryClientProvider>
   )
 }
