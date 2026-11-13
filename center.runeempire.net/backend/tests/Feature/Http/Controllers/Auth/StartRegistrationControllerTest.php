@@ -34,13 +34,6 @@ class StartRegistrationControllerTest extends TestCase
      */
     private ?string $browserSession = null;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->createAccountsTable();
-    }
-
     /**
      * A request from outside the website: no session, so it owns no pending registration.
      *
@@ -161,7 +154,7 @@ class StartRegistrationControllerTest extends TestCase
 
     public function test_client_supplied_username_is_never_queried(): void
     {
-        DB::connection('global')->enableQueryLog();
+        $this->logAuthQueries();
 
         $this->register(['display_name' => '!!', 'username' => 'őrült'])
             ->assertUnprocessable()
@@ -194,17 +187,15 @@ class StartRegistrationControllerTest extends TestCase
 
     public function test_returns_422_not_500_when_a_simultaneous_registration_takes_the_name(): void
     {
-        PendingRegistration::creating(function (PendingRegistration $pending): void {
-            if ($pending->email === 'patrik@example.com') {
-                DB::connection('global')->table('pending_registrations')->insert([
-                    'username' => 'patrikt',
-                    'display_name' => 'PatrikT',
-                    'email' => 'masik@example.com',
-                    'password_hash' => 'x',
-                    'code_hash' => str_repeat('0', 64),
-                    'expires_at' => now()->addMinutes(15),
-                ]);
-            }
+        $this->beforeProcedureCall('CreatePendingRegistration', function (): void {
+            DB::connection('global')->table('pending_registrations')->insert([
+                'username' => 'patrikt',
+                'display_name' => 'PatrikT',
+                'email' => 'masik@example.com',
+                'password_hash' => 'x',
+                'code_hash' => str_repeat('0', 64),
+                'expires_at' => now()->addMinutes(15),
+            ]);
         });
 
         $this->register()
@@ -216,17 +207,15 @@ class StartRegistrationControllerTest extends TestCase
 
     public function test_returns_422_on_email_when_a_simultaneous_registration_takes_the_email(): void
     {
-        PendingRegistration::creating(function (PendingRegistration $pending): void {
-            if ($pending->display_name === 'PatrikT') {
-                DB::connection('global')->table('pending_registrations')->insert([
-                    'username' => 'masvalaki',
-                    'display_name' => 'Masvalaki',
-                    'email' => 'patrik@example.com',
-                    'password_hash' => 'x',
-                    'code_hash' => str_repeat('0', 64),
-                    'expires_at' => now()->addMinutes(15),
-                ]);
-            }
+        $this->beforeProcedureCall('CreatePendingRegistration', function (): void {
+            DB::connection('global')->table('pending_registrations')->insert([
+                'username' => 'masvalaki',
+                'display_name' => 'Masvalaki',
+                'email' => 'patrik@example.com',
+                'password_hash' => 'x',
+                'code_hash' => str_repeat('0', 64),
+                'expires_at' => now()->addMinutes(15),
+            ]);
         });
 
         $this->register()
@@ -319,7 +308,7 @@ class StartRegistrationControllerTest extends TestCase
     #[DataProvider('invalidDisplayNames')]
     public function test_returns_422_for_a_name_breaking_minecraft_rules(mixed $displayName, string $message): void
     {
-        DB::connection('global')->enableQueryLog();
+        $this->logAuthQueries();
 
         $this->register(['display_name' => $displayName])
             ->assertUnprocessable()

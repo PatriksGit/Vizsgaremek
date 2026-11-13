@@ -4,6 +4,8 @@ namespace App\Actions;
 
 use App\Models\Account;
 use App\Models\PendingRegistration;
+use App\Repositories\AccountRepository;
+use App\Repositories\PendingRegistrationRepository;
 use App\Support\RegistrationCode;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
@@ -12,7 +14,11 @@ use SensitiveParameter;
 
 class VerifyRegistration
 {
-    public function __construct(private RegisterAccount $registerAccount) {}
+    public function __construct(
+        private RegisterAccount $registerAccount,
+        private AccountRepository $accounts,
+        private PendingRegistrationRepository $pendingRegistrations,
+    ) {}
 
     /**
      * Redeem an emailed code: turn the pending registration into a PAxAuth account.
@@ -38,7 +44,7 @@ class VerifyRegistration
         $ownerHash = PendingRegistration::ownerHashFor($ownerToken);
 
         $result = DB::connection('global')->transaction(function () use ($email, $code, $ownerHash): Account|ValidationException {
-            $pending = PendingRegistration::query()->where('email', $email)->lockForUpdate()->first();
+            $pending = $this->pendingRegistrations->findByEmailForUpdate($email);
 
             if ($pending === null || $pending->expires_at->isPast()) {
                 return self::invalidCode();
@@ -47,7 +53,7 @@ class VerifyRegistration
             $maxAttempts = config('auth.registration_code.max_attempts');
 
             if ($pending->attempts >= $maxAttempts) {
-                $pending->delete();
+                $this->pendingRegistrations->delete($pending);
 
                 return self::invalidCode();
             }
@@ -69,22 +75,17 @@ class VerifyRegistration
                 $pending->attempts++;
 
                 if ($pending->attempts >= $maxAttempts) {
-                    $pending->delete();
+                    $this->pendingRegistrations->delete($pending);
                 } else {
-                    $pending->save();
+                    $this->pendingRegistrations->updateAttempts($pending);
                 }
 
                 return self::invalidCode();
             }
 
-            $pending->delete();
+            $this->pendingRegistrations->delete($pending);
 
-            $taken = Account::query()
-                ->where('username', $pending->username)
-                ->orWhere('email', $pending->email)
-                ->exists();
-
-            if ($taken) {
+            if ($this->accounts->usernameOrEmailExists($pending->username, $pending->email)) {
                 return self::takenMeanwhile();
             }
 

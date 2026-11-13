@@ -13,13 +13,6 @@ class ChangePasswordControllerTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->createAccountsTable();
-    }
-
     private function account(): Account
     {
         return Account::factory()->withPassword('regi-jelszo')->create(['display_name' => 'PatrikT']);

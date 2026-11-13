@@ -12,7 +12,6 @@ class LogoutControllerTest extends TestCase
 
     public function test_returns_204_and_the_session_no_longer_logs_in(): void
     {
-        $this->createAccountsTable();
         Account::factory()->withPassword('titkos-jelszo')->create(['display_name' => 'PatrikT']);
         $this->postJson('/api/auth/login', ['username' => 'PatrikT', 'password' => 'titkos-jelszo'], self::FROM_WEBSITE)->assertOk();
         $sessionId = $this->lastSessionId();

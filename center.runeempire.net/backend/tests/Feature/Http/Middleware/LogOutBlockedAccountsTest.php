@@ -11,13 +11,6 @@ class LogOutBlockedAccountsTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->createAccountsTable();
-    }
-
     /**
      * A player logged in on the website, and the id of their session.
      *

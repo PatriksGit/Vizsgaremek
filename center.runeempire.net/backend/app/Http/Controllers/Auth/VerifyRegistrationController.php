@@ -29,9 +29,6 @@ class VerifyRegistrationController extends Controller
             is_string($ownerToken) ? $ownerToken : null,
         );
 
-        // The database fills created_at on insert; read it back for the answer.
-        $account->refresh();
-
         if ($request->hasSession()) {
             Auth::guard('web')->login($account);
             $request->session()->regenerate();

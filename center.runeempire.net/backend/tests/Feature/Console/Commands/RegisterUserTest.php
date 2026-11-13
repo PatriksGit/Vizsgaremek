@@ -4,7 +4,6 @@ namespace Tests\Feature\Console\Commands;
 
 use App\Models\Account;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -12,13 +11,6 @@ use Tests\TestCase;
 class RegisterUserTest extends TestCase
 {
     use LazilyRefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->createAccountsTable();
-    }
 
     public function test_registers_the_account_from_arguments_without_mailing(): void
     {
@@ -99,7 +91,7 @@ class RegisterUserTest extends TestCase
 
     public function test_fails_on_an_invalid_name_without_querying_usernames(): void
     {
-        DB::connection('global')->enableQueryLog();
+        $this->logAuthQueries();
 
         $this->artisan('user:register', ['username' => 'Patrík', 'email' => 'patrik@example.com', '--password' => 'titkos-jelszo'])
             ->expectsOutputToContain('Játékosnév formátuma érvénytelen.')

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Bootstrap;
 
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
@@ -9,6 +10,8 @@ use Tests\TestCase;
 
 class TrustedProxiesTest extends TestCase
 {
+    use LazilyRefreshDatabase;
+
     /**
      * A wrong login through the per-IP limiter, as if forwarded by Cloudflare Tunnel.
      *
@@ -25,7 +28,6 @@ class TrustedProxiesTest extends TestCase
 
     public function test_client_ip_comes_from_the_trusted_tunnel(): void
     {
-        $this->createAccountsTable();
         config(['rate_limits.login.per_minute_per_ip' => 1]);
 
         $this->loginVia('203.0.113.1')->assertUnprocessable();
@@ -35,7 +37,6 @@ class TrustedProxiesTest extends TestCase
 
     public function test_untrusted_sender_cannot_choose_its_ip(): void
     {
-        $this->createAccountsTable();
         config(['rate_limits.login.per_minute_per_ip' => 1]);
         $untrusted = ['REMOTE_ADDR' => '198.51.100.7'];
 

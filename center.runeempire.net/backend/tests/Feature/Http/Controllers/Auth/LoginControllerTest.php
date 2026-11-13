@@ -20,13 +20,6 @@ class LoginControllerTest extends TestCase
      */
     private const PLUGIN_HASH = '$argon2id$v=19$m=131072,t=3,p=4$8tYmWSvlEWcQTgkQa4byaQ$zXZHMX4uDnPxBJ8QXQN7kl3JoMEa+mHScMr7XvHi1E8';
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->createAccountsTable();
-    }
-
     private function account(string $displayName = 'PatrikT'): Account
     {
         return Account::factory()->withPassword('titkos-jelszo')->create(['display_name' => $displayName]);
@@ -128,7 +121,7 @@ class LoginControllerTest extends TestCase
     #[DataProvider('malformedUsernames')]
     public function test_returns_422_for_a_malformed_username_without_querying_the_username_column(mixed $username, string $message): void
     {
-        DB::connection('global')->enableQueryLog();
+        $this->logAuthQueries();
 
         $this->login($username)->assertUnprocessable()->assertJsonValidationErrors(['username' => $message]);
 

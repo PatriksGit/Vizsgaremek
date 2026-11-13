@@ -12,7 +12,6 @@ class MeControllerTest extends TestCase
 
     public function test_returns_200_with_the_logged_in_account(): void
     {
-        $this->createAccountsTable();
         // Read back like the guard would, so created_at (set by the database) is loaded.
         $account = Account::factory()->create(['display_name' => 'PatrikT'])->refresh();
 

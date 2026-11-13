@@ -26,15 +26,9 @@ return new class extends Migration
      * case-sensitive ascii_bin username it could also turn the lookup
      * case-insensitive. With matching types the procedures compare exactly
      * like the queries they replace.
-     *
-     * SQLite (the test suite) has no stored procedures, so it is skipped there.
      */
     public function up(): void
     {
-        if (! $this->supportsProcedures()) {
-            return;
-        }
-
         foreach ($this->procedures() as $name => $definition) {
             DB::connection($this->getConnection())->unprepared("DROP PROCEDURE IF EXISTS {$name}");
             DB::connection($this->getConnection())->unprepared($definition);
@@ -46,18 +40,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (! $this->supportsProcedures()) {
-            return;
-        }
-
         foreach (array_keys($this->procedures()) as $name) {
             DB::connection($this->getConnection())->unprepared("DROP PROCEDURE IF EXISTS {$name}");
         }
-    }
-
-    private function supportsProcedures(): bool
-    {
-        return DB::connection($this->getConnection())->getDriverName() === 'mysql';
     }
 
     /**

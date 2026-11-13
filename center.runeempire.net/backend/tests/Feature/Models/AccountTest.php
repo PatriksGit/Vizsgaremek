@@ -12,13 +12,6 @@ class AccountTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->createAccountsTable();
-    }
-
     /**
      * MySQL fills created_at from its own clock, which runs on Budapest time
      * on the server, summer and winter alike.

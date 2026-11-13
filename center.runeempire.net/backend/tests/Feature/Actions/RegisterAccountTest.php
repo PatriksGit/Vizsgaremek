@@ -13,13 +13,6 @@ class RegisterAccountTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->createAccountsTable();
-    }
-
     /**
      * Callers validate first, so this only happens when another registration
      * takes the name in between; the unique index is the last line of defence.

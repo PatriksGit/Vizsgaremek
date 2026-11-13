@@ -21,13 +21,34 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
         <env name="BROADCAST_CONNECTION" value="null" force="true"/>
         <env name="CACHE_STORE" value="array" force="true"/>
-        <env name="DB_CONNECTION" value="sqlite" force="true"/>
-        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <!--
+            The tests need MySQL: the backend reads and writes through stored
+            procedures, which SQLite does not have. They run on two empty test
+            databases next to the local copies of the real ones (center_test on
+            mysql-web, auth_test on mysql-global), as a user that can reach only
+            those two, so a test can never touch Center or Auth. Its password is
+            not a secret: the user exists only on the local Docker servers.
+            Set up once as root on each server:
+              CREATE DATABASE center_test (on mysql-web) / auth_test (on mysql-global)
+                  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE USER 'center_test'@'%' IDENTIFIED BY 'center_test';
+              GRANT ALL PRIVILEGES ON center_test.* (or auth_test.*) TO 'center_test'@'%';
+        -->
+        <env name="DB_CONNECTION" value="mysql" force="true"/>
         <env name="DB_URL" value="" force="true"/>
-        <env name="DB_GLOBAL_DRIVER" value="sqlite" force="true"/>
-        <env name="DB_GLOBAL_DATABASE" value=":memory:" force="true"/>
-        <!-- SQLite's CURRENT_TIMESTAMP is UTC. -->
-        <env name="DB_GLOBAL_CLOCK_TIMEZONE" value="UTC" force="true"/>
+        <env name="DB_HOST" value="127.0.0.1" force="true"/>
+        <env name="DB_PORT" value="3954" force="true"/>
+        <env name="DB_DATABASE" value="center_test" force="true"/>
+        <env name="DB_USERNAME" value="center_test" force="true"/>
+        <env name="DB_PASSWORD" value="center_test" force="true"/>
+        <env name="DB_GLOBAL_DRIVER" value="mysql" force="true"/>
+        <env name="DB_GLOBAL_HOST" value="127.0.0.1" force="true"/>
+        <env name="DB_GLOBAL_PORT" value="3951" force="true"/>
+        <env name="DB_GLOBAL_DATABASE" value="auth_test" force="true"/>
+        <env name="DB_GLOBAL_USERNAME" value="center_test" force="true"/>
+        <env name="DB_GLOBAL_PASSWORD" value="center_test" force="true"/>
+        <!-- The MySQL containers' clock, like on the server. -->
+        <env name="DB_GLOBAL_CLOCK_TIMEZONE" value="Europe/Budapest" force="true"/>
         <env name="PASSWORD_ARGON2_MEMORY_KIB" value="1024" force="true"/>
         <env name="PASSWORD_ARGON2_ITERATIONS" value="1" force="true"/>
         <env name="PASSWORD_ARGON2_PARALLELISM" value="1" force="true"/>

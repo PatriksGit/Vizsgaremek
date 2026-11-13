@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Models\Account;
 use App\Models\PendingRegistration;
 use App\Notifications\RegistrationCodeNotification;
+use App\Repositories\PendingRegistrationRepository;
 use App\Support\RegistrationCode;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
@@ -19,6 +20,8 @@ use Throwable;
 
 class StartRegistration
 {
+    public function __construct(private PendingRegistrationRepository $pendingRegistrations) {}
+
     /**
      * Park validated registration input until its emailed code is redeemed,
      * replacing this email's pending registration, and mail the code.
@@ -69,7 +72,7 @@ class StartRegistration
             Notification::route('mail', $email)->notify(new RegistrationCodeNotification($code, $expiresInMinutes, $displayName));
         } catch (Throwable $exception) {
             RateLimiter::clear($cooldownKey);
-            $pending->delete();
+            $this->pendingRegistrations->delete($pending);
             report($exception);
 
             throw new ServiceUnavailableHttpException(message: 'A megerősítő e-mailt most nem sikerült elküldeni, próbáld újra később.');
@@ -101,11 +104,9 @@ class StartRegistration
     ): PendingRegistration {
         try {
             return DB::connection('global')->transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes, $ownerHash): PendingRegistration {
-                PendingRegistration::query()->where('expires_at', '<=', now())->delete();
+                $this->pendingRegistrations->deleteExpired(now());
 
-                $held = PendingRegistration::query()
-                    ->where(fn ($query) => $query->where('username', $username)->orWhere('email', $email))
-                    ->get();
+                $held = $this->pendingRegistrations->findByUsernameOrEmail($username, $email);
                 $heldByOthers = $held->reject(fn (PendingRegistration $pending): bool => $pending->isOwnedBy($ownerHash));
 
                 if ($heldByOthers->contains('username', $username)) {
@@ -116,17 +117,17 @@ class StartRegistration
                     throw self::emailHeld();
                 }
 
-                PendingRegistration::query()->whereKey($held->modelKeys())->delete();
+                $held->each(fn (PendingRegistration $pending) => $this->pendingRegistrations->delete($pending));
 
-                return PendingRegistration::create([
-                    'username' => $username,
-                    'display_name' => $displayName,
-                    'email' => $email,
-                    'password_hash' => $passwordHash,
-                    'code_hash' => RegistrationCode::hash($code),
-                    'owner_hash' => $ownerHash,
-                    'expires_at' => now()->addMinutes($expiresInMinutes),
-                ]);
+                return $this->pendingRegistrations->create(
+                    $username,
+                    $displayName,
+                    $email,
+                    $passwordHash,
+                    RegistrationCode::hash($code),
+                    $ownerHash,
+                    now()->addMinutes($expiresInMinutes),
+                );
             }, attempts: 3);
         } catch (UniqueConstraintViolationException $exception) {
             throw self::hitEmailIndex($exception) ? self::emailHeld() : self::nameHeld();
@@ -135,14 +136,12 @@ class StartRegistration
 
     /**
      * Whether the violated index is the email one: MySQL names the key
-     * (pending_registrations_email_unique), SQLite the column
-     * (pending_registrations.email). Names cannot contain dots or "@", so a
-     * duplicate value never looks like either.
+     * (pending_registrations_email_unique) in its error. Names cannot contain
+     * "@" or dots, so a duplicate value never looks like it.
      */
     private static function hitEmailIndex(UniqueConstraintViolationException $exception): bool
     {
-        return str_contains($exception->getMessage(), 'pending_registrations_email_unique')
-            || str_contains($exception->getMessage(), 'pending_registrations.email');
+        return str_contains($exception->getMessage(), 'pending_registrations_email_unique');
     }
 
     private static function emailHeld(): ValidationException

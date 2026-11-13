@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  *
  * The schema is owned by the plugin: created_at is filled by the database
  * and there is no updated_at column. Only the columns the website uses are listed.
+ * Rows are read and written through the stored procedures of
+ * App\Repositories\AccountRepository, never through Eloquent queries.
  *
  * @property int $id
  * @property string $uuid
