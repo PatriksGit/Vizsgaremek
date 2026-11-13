@@ -64,7 +64,8 @@ async function comeBackToTheTabAfterAMinute() {
 
 const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 200)))
 
-describe('logging in while the session check is still on its way', () => {
+// The whole app renders here: under the full parallel suite that can pass 5 s (1 run in 3, 2026-11-13).
+describe('logging in while the session check is still on its way', { timeout: 15_000 }, () => {
   beforeAll(stubBrowserApis)
   beforeEach(() => vi.useFakeTimers({ toFake: ['Date'], now: Date.now() }))
   afterEach(() => {

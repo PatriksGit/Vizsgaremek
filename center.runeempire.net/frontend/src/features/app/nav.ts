@@ -2,8 +2,8 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
   faCartShopping,
   faClockRotateLeft,
-  faCrown,
-  faGem,
+  faCoins,
+  faHatWizard,
   faHouse,
   faRightLeft,
   faUser,
@@ -36,10 +36,11 @@ export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faUser, to: '/be
  * buying, sending and their log, the ranks, and the players.
  */
 export const NAV: NavItem[] = [
-  { label: 'Áttekintés', icon: faHouse, to: '/', comingSoon: false },
+  { label: 'Főoldal', icon: faHouse, to: '/', comingSoon: false },
   {
     label: 'Rúnák',
-    icon: faGem,
+    // The coin is the runes' icon everywhere on the site (owner, 2026-11-13).
+    icon: faCoins,
     to: '/runak',
     comingSoon: false,
     children: [
@@ -60,7 +61,7 @@ export const NAV: NavItem[] = [
       { label: 'Napló', icon: faClockRotateLeft, to: '/runak/naplo', description: 'Hova mentek a rúnáid', comingSoon: true },
     ],
   },
-  { label: 'Rangok', icon: faCrown, to: '/rangok', comingSoon: false },
+  { label: 'Rangok', icon: faHatWizard, to: '/rangok', comingSoon: false },
   { label: 'Játékosok', icon: faUsers, to: '/jatekosok', comingSoon: false },
 ]
 

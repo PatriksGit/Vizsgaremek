@@ -206,51 +206,64 @@ function PlayerCard() {
   const current = isPage(ACCOUNT_NAV.to, pathname)
 
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card py-2 pr-2 pl-2.5">
-      <PlayerHead name={account?.display_name} className="size-8 shrink-0 rounded-sm" />
-      <span className="min-w-0 flex-1 truncate font-bold text-foreground">{account?.display_name}</span>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          aria-label="Fiók menü"
+    <DropdownMenu>
+      {/* The whole card opens the menu: the head, the name and the gear (owner, 2026-11-13). */}
+      <DropdownMenuTrigger
+        aria-label="Fiók menü"
+        className={cn(
+          'group/card flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-border bg-card py-2 pr-2 pl-2.5 text-left transition-colors',
+          'hover:border-line hover:bg-raised data-popup-open:border-primary/30 data-popup-open:bg-raised',
+          focusRing,
+        )}
+      >
+        <PlayerHead name={account?.display_name} className="size-8 shrink-0 rounded-sm" />
+        <span className="min-w-0 flex-1 truncate font-bold text-foreground">{account?.display_name}</span>
+        <span
+          aria-hidden="true"
           className={cn(
-            'group/gear grid size-10 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors',
-            current ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-raised hover:text-foreground',
-            'data-popup-open:bg-raised data-popup-open:text-foreground',
-            focusRing,
+            'grid size-10 shrink-0 place-items-center rounded-lg transition-colors',
+            current ? 'bg-primary/10 text-primary' : 'text-muted-foreground group-hover/card:text-foreground',
+            'group-data-popup-open/card:text-foreground',
           )}
         >
           <FontAwesomeIcon
             icon={faGear}
-            className="size-4.25 transition-transform duration-300 group-data-popup-open/gear:rotate-60 motion-reduce:transition-none"
-            aria-hidden="true"
+            className="size-4.25 transition-transform duration-300 group-data-popup-open/card:rotate-60 motion-reduce:transition-none"
           />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          side="top"
-          align="end"
-          alignOffset={-8}
-          sideOffset={14}
-          className="w-54 rounded-xl border border-[#2f2a21] p-1.5 shadow-[0_12px_32px_rgb(0_0_0/0.55)] ring-0"
+        </span>
+      </DropdownMenuTrigger>
+      {/* As wide as the card, right above it. */}
+      <DropdownMenuContent
+        side="top"
+        align="start"
+        sideOffset={8}
+        className="w-(--anchor-width) rounded-xl border border-[#2f2a21] p-1.5 shadow-[0_12px_32px_rgb(0_0_0/0.55)] ring-0"
+      >
+        <MenuPrimitive.LinkItem
+          closeOnClick
+          render={<Link to={ACCOUNT_NAV.to} aria-current={current ? 'page' : undefined} />}
+          className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
         >
-          <MenuPrimitive.LinkItem
-            closeOnClick
-            render={<Link to={ACCOUNT_NAV.to} aria-current={current ? 'page' : undefined} />}
-            className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
-          >
-            <FontAwesomeIcon icon={faGear} className="size-3.75 text-muted-foreground" aria-hidden="true" />
-            Beállítások
-          </MenuPrimitive.LinkItem>
-          {/* Logged out: the guard sends the player to the login page. */}
-          <MenuPrimitive.Item
-            onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
-            disabled={logout.isPending}
-            className={cn(menuRow, 'text-foreground data-disabled:opacity-60 data-highlighted:bg-danger/10 data-highlighted:text-danger')}
-          >
-            <FontAwesomeIcon icon={faRightFromBracket} className="size-3.75" aria-hidden="true" />
-            {logout.isPending ? 'Kijelentkezés…' : 'Kijelentkezés'}
-          </MenuPrimitive.Item>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+          <FontAwesomeIcon icon={faGear} className="size-3.75 text-muted-foreground" aria-hidden="true" />
+          Beállítások
+        </MenuPrimitive.LinkItem>
+        {/* Logged out: the guard sends the player to the login page. */}
+        <MenuPrimitive.Item
+          onClick={() =>
+            logout.mutate(undefined, {
+              onError: (error) => toast.error(formMessage(error)),
+            })
+          }
+          disabled={logout.isPending}
+          className={cn(
+            menuRow,
+            'text-foreground data-disabled:opacity-60 data-highlighted:bg-danger/10 data-highlighted:text-danger',
+          )}
+        >
+          <FontAwesomeIcon icon={faRightFromBracket} className="size-3.75" aria-hidden="true" />
+          {logout.isPending ? 'Kijelentkezés…' : 'Kijelentkezés'}
+        </MenuPrimitive.Item>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

@@ -1,4 +1,5 @@
-import type { LucideIcon } from 'lucide-react'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { CSSProperties, ReactNode } from 'react'
 
 import { panelLook } from '@/components/app/Panel'
@@ -9,7 +10,8 @@ import { NO_DATA } from './stats'
 
 type StatCardProps = {
   label: string
-  icon: LucideIcon
+  /** A solid Font Awesome icon, the same family as the menu's. */
+  icon: IconDefinition
   /** The number or word; left out while it loads (a skeleton bar), null when it could not be loaded (a dash). */
   value?: ReactNode | null
   /** A smaller word after the value, such as "rúna" or "óra". */
@@ -21,7 +23,7 @@ type StatCardProps = {
 }
 
 /** One of the overview's four numbers: the label and the value on the left, a quiet icon tile on the right. */
-export function StatCard({ label, icon: Icon, value, unit, children, className, style }: StatCardProps) {
+export function StatCard({ label, icon, value, unit, children, className, style }: StatCardProps) {
   return (
     <li
       className={cn(panelLook, 'flex min-h-21 items-center justify-between gap-3.5 px-4.5 py-4 md:min-h-29 md:px-6 md:py-5', className)}
@@ -47,13 +49,13 @@ export function StatCard({ label, icon: Icon, value, unit, children, className, 
         )}
         {children}
       </div>
-      <StatIcon icon={Icon} />
+      <StatIcon icon={icon} />
     </li>
   )
 }
 
 /** The same quiet tile on every card: colour is kept for the values that carry a status. */
-export function StatIcon({ icon: Icon }: { icon: LucideIcon }) {
+export function StatIcon({ icon }: { icon: IconDefinition }) {
   return (
     <span
       aria-hidden="true"
@@ -61,7 +63,7 @@ export function StatIcon({ icon: Icon }: { icon: LucideIcon }) {
         'grid size-11 shrink-0 place-items-center rounded-xl bg-raised text-soft shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] md:size-13 md:rounded-[14px]',
       )}
     >
-      <Icon className="size-5.5 md:size-6.5" />
+      <FontAwesomeIcon icon={icon} className="size-5 md:size-5.75" />
     </span>
   )
 }

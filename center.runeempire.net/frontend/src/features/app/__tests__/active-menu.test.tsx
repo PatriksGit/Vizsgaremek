@@ -74,3 +74,26 @@ it('a page in the Rúnák group marks itself in the sidebar and Rúnák on the t
   expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
   expect(currentLinks()).toEqual(['Vásárlás', 'Rúnák'])
 })
+
+it('the overview is called Főoldal in the menu', async () => {
+  renderMenuOn('/', '/')
+
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  expect(currentLinks()).toEqual(['Főoldal', 'Főoldal'])
+})
+
+it('the runes have the coin icon in the menu', async () => {
+  renderMenuOn('/runak/vasarlas/', 'runak/vasarlas')
+
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  const runeLinks = screen.getAllByText('Rúnák').map((label) => label.closest('a, button')!)
+  expect(runeLinks.map((link) => link.querySelector('svg')?.getAttribute('data-icon'))).toEqual(['coins', 'coins'])
+})
+
+it('the ranks have the wizard hat icon in the menu', async () => {
+  renderMenuOn('/rangok', 'rangok')
+
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  const rankLinks = screen.getAllByText('Rangok').map((label) => label.closest('a')!)
+  expect(rankLinks.map((link) => link.querySelector('svg')?.getAttribute('data-icon'))).toEqual(['hat-wizard', 'hat-wizard'])
+})

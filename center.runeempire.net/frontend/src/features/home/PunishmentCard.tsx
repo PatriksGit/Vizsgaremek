@@ -1,4 +1,4 @@
-import { Gavel } from 'lucide-react'
+import { faGavel } from '@fortawesome/free-solid-svg-icons'
 import type { CSSProperties } from 'react'
 
 import { panelLook } from '@/components/app/Panel'
@@ -104,7 +104,7 @@ export function PunishmentCard({ punishment, unavailable = false, className, sty
           </HoverCard>
         )}
       </div>
-      <StatIcon icon={Gavel} />
+      <StatIcon icon={faGavel} />
     </li>
   )
 }

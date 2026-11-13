@@ -115,3 +115,17 @@ it('each friend\'s name and rank label take the rank\'s colour; no colour stays 
     ciliRank: 'CiliOffline',
   })
 })
+
+it('the runes card has the coin icon, like the menu', async () => {
+  renderHome()
+  const card = (await screen.findByText('Rúnáid')).closest('li')!
+
+  expect(card.querySelector('svg[data-icon]')?.getAttribute('data-icon')).toBe('coins')
+})
+
+it('the rank card has the wizard hat icon, like the menu', async () => {
+  renderHome()
+  const card = (await screen.findByText('Rangod')).closest('li')!
+
+  expect(card.querySelector('svg[data-icon]')?.getAttribute('data-icon')).toBe('hat-wizard')
+})

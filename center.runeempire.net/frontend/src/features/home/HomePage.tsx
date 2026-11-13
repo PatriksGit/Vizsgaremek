@@ -1,4 +1,5 @@
-import { Clock, Gem, Medal } from 'lucide-react'
+import { faClock, faCoins, faHatWizard } from '@fortawesome/free-solid-svg-icons'
+import { Clock } from 'lucide-react'
 
 import { site } from '@/config/site'
 import { useAccount } from '@/features/auth/queries'
@@ -45,7 +46,7 @@ export function HomePage() {
 
   return (
     <div className="flex flex-col gap-3.5 md:gap-5">
-      <title>{`Áttekintés | ${site.name}`}</title>
+      <title>{`Főoldal | ${site.name}`}</title>
 
       <HeroCard streak={shown('streak', (loaded) => loaded.streak)} />
 
@@ -54,7 +55,7 @@ export function HomePage() {
       <ul aria-label="Statisztikák" className="grid grid-cols-1 gap-2.5 sm:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] md:gap-5">
         <StatCard
           label="Rúnáid"
-          icon={Gem}
+          icon={faCoins}
           value={shown('runes', (loaded) => (loaded.runes === null ? null : runeCountFormat.format(loaded.runes)))}
           unit="rúna"
           className="content-in"
@@ -62,7 +63,7 @@ export function HomePage() {
         />
         <StatCard
           label="Játékidőd"
-          icon={Clock}
+          icon={faClock}
           value={shown('playtime', (loaded) => loaded.playtime && hoursFormat.format(loaded.playtime.total_seconds / 3600))}
           unit="óra"
           className="content-in"
@@ -70,7 +71,7 @@ export function HomePage() {
         />
         <StatCard
           label="Rangod"
-          icon={Medal}
+          icon={faHatWizard}
           value={shown('rank', (loaded) =>
             loaded.rank ? <span style={rankColor(loaded.rank.color)}>{loaded.rank.name}</span> : null,
           )}
