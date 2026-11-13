@@ -1,3 +1,15 @@
+# Vite + React frontend. AI tools, editors and OS files are in the repository's root .gitignore.
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Local environment files (.env.local, .env.*.local)
+*.local
+
 # Logs
 logs
 *.log
@@ -6,19 +18,3 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?

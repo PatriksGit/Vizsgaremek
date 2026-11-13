@@ -1,26 +1,24 @@
-*.log
-.DS_Store
+# Laravel backend. AI tools, editors and OS files are in the repository's root .gitignore.
+
+# Dependencies
+/vendor
+
+# Local configuration and secrets (.env.example is the committed template)
 .env
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.codex
-/.cursor/
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
 /auth.json
+
+# Logs, caches and generated files
+*.log
+.phpunit.result.cache
+/.phpunit.cache
 /public/storage
 /storage/*.key
 /storage/pail
-/vendor
 _ide_helper.php
+.phpactor.json
+
+# Homestead
 Homestead.json
 Homestead.yaml
-Thumbs.db
-/config.yml
-/.claude
-/docs

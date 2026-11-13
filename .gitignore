@@ -1,11 +1,48 @@
-# ===== Claude / AI eszközök =====
+# Shared by the whole repository. The backend's and the frontend's own
+# .gitignore only list what belongs to Laravel and to Vite.
+
+# --- AI tools: each developer's own, never committed --------------------------
+# Claude Code
+.claude/
 CLAUDE.md
 CLAUDE.local.md
-.claude/
-.mcp.json
+# Laravel Boost and the agents it configures
 AGENTS.md
+boost.json
+.mcp.json
 .ai/
+.junie/
+**/.github/copilot-instructions.md
+# Other assistants
+.cursor/
+.codex/
+.windsurf/
+.gemini/
+GEMINI.md
+.aider*
+# Plugin and tool output
 .superpowers/
-.playwright-mcp/
 superpowers/
+.playwright-mcp/
+graphify-out/
+
+# --- Notes, plans and specs (kept locally, not in git) ------------------------
 docs/
+
+# --- Operating systems ---------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# --- Editors --------------------------------------------------------------------
+# (a pattern with a slash in the middle only matches from the root, hence **/)
+.idea/
+**/.vscode/*
+!**/.vscode/extensions.json
+.fleet/
+.zed/
+.nova/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
