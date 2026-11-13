@@ -61,8 +61,9 @@ export default function SkinViewer3D({ url, width, height, onError }: SkinViewer
     <canvas
       ref={canvasRef}
       className={cn(
-        'cursor-grab transition-opacity duration-300 active:cursor-grabbing motion-reduce:transition-none',
-        shownUrl === url ? 'opacity-100' : 'opacity-0',
+        // Fades in and rises a little into place once the skin is on it, instead of popping up.
+        'cursor-grab transition-[opacity,translate,scale] duration-700 ease-out active:cursor-grabbing motion-reduce:transition-none',
+        shownUrl === url ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-3 scale-95 opacity-0',
       )}
     />
   )
