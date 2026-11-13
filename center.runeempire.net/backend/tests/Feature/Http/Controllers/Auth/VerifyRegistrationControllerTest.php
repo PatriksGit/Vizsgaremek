@@ -199,13 +199,15 @@ class VerifyRegistrationControllerTest extends TestCase
     public function test_returns_422_on_email_when_the_name_is_taken_at_the_moment_of_redeeming(): void
     {
         $pending = $this->pending();
-        $this->beforeProcedureCall('CreateAccount', function (): void {
-            DB::connection('global')->table('accounts')->insert([
-                'uuid' => Account::offlineUuid('PATRIKT'),
-                'username' => 'patrikt',
-                'display_name' => 'PATRIKT',
-                'password_hash' => 'x',
-            ]);
+        Account::creating(function (Account $account): void {
+            if ($account->username === 'patrikt') {
+                DB::connection('global')->table('accounts')->insert([
+                    'uuid' => Account::offlineUuid('PATRIKT'),
+                    'username' => 'patrikt',
+                    'display_name' => 'PATRIKT',
+                    'password_hash' => 'x',
+                ]);
+            }
         });
 
         $this->verify('123456')->assertUnprocessable()->assertJsonValidationErrors(['email' => self::TAKEN_MEANWHILE]);

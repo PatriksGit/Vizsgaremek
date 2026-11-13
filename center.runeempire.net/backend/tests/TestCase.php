@@ -3,7 +3,6 @@
 namespace Tests;
 
 use App\Models\Account;
-use Closure;
 use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -31,8 +30,8 @@ abstract class TestCase extends BaseTestCase
      * The Auth database's two shared tables exactly as they are on the server
      * (the owner's schema dump of 2026-11-13). No migration of ours creates
      * them: accounts is changed by hand, account_locks belongs to RuneAuth.
-     * The exact copy matters: the stored procedures' parameters carry these
-     * columns' collations.
+     * The exact copy matters: comparisons follow these columns' collations
+     * (the username is case-sensitive ascii_bin, the email is not).
      */
     private const AUTH_TABLES = [
         <<<'SQL'
@@ -90,9 +89,8 @@ abstract class TestCase extends BaseTestCase
         // database, so the auth test database is emptied here, and the shared
         // accounts and account_locks tables are created before the migrations
         // (DDL cannot run inside a test: MySQL commits the open transaction on
-        // it). The migrations then add pending_registrations and the stored
-        // procedures. An event, not an override: the traits' own methods would
-        // replace this class's.
+        // it). The migrations then add pending_registrations. An event, not an
+        // override: the traits' own methods would replace this class's.
         $app['events']->listen(MigrationsStarted::class, function (): void {
             Schema::connection('global')->dropAllTables();
 
@@ -128,23 +126,6 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Run $callback once, right before the first call of the stored procedure
-     * on the auth connection: a way to let "another request" change the data
-     * at exactly that moment.
-     */
-    protected function beforeProcedureCall(string $procedure, Closure $callback): void
-    {
-        $done = false;
-
-        DB::connection('global')->beforeExecuting(function (string $query) use ($procedure, $callback, &$done): void {
-            if (! $done && str_starts_with($query, "CALL {$procedure}(")) {
-                $done = true;
-                $callback();
-            }
-        });
-    }
-
-    /**
      * Like a browser: the next request carries this session cookie, and the
      * guards and the session store start fresh. Tests share one app, which
      * would otherwise keep the user and the previous session data in memory.
@@ -176,16 +157,14 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Assert that no query logged on the connection mentioned the column,
-     * ignoring case, so a call of a procedure named after it counts too
-     * ("username" matches CALL FindAccountByUsername(?)). The connection's
-     * query log must have been enabled by the test.
+     * Assert that no query logged on the connection mentioned the column.
+     * The connection's query log must have been enabled by the test.
      */
     protected function assertNoQueryMentions(string $connection, string $column, string $message = ''): void
     {
         $queries = array_filter(
             DB::connection($connection)->getQueryLog(),
-            fn (array $query): bool => stripos($query['query'], $column) !== false,
+            fn (array $query): bool => str_contains($query['query'], $column),
         );
 
         $this->assertSame([], array_values($queries), $message);

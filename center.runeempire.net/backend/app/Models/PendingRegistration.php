@@ -12,9 +12,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * A registration waiting for its emailed code, in the auth database.
- * It becomes an Account when the code is redeemed. Rows are read and written
- * through the stored procedures of App\Repositories\PendingRegistrationRepository,
- * never through Eloquent queries.
+ * It becomes an Account when the code is redeemed.
  *
  * @property int $id
  * @property string $username

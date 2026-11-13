@@ -3,11 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Models\Account;
-use App\Repositories\AccountRepository;
 use App\Rules\PlayablePassword;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
 {
@@ -43,7 +43,7 @@ class RegisterRequest extends FormRequest
     {
         return [
             'display_name' => ['bail', 'required', 'string', 'regex:'.Account::NAME_PATTERN, self::nameIsFree()],
-            'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.self::EMAIL_PATTERN, 'email', self::emailIsFree()],
+            'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.self::EMAIL_PATTERN, 'email', Rule::unique(Account::class, 'email')],
             'password' => ['required', 'string', 'confirmed', new PlayablePassword],
             'terms' => ['accepted'],
             'age_confirmed' => ['accepted'],
@@ -56,20 +56,8 @@ class RegisterRequest extends FormRequest
     private static function nameIsFree(): Closure
     {
         return function (string $attribute, string $value, Closure $fail): void {
-            if (app(AccountRepository::class)->usernameExists(Account::usernameFor($value))) {
+            if (Account::query()->where('username', Account::usernameFor($value))->exists()) {
                 $fail('validation.custom.display_name.unique')->translate();
-            }
-        };
-    }
-
-    /**
-     * The email must not belong to an account.
-     */
-    private static function emailIsFree(): Closure
-    {
-        return function (string $attribute, string $value, Closure $fail): void {
-            if (app(AccountRepository::class)->emailExists($value)) {
-                $fail('validation.custom.email.unique')->translate();
             }
         };
     }

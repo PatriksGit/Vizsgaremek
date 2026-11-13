@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * A player account in the Auth database's accounts table (global connection).
@@ -21,9 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  * The table is shared with the Rune Gateway and RuneAuth and changed by hand,
  * never by a migration: created_at is filled by the database and there is no
  * updated_at column. Only the columns the website uses are listed; locked
- * comes from RuneAuth's account_locks table.
- * Rows are read and written through the stored procedures of
- * App\Repositories\AccountRepository, never through Eloquent queries.
+ * comes from RuneAuth's account_locks table (the lock relation).
  *
  * @property int $id
  * @property string $uuid
@@ -32,7 +31,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $password_hash
  * @property string|null $email
  * @property bool $twofa_enabled
- * @property bool $locked
+ * @property-read bool $locked
+ * @property-read AccountLock|null $lock
  * @property-read CarbonImmutable|null $created_at
  */
 #[Connection('global')]
@@ -88,12 +88,22 @@ class Account extends Model implements AuthenticatableContract
 
     /**
      * Whether the account may be used on the website: not locked by staff,
-     * and without two-factor authentication, which only the game can check
-     * for now (the website would let the password alone in).
+     * and without two-factor authentication, which the website cannot check
+     * yet (it would let the password alone in).
      */
     public function canUseWebsite(): bool
     {
         return ! $this->locked && ! $this->twofa_enabled;
+    }
+
+    /**
+     * The staff lock on this account, if any (RuneAuth's account_locks row).
+     *
+     * @return HasOne<AccountLock, $this>
+     */
+    public function lock(): HasOne
+    {
+        return $this->hasOne(AccountLock::class, 'uuid', 'uuid');
     }
 
     /**
@@ -121,9 +131,19 @@ class Account extends Model implements AuthenticatableContract
     {
         return [
             'password_hash' => 'hashed',
-            'locked' => 'boolean',
             'twofa_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * Whether staff locked the account: a lock is a row in account_locks,
+     * not a column of accounts. Loaded once per model, on first use.
+     *
+     * @return Attribute<bool, never>
+     */
+    protected function locked(): Attribute
+    {
+        return Attribute::get(fn (): bool => $this->lock !== null);
     }
 
     /**

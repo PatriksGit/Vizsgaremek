@@ -7,11 +7,9 @@ use App\Models\Account;
  */
 return [
 
-    // Accounts are loaded through the stored procedures (App\Auth\ProcedureUserProvider);
-    // the model is what the rows come back as.
     'providers' => [
         'users' => [
-            'driver' => 'procedures',
+            'driver' => 'eloquent',
             'model' => Account::class,
         ],
     ],

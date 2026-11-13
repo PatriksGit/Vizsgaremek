@@ -5,7 +5,6 @@ namespace App\Actions;
 use App\Models\Account;
 use App\Models\PendingRegistration;
 use App\Notifications\RegistrationCodeNotification;
-use App\Repositories\PendingRegistrationRepository;
 use App\Support\RegistrationCode;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
@@ -20,8 +19,6 @@ use Throwable;
 
 class StartRegistration
 {
-    public function __construct(private PendingRegistrationRepository $pendingRegistrations) {}
-
     /**
      * Park validated registration input until its emailed code is redeemed,
      * replacing this email's pending registration, and mail the code.
@@ -72,7 +69,7 @@ class StartRegistration
             Notification::route('mail', $email)->notify(new RegistrationCodeNotification($code, $expiresInMinutes, $displayName));
         } catch (Throwable $exception) {
             RateLimiter::clear($cooldownKey);
-            $this->pendingRegistrations->delete($pending);
+            $pending->delete();
             report($exception);
 
             throw new ServiceUnavailableHttpException(message: 'A megerősítő e-mailt most nem sikerült elküldeni, próbáld újra később.');
@@ -104,9 +101,11 @@ class StartRegistration
     ): PendingRegistration {
         try {
             return DB::connection('global')->transaction(function () use ($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes, $ownerHash): PendingRegistration {
-                $this->pendingRegistrations->deleteExpired(now());
+                PendingRegistration::query()->where('expires_at', '<=', now())->delete();
 
-                $held = $this->pendingRegistrations->findByUsernameOrEmail($username, $email);
+                $held = PendingRegistration::query()
+                    ->where(fn ($query) => $query->where('username', $username)->orWhere('email', $email))
+                    ->get();
                 $heldByOthers = $held->reject(fn (PendingRegistration $pending): bool => $pending->isOwnedBy($ownerHash));
 
                 if ($heldByOthers->contains('username', $username)) {
@@ -117,17 +116,17 @@ class StartRegistration
                     throw self::emailHeld();
                 }
 
-                $held->each(fn (PendingRegistration $pending) => $this->pendingRegistrations->delete($pending));
+                PendingRegistration::query()->whereKey($held->modelKeys())->delete();
 
-                return $this->pendingRegistrations->create(
-                    $username,
-                    $displayName,
-                    $email,
-                    $passwordHash,
-                    RegistrationCode::hash($code),
-                    $ownerHash,
-                    now()->addMinutes($expiresInMinutes),
-                );
+                return PendingRegistration::create([
+                    'username' => $username,
+                    'display_name' => $displayName,
+                    'email' => $email,
+                    'password_hash' => $passwordHash,
+                    'code_hash' => RegistrationCode::hash($code),
+                    'owner_hash' => $ownerHash,
+                    'expires_at' => now()->addMinutes($expiresInMinutes),
+                ]);
             }, attempts: 3);
         } catch (UniqueConstraintViolationException $exception) {
             throw self::hitEmailIndex($exception) ? self::emailHeld() : self::nameHeld();

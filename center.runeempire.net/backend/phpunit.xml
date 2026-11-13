@@ -22,8 +22,8 @@
         <env name="BROADCAST_CONNECTION" value="null" force="true"/>
         <env name="CACHE_STORE" value="array" force="true"/>
         <!--
-            The tests need MySQL: the backend reads and writes through stored
-            procedures, which SQLite does not have. They run on two empty test
+            The tests run on MySQL like the real databases (collations, unique
+            index names and locking behave the same). They use two empty test
             databases next to the local copies of the real ones (center_test on
             mysql-web, auth_test on mysql-global), as a user that can reach only
             those two, so a test can never touch Center or Auth. Its password is
