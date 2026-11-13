@@ -11,9 +11,12 @@ const NAME_PATTERN = /^[A-Za-z0-9_]{3,16}$/
 /** RegisterRequest::EMAIL_PATTERN: ASCII address with a dotted domain. */
 const EMAIL_PATTERN = /^[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
 
-/** PlayablePassword: no whitespace, § or control characters (untypeable in Minecraft chat). */
-// eslint-disable-next-line no-control-regex -- matching control characters is the point
-const UNTYPEABLE_PATTERN = /[\s§\x00-\x1F\x7F]/
+/**
+ * PlayablePassword::ALLOWED_PATTERN: what a keyboard types -- the English letters,
+ * digits, space and plain symbols (printable ASCII) plus the Hungarian accented
+ * letters. No emoji, copied symbols, other alphabets or separate accent marks.
+ */
+const ALLOWED_PASSWORD_PATTERN = /^[\x20-\x7EáéíóöőúüűÁÉÍÓÖŐÚÜŰ]+$/
 
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 64
@@ -30,10 +33,11 @@ export type LoginValues = z.infer<typeof loginSchema>
 const password = z
   .string()
   .min(1, { error: 'Adj meg egy jelszót.' })
-  .refine((value) => !UNTYPEABLE_PATTERN.test(value), { error: 'A jelszóban nem lehet szóköz vagy § jel.' })
-  // The minimum counts characters like the backend (mb_strlen), the maximum
-  // UTF-16 units like the plugin, so an emoji counts once and twice.
-  .refine((value) => [...value].length >= PASSWORD_MIN_LENGTH, { error: `Legalább ${PASSWORD_MIN_LENGTH} karakter legyen.` })
+  .refine((value) => ALLOWED_PASSWORD_PATTERN.test(value), {
+    error: 'Csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.',
+  })
+  // Every allowed character is one UTF-16 unit, so .length counts characters like the backend.
+  .refine((value) => value.length >= PASSWORD_MIN_LENGTH, { error: `Legalább ${PASSWORD_MIN_LENGTH} karakter legyen.` })
   .refine((value) => value.length <= PASSWORD_MAX_LENGTH, { error: `Legfeljebb ${PASSWORD_MAX_LENGTH} karakter lehet.` })
 
 export const registerSchema = z

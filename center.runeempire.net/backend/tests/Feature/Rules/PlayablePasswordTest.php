@@ -12,6 +12,8 @@ use Tests\TestCase;
  */
 class PlayablePasswordTest extends TestCase
 {
+    private const CHARACTERS = 'Jelszó csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.';
+
     /**
      * @return array<int, string>
      */
@@ -20,8 +22,8 @@ class PlayablePasswordTest extends TestCase
         return Validator::make(['password' => $password], ['password' => [new PlayablePassword]])->errors()->get('password');
     }
 
-    #[DataProvider('playablePasswords')]
-    public function test_accepts_passwords_usable_with_in_game_login(string $password): void
+    #[DataProvider('typeablePasswords')]
+    public function test_accepts_passwords_typed_on_a_keyboard(string $password): void
     {
         $this->assertSame([], $this->errors($password));
     }
@@ -29,18 +31,21 @@ class PlayablePasswordTest extends TestCase
     /**
      * @return array<string, array{string}>
      */
-    public static function playablePasswords(): array
+    public static function typeablePasswords(): array
     {
         return [
-            'ascii with symbols' => ['titkos-jelszo!?#'],
-            'accented letters' => ['árvíztűrő-tükörfúrógép'],
+            'letters and digits' => ['TitkosJelszo2026'],
+            'every plain symbol' => [' !"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~'],
+            'spaces inside and at the ends' => [' titkos jelszo '],
+            'Hungarian accented letters' => ['árvíztűrő tükörfúrógép ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP'],
+            'exactly 8 characters' => ['12345678'],
             'exactly 64 characters' => [str_repeat('a', 64)],
-            'exactly 64 UTF-16 units (32 emoji)' => [str_repeat('😀', 32)],
+            'exactly 64 accented characters' => [str_repeat('ő', 64)],
         ];
     }
 
-    #[DataProvider('unplayablePasswords')]
-    public function test_rejects_passwords_unusable_in_game_with_the_reason(string $password, string $message): void
+    #[DataProvider('untypeablePasswords')]
+    public function test_rejects_other_passwords_with_the_reason(string $password, string $message): void
     {
         $this->assertSame([$message], $this->errors($password));
     }
@@ -48,20 +53,25 @@ class PlayablePasswordTest extends TestCase
     /**
      * @return array<string, array{string, string}>
      */
-    public static function unplayablePasswords(): array
+    public static function untypeablePasswords(): array
     {
-        $format = 'Jelszó formátuma érvénytelen.';
-
         return [
             'too short' => ['1234567', 'Jelszó legalább 8 karakter legyen.'],
-            'space (in-game /login splits on spaces)' => ['titkos jelszo', $format],
-            'tab' => ["titkos\tjelszo", $format],
-            'newline' => ["titkos\njelszo", $format],
-            'section sign (cannot be typed in Minecraft chat)' => ['titkos§jelszo', $format],
-            'control character' => ["titkos\x01jelszo", $format],
-            'delete character' => ["titkos\x7Fjelszo", $format],
-            'invalid UTF-8' => ["titkos\xA7jelszo", $format],
-            'over 64 UTF-16 units like the plugin counts' => [str_repeat('😀', 33), 'Jelszó legfeljebb 64 karakter lehet.'],
+            'too long' => [str_repeat('a', 65), 'Jelszó legfeljebb 64 karakter lehet.'],
+            'emoji' => ['titkos-jelszo😀', self::CHARACTERS],
+            'copied symbol' => ['titkos™jelszo', self::CHARACTERS],
+            'arrow' => ['titkos→jelszo', self::CHARACTERS],
+            'section sign' => ['titkos§jelszo', self::CHARACTERS],
+            'accent of another language' => ['titkosjelszoñ', self::CHARACTERS],
+            'another alphabet' => ['титкосджелсо', self::CHARACTERS],
+            'accent as a separate combining mark' => ["titkos-jela\u{0301}szo", self::CHARACTERS],
+            'non-breaking space' => ["titkos\u{00A0}jelszo", self::CHARACTERS],
+            'zero-width space' => ["titkos\u{200B}jelszo", self::CHARACTERS],
+            'tab' => ["titkos\tjelszo", self::CHARACTERS],
+            'newline' => ["titkos\njelszo", self::CHARACTERS],
+            'control character' => ["titkos\x01jelszo", self::CHARACTERS],
+            'delete character' => ["titkos\x7Fjelszo", self::CHARACTERS],
+            'invalid UTF-8' => ["titkos\xA7jelszo", self::CHARACTERS],
         ];
     }
 }

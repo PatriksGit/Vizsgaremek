@@ -137,14 +137,14 @@ class ChangePasswordControllerTest extends TestCase
     /**
      * The full policy matrix lives in PlayablePasswordTest; this proves the endpoint applies it.
      */
-    public function test_returns_422_for_a_new_password_unusable_in_game(): void
+    public function test_returns_422_for_a_new_password_that_cannot_be_typed(): void
     {
         $account = $this->account();
 
         $this->actingAs($account, 'web')
-            ->changePassword(['password' => 'uj titkos jelszo', 'password_confirmation' => 'uj titkos jelszo'])
+            ->changePassword(['password' => 'uj-titkos-jelszo😀', 'password_confirmation' => 'uj-titkos-jelszo😀'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'Jelszó formátuma érvénytelen.']);
+            ->assertJsonValidationErrors(['password' => 'Jelszó csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.']);
 
         $this->assertPasswordUnchanged($account);
     }

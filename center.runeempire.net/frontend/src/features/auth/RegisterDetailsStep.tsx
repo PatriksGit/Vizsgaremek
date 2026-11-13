@@ -67,7 +67,7 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false }: RegisterDe
           <PasswordField
             label="Jelszó"
             autoComplete="new-password"
-            description={`Min. ${PASSWORD_MIN_LENGTH} karakter, szóköz és § nélkül.`}
+            description={`Min. ${PASSWORD_MIN_LENGTH} karakter: magyar vagy angol betűk, számok és egyszerű szimbólumok.`}
             error={errors.password?.message}
             {...form.register('password')}
           />

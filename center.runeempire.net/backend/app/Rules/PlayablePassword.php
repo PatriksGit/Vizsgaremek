@@ -8,16 +8,22 @@ use Illuminate\Translation\PotentiallyTranslatedString;
 
 /**
  * The whole password policy, shared by registration and password change: a
- * password the player can also use with PAxAuth's in-game /login.
+ * password the player can type on a keyboard, also into the launcher's login
+ * form (the Rune Gateway accepts 1-128 characters).
  *
- * /login splits its argument on spaces, § and control characters cannot be
- * typed in Minecraft chat, and the plugin measures length in Java chars
- * (UTF-16 units, an emoji counts twice), so such passwords could never log in
- * on the server. Invalid UTF-8 is refused too: the pattern check cannot read it.
+ * An allow list, not a deny list: the English letters, digits, space and the
+ * plain symbols (printable ASCII), plus the Hungarian accented letters.
+ * Everything else is refused: emoji, copied symbols (™, →), other alphabets,
+ * invisible and control characters. It also refuses an accent typed as a
+ * separate combining mark (a + ´): such an "á" looks the same but is stored
+ * differently from the one-character "á" a keyboard sends, so the player
+ * could not log in by typing it. A string that is not valid UTF-8 never
+ * matches either. Every allowed character is a single character, so the
+ * length means the same here as in the launcher.
  */
 class PlayablePassword implements ValidationRule
 {
-    private const UNTYPEABLE_PATTERN = '/[\s§\x00-\x1F\x7F]/u';
+    private const ALLOWED_PATTERN = '/\A[\x20-\x7EáéíóöőúüűÁÉÍÓÖŐÚÜŰ]+\z/u';
 
     /**
      * Run the validation rule.
@@ -30,8 +36,8 @@ class PlayablePassword implements ValidationRule
             return;
         }
 
-        if (! mb_check_encoding($value, 'UTF-8') || preg_match(self::UNTYPEABLE_PATTERN, $value) === 1) {
-            $fail('validation.not_regex')->translate();
+        if (preg_match(self::ALLOWED_PATTERN, $value) !== 1) {
+            $fail('validation.password_characters')->translate();
 
             return;
         }
@@ -46,7 +52,7 @@ class PlayablePassword implements ValidationRule
 
         $max = config('auth.password_length.max');
 
-        if (strlen(mb_convert_encoding($value, 'UTF-16LE', 'UTF-8')) / 2 > $max) {
+        if (mb_strlen($value) > $max) {
             $fail('validation.max.string')->translate(['max' => $max]);
         }
     }

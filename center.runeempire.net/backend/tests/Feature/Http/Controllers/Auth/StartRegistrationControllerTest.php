@@ -340,11 +340,11 @@ class StartRegistrationControllerTest extends TestCase
     /**
      * The full policy matrix lives in PlayablePasswordTest; this proves the endpoint applies it.
      */
-    public function test_returns_422_for_a_password_unusable_in_game(): void
+    public function test_returns_422_for_a_password_that_cannot_be_typed(): void
     {
-        $this->register(['password' => 'titkos jelszo', 'password_confirmation' => 'titkos jelszo'])
+        $this->register(['password' => 'titkos-jelszo😀', 'password_confirmation' => 'titkos-jelszo😀'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'Jelszó formátuma érvénytelen.']);
+            ->assertJsonValidationErrors(['password' => 'Jelszó csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.']);
 
         $this->assertDatabaseCount('pending_registrations', 0, 'global');
     }
