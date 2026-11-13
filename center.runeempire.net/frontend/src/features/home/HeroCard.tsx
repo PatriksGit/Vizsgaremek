@@ -58,7 +58,6 @@ export function HeroCard({ streak }: { streak?: Streak }) {
 
       <StreakPanel
         streak={streak}
-        registeredAt={account?.registered_at}
         className="content-in order-last basis-full border-t border-line pt-4 xl:order-0 xl:mr-12 xl:shrink xl:grow-0 xl:basis-100 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-8"
       />
 

@@ -7,7 +7,7 @@ import { CubePlayer } from './CubePlayer'
 
 const SkinViewer3D = lazy(() => import('./SkinViewer3D'))
 
-/** The stand-in Steve made of CSS boxes: while the 3D viewer loads, and when it cannot run. */
+/** The stand-in Steve made of CSS boxes, for when the 3D viewer cannot run or the skin cannot load. */
 function Stand() {
   return (
     <div className="relative h-full w-full perspective-distant">
@@ -21,8 +21,9 @@ function Stand() {
 
 /**
  * The player's own skin as a 3D figure in the hero: 120x200 on wide screens,
- * 72x128 on phones. Falls back to the CSS Steve without a name, without
- * WebGL, or when the skin cannot be loaded.
+ * 72x128 on phones, faded in once the skin is ready (nothing shows before,
+ * so no Steve flashes up). Falls back to the CSS Steve without a name,
+ * without WebGL, or when the skin cannot be loaded.
  */
 export function SkinFigure({ name }: { name?: string }) {
   const isMobile = useIsMobile()
@@ -34,7 +35,8 @@ export function SkinFigure({ name }: { name?: string }) {
       {!name || failedName === name ? (
         <Stand />
       ) : (
-        <Suspense fallback={<Stand />}>
+        // Empty while three.js downloads: Steve only stands in when the skin cannot be shown.
+        <Suspense fallback={null}>
           <SkinViewer3D url={skinUrl(name)} width={width} height={height} onError={() => setFailedName(name)} />
         </Suspense>
       )}

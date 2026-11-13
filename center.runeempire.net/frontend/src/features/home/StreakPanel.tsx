@@ -1,10 +1,10 @@
-import { Check, Flame, X } from 'lucide-react'
+import { Check, Clock, Flame, X } from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-/** One day of this week's login streak. `unknown`: a past day the server has not told about yet. */
-export type StreakDayStatus = 'done' | 'missed' | 'pending' | 'future' | 'before' | 'unknown'
+/** One day of this week's login streak, as GET /api/me/stats sends it. */
+export type StreakDayStatus = 'done' | 'missed' | 'pending' | 'future' | 'before'
 
 export type Streak = {
   /** Days in a row, today included once the player logged in. */
@@ -23,7 +23,6 @@ const LOOK: Record<StreakDayStatus, { box: string; date: string; text: string }>
   pending: { box: 'today-pulse border-2 border-primary bg-primary/8', date: 'text-primary', text: 'még nem léptél be' },
   future: { box: 'border border-line bg-sunken', date: 'text-faint', text: 'még hátravan' },
   before: { box: 'border border-dashed border-line', date: 'text-faint', text: 'regisztráció előtt' },
-  unknown: { box: 'border border-line bg-sunken', date: 'text-faint', text: 'nincs még adat' },
 }
 
 const dayCount = (days: number) => `${days} nap`
@@ -39,42 +38,23 @@ function thisWeek(today = new Date()) {
   return Array.from({ length: 7 }, (_, index) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + index))
 }
 
-/**
- * Until the server sends the streak: days before the registration as such,
- * today waiting for a login, the rest of the week ahead, and the past days
- * since the registration as not known yet (never as missed).
- */
-function weekWithoutData(registeredAt: string | null | undefined): StreakDayStatus[] {
-  const todayIndex = (new Date().getDay() + 6) % 7
-  const registered = registeredAt ? new Date(registeredAt) : null
-  const registeredDay = registered && new Date(registered.getFullYear(), registered.getMonth(), registered.getDate())
-
-  return thisWeek().map((day, index) => {
-    if (index > todayIndex) return 'future'
-    if (registeredDay && day < registeredDay) return 'before'
-    return index === todayIndex ? 'pending' : 'unknown'
-  })
-}
-
 type StreakPanelProps = {
-  /** Left out until the stats API sends it: the count shows a skeleton, the week what is known. */
+  /** Left out while the stats load: skeletons in its place. */
   streak?: Streak
-  registeredAt?: string | null
   className?: string
 }
 
 /**
  * This week's daily logins inside the hero: the streak and the record on
  * top, seven boxes (a check for a day logged in, a cross for a missed one,
- * today pulsing gold until the login), and a line of encouragement.
+ * today pulsing gold with a clock until the login), and a line of encouragement.
  */
-export function StreakPanel({ streak, registeredAt, className }: StreakPanelProps) {
+export function StreakPanel({ streak, className }: StreakPanelProps) {
   const todayIndex = (new Date().getDay() + 6) % 7
-  const week = streak?.week ?? weekWithoutData(registeredAt)
   const dates = thisWeek()
 
   const message = !streak
-    ? 'Hamarosan itt követheted, hány napja lépsz be egymás után.'
+    ? null
     : streak.week[todayIndex] === 'done'
       ? 'Ma már beléptél, így tovább!'
       : streak.current > 0
@@ -100,34 +80,40 @@ export function StreakPanel({ streak, registeredAt, className }: StreakPanelProp
         {streak && <span className="text-xs text-faint">Rekord: {dayCount(streak.best)}</span>}
       </div>
 
-      <ol aria-label="Napi sorozat ezen a héten" className="grid grid-cols-7 gap-1.25 md:gap-1.5">
-        {week.map((status, index) => {
-          const look = LOOK[status]
+      <ol aria-label="Napi sorozat ezen a héten" aria-busy={!streak} className="grid grid-cols-7 gap-1.25 md:gap-1.5">
+        {dates.map((date, index) => {
+          const status = streak?.week[index]
           const today = index === todayIndex
+
           return (
             <li key={DAY_SHORT[index]} className="flex flex-col items-center gap-1 md:gap-1.25">
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg md:rounded-[9px]',
-                  look.box,
-                  today && status === 'done' && 'border-2 border-ok',
-                )}
-              >
-                {status === 'done' && <Check className="size-3.5 text-ok md:size-4" strokeWidth={3} />}
-                {status === 'missed' && <X className="size-3.25 text-danger md:size-3.75" strokeWidth={3} />}
-                <span className={cn('text-[10px] leading-none font-bold md:text-[11px]', look.date)}>{monthDay(dates[index])}</span>
-              </span>
+              {status ? (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg md:rounded-[9px]',
+                    LOOK[status].box,
+                    today && status === 'done' && 'border-2 border-ok',
+                  )}
+                >
+                  {status === 'done' && <Check className="size-3.5 text-ok md:size-4" strokeWidth={3} />}
+                  {status === 'missed' && <X className="size-3.25 text-danger md:size-3.75" strokeWidth={3} />}
+                  {status === 'pending' && <Clock className="size-3.25 text-primary md:size-3.75" strokeWidth={2.5} />}
+                  <span className={cn('text-[10px] leading-none font-bold md:text-[11px]', LOOK[status].date)}>{monthDay(date)}</span>
+                </span>
+              ) : (
+                <Skeleton className="aspect-square w-full rounded-lg md:rounded-[9px]" />
+              )}
               <span aria-hidden="true" className={cn('text-[11px]', today ? 'font-extrabold text-primary' : 'font-semibold text-faint')}>
                 {today ? 'Ma' : DAY_SHORT[index]}
               </span>
-              <span className="sr-only">{`${DAY_NAMES[index]} (${monthDay(dates[index])}): ${look.text}`}</span>
+              {status && <span className="sr-only">{`${DAY_NAMES[index]} (${monthDay(date)}): ${LOOK[status].text}`}</span>}
             </li>
           )
         })}
       </ol>
 
-      <p className="text-xs text-muted-foreground">{message}</p>
+      {message ? <p className="text-xs text-muted-foreground">{message}</p> : <Skeleton className="h-4 w-56" />}
     </div>
   )
 }
