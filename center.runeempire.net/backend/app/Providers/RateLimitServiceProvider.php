@@ -40,6 +40,13 @@ class RateLimitServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('password-change', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.password_change.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));
+
+        RateLimiter::for('password-forgot', fn (Request $request): array => [
+            Limit::perMinute(config('rate_limits.password_forgot.per_minute'))->by('minute:'.$request->ip())->response(self::tooManyAttempts()),
+            Limit::perHour(config('rate_limits.password_forgot.per_hour'))->by('hour:'.$request->ip())->response(self::tooManyAttempts()),
+        ]);
+
+        RateLimiter::for('password-reset', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.password_reset.per_minute'))->by($request->ip())->response(self::tooManyAttempts()));
     }
 
     /**

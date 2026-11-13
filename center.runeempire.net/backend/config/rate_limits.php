@@ -50,4 +50,28 @@ return [
         'cooldown_seconds' => max(1, (int) env('RATE_LIMITS_REGISTRATION_MAIL_COOLDOWN_SECONDS', 600)),
     ],
 
+    /*
+     * POST /api/auth/password/forgot, per IP. Each account also waits
+     * registration_mail.cooldown_seconds between two reset codes.
+     */
+    'password_forgot' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_PASSWORD_FORGOT_PER_MINUTE', 5)),
+        'per_hour' => max(1, (int) env('RATE_LIMITS_PASSWORD_FORGOT_PER_HOUR', 20)),
+    ],
+
+    /*
+     * POST /api/auth/password/forgot/verify and /api/auth/password/reset, per IP.
+     */
+    'password_reset' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_PASSWORD_RESET_PER_MINUTE', 10)),
+    ],
+
+    /*
+     * Wrong password reset codes per account in 24 hours, across all its
+     * codes: requesting a new code does not give new guesses.
+     */
+    'password_reset_guesses' => [
+        'per_day' => max(1, (int) env('RATE_LIMITS_PASSWORD_RESET_GUESSES_PER_DAY', 10)),
+    ],
+
 ];

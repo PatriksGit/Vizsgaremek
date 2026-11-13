@@ -133,6 +133,10 @@ class ConfigDefaultsTest extends TestCase
             'RATE_LIMITS_LOGIN_PER_MINUTE_PER_IP' => ['login', 'per_minute_per_ip'],
             'RATE_LIMITS_PASSWORD_CHANGE_PER_MINUTE' => ['password_change', 'per_minute'],
             'RATE_LIMITS_REGISTRATION_MAIL_COOLDOWN_SECONDS' => ['registration_mail', 'cooldown_seconds'],
+            'RATE_LIMITS_PASSWORD_FORGOT_PER_MINUTE' => ['password_forgot', 'per_minute'],
+            'RATE_LIMITS_PASSWORD_FORGOT_PER_HOUR' => ['password_forgot', 'per_hour'],
+            'RATE_LIMITS_PASSWORD_RESET_PER_MINUTE' => ['password_reset', 'per_minute'],
+            'RATE_LIMITS_PASSWORD_RESET_GUESSES_PER_DAY' => ['password_reset_guesses', 'per_day'],
         ];
 
         $cases = [];

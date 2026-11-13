@@ -65,6 +65,10 @@
         <env name="RATE_LIMITS_LOGIN_PER_MINUTE" value="5" force="true"/>
         <env name="RATE_LIMITS_LOGIN_PER_MINUTE_PER_IP" value="20" force="true"/>
         <env name="RATE_LIMITS_PASSWORD_CHANGE_PER_MINUTE" value="5" force="true"/>
+        <env name="RATE_LIMITS_PASSWORD_FORGOT_PER_MINUTE" value="5" force="true"/>
+        <env name="RATE_LIMITS_PASSWORD_FORGOT_PER_HOUR" value="20" force="true"/>
+        <env name="RATE_LIMITS_PASSWORD_RESET_PER_MINUTE" value="10" force="true"/>
+        <env name="RATE_LIMITS_PASSWORD_RESET_GUESSES_PER_DAY" value="10" force="true"/>
         <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost:5173" force="true"/>
         <env name="TRUSTED_PROXIES" value="127.0.0.1" force="true"/>
         <env name="MAIL_MAILER" value="array" force="true"/>
