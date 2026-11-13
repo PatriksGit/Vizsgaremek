@@ -4,19 +4,22 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-import { NO_DATA } from './stats'
+import { NO_DATA, rankColor } from './stats'
 
 /** A friend from RuneFriends, as GET /api/me/friends sends it. */
 export type Friend = {
   name: string
   online: boolean
+  /** Their LuckPerms rank; null when LuckPerms could not be read. */
+  rank: { name: string; color: string | null } | null
 }
 
 const countFormat = new Intl.NumberFormat('hu-HU')
 
 /**
  * The player's friends from the game: their heads with a green dot while
- * online, the online ones first (the server's order, like /fr in game).
+ * online, the online ones first (the server's order, like /fr in game). Each
+ * name and its small rank label take the rank's colour, when it has one.
  * While the list loads, shimmering rows; a dash when it could not be loaded.
  */
 export function FriendsCard({ friends, className }: { friends?: Friend[] | null; className?: string }) {
@@ -83,7 +86,24 @@ export function FriendsCard({ friends, className }: { friends?: Friend[] | null;
                   )}
                 />
               </span>
-              <span className="min-w-0 truncate font-bold text-foreground">{friend.name}</span>
+              <span className="min-w-0 truncate font-bold text-foreground" style={rankColor(friend.rank?.color ?? null)}>
+                {friend.name}
+              </span>
+              {friend.rank && (
+                <span
+                  className={cn(
+                    'ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-bold',
+                    !friend.rank.color && 'bg-raised text-soft',
+                  )}
+                  style={
+                    friend.rank.color
+                      ? { color: friend.rank.color, backgroundColor: `color-mix(in srgb, ${friend.rank.color} 14%, transparent)` }
+                      : undefined
+                  }
+                >
+                  {friend.rank.name}
+                </span>
+              )}
               <span className="sr-only">{friend.online ? 'Online' : 'Offline'}</span>
             </li>
           ))}

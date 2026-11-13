@@ -13,6 +13,9 @@ class MyFriendsControllerTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    /** The rank of a player in no group of their own: LuckPerms' default. */
+    private const PLAYER = ['name' => 'Játékos', 'color' => null];
+
     private Account $account;
 
     protected function setUp(): void
@@ -36,6 +39,25 @@ class MyFriendsControllerTest extends TestCase
 
         PluginDatabase::table('runefriends', 'friendships')->insert([
             'player_a' => $a, 'player_b' => $b, 'created_at' => '2026-11-01 12:00:00',
+        ]);
+    }
+
+    /**
+     * A player in a LuckPerms group with a weight and, when given, the colour `/lp group <group> meta set color` sets.
+     */
+    private function rank(Account $account, string $group, int $weight, ?string $color = null): void
+    {
+        $nodes = [['name' => $group, 'permission' => "weight.{$weight}"]];
+        if ($color !== null) {
+            $nodes[] = ['name' => $group, 'permission' => "meta.color.{$color}"];
+        }
+        foreach ($nodes as $node) {
+            PluginDatabase::table('luckperms', 'luckperms_group_permissions')->insert($node + [
+                'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}',
+            ]);
+        }
+        PluginDatabase::table('luckperms', 'luckperms_user_permissions')->insert([
+            'uuid' => $account->uuid, 'permission' => "group.{$group}", 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}',
         ]);
     }
 
@@ -65,9 +87,9 @@ class MyFriendsControllerTest extends TestCase
         $this->online($zed);
 
         $this->friends()->assertOk()->assertExactJson(['data' => [
-            ['name' => 'zed', 'online' => true],
-            ['name' => 'Anna', 'online' => false],
-            ['name' => 'Bela', 'online' => false],
+            ['name' => 'zed', 'online' => true, 'rank' => self::PLAYER],
+            ['name' => 'Anna', 'online' => false, 'rank' => self::PLAYER],
+            ['name' => 'Bela', 'online' => false, 'rank' => self::PLAYER],
         ]]);
     }
 
@@ -79,7 +101,7 @@ class MyFriendsControllerTest extends TestCase
         ]);
         $this->befriend($this->account->uuid, $uuid);
 
-        $this->friends()->assertExactJson(['data' => [['name' => 'RegiJatekos', 'online' => false]]]);
+        $this->friends()->assertExactJson(['data' => [['name' => 'RegiJatekos', 'online' => false, 'rank' => self::PLAYER]]]);
     }
 
     public function test_other_players_friendships_are_not_listed(): void
@@ -97,6 +119,31 @@ class MyFriendsControllerTest extends TestCase
         $anna = Account::factory()->create(['display_name' => 'Anna']);
         $this->befriend($anna->uuid, $this->account->uuid);
 
-        $this->friends()->assertExactJson(['data' => [['name' => 'Anna', 'online' => false]]]);
+        $this->friends()->assertExactJson(['data' => [['name' => 'Anna', 'online' => false, 'rank' => self::PLAYER]]]);
+    }
+
+    public function test_each_friend_has_their_rank_and_its_colour(): void
+    {
+        $anna = Account::factory()->create(['display_name' => 'Anna']);
+        $bela = Account::factory()->create(['display_name' => 'Bela']);
+        $this->befriend($this->account->uuid, $anna->uuid);
+        $this->befriend($this->account->uuid, $bela->uuid);
+        $this->rank($anna, 'manager', 700, '#E5675A');
+        $this->rank($bela, 'archmage', 11);
+
+        $this->friends()->assertExactJson(['data' => [
+            ['name' => 'Anna', 'online' => false, 'rank' => ['name' => 'Manager', 'color' => '#E5675A']],
+            ['name' => 'Bela', 'online' => false, 'rank' => ['name' => 'Archmage', 'color' => null]],
+        ]]);
+    }
+
+    public function test_friends_are_still_listed_when_luckperms_cannot_be_read(): void
+    {
+        $anna = Account::factory()->create(['display_name' => 'Anna']);
+        $this->befriend($this->account->uuid, $anna->uuid);
+        // As on a server where the website's user was not granted the LuckPerms database yet.
+        config(['database.plugins.luckperms' => 'center_missing_test']);
+
+        $this->friends()->assertOk()->assertExactJson(['data' => [['name' => 'Anna', 'online' => false, 'rank' => null]]]);
     }
 }

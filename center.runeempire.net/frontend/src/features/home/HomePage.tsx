@@ -12,7 +12,16 @@ import { PlaytimeCard } from './PlaytimeCard'
 import { PunishmentCard } from './PunishmentCard'
 import { registeredWithin } from './registration'
 import { StatCard } from './StatCard'
-import { hoursFormat, runeCountFormat, shortDate, type StatPart, toPunishment, useMyFriends, useMyStats } from './stats'
+import {
+  hoursFormat,
+  rankColor,
+  runeCountFormat,
+  shortDate,
+  type StatPart,
+  toPunishment,
+  useMyFriends,
+  useMyStats,
+} from './stats'
 
 /** How long a new player sees how to join the server. */
 const JOIN_HINT_DAYS = 7
@@ -59,7 +68,15 @@ export function HomePage() {
           className="content-in"
           style={enterAfter(620)}
         />
-        <StatCard label="Rangod" icon={Medal} value={shown('rank', (loaded) => loaded.rank?.name ?? null)} className="content-in" style={enterAfter(680)}>
+        <StatCard
+          label="Rangod"
+          icon={Medal}
+          value={shown('rank', (loaded) =>
+            loaded.rank ? <span style={rankColor(loaded.rank.color)}>{loaded.rank.name}</span> : null,
+          )}
+          className="content-in"
+          style={enterAfter(680)}
+        >
           {stats?.rank?.expires_at && (
             <span className="inline-flex h-6.5 items-center gap-1.5 self-start rounded-full bg-primary/10 px-2.5 text-xs font-bold text-primary">
               <Clock className="size-3.25" aria-hidden="true" />

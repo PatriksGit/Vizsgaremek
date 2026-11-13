@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import type { CSSProperties } from 'react'
 
 import { useAccount } from '@/features/auth/queries'
 import { http } from '@/lib/api'
@@ -15,6 +16,14 @@ export type StatPart = 'runes' | 'playtime' | 'streak' | 'rank' | 'punishment'
  * Times are UTC ISO 8601. A part whose plugin could not be read is null and
  * named in `unavailable`.
  */
+/**
+ * The text colour of a rank: the #RRGGBB set in game with
+ * `/lp group <group> meta set color`, or none (the neutral text colour).
+ */
+export function rankColor(color: string | null): CSSProperties | undefined {
+  return color ? { color } : undefined
+}
+
 export type MyStats = {
   runes: number | null
   playtime: {
@@ -23,7 +32,7 @@ export type MyStats = {
     week: number[]
   } | null
   streak: Streak | null
-  rank: { group: string; name: string; expires_at: string | null } | null
+  rank: { group: string; name: string; expires_at: string | null; color: string | null } | null
   punishment: {
     kind: 'ban' | 'mute'
     until: string | null

@@ -83,6 +83,16 @@ class MyStatsControllerTest extends TestCase
         ]);
     }
 
+    /**
+     * A group node as `/lp group <group> meta set color <value>` leaves it: no context, no expiry.
+     */
+    private function groupColor(string $group, string $value): void
+    {
+        $this->plugin('luckperms', 'luckperms_group_permissions')->insert([
+            'name' => $group, 'permission' => "meta.color.{$value}", 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}',
+        ]);
+    }
+
     private function userGroup(string $group, int $expiry = 0): void
     {
         $this->plugin('luckperms', 'luckperms_user_permissions')->insert([
@@ -101,7 +111,7 @@ class MyStatsControllerTest extends TestCase
             'runes' => 0,
             'playtime' => ['total_seconds' => 0, 'week' => [0, 0, 0, 0, 0, 0, 0]],
             'streak' => ['current' => 0, 'best' => 0, 'week' => ['missed', 'missed', 'missed', 'missed', 'pending', 'future', 'future']],
-            'rank' => ['group' => 'default', 'name' => 'Játékos', 'expires_at' => null],
+            'rank' => ['group' => 'default', 'name' => 'Játékos', 'expires_at' => null, 'color' => null],
             'punishment' => null,
             'unavailable' => [],
         ]]);
@@ -226,7 +236,7 @@ class MyStatsControllerTest extends TestCase
         $this->userGroup('archmage');
         $this->userGroup('manager');
 
-        $this->stats()->assertJsonPath('data.rank', ['group' => 'manager', 'name' => 'Manager', 'expires_at' => null]);
+        $this->stats()->assertJsonPath('data.rank', ['group' => 'manager', 'name' => 'Manager', 'expires_at' => null, 'color' => null]);
     }
 
     public function test_a_temporary_rank_shows_when_it_ends(): void
@@ -234,7 +244,52 @@ class MyStatsControllerTest extends TestCase
         $this->groupWeight('archmage', 11);
         $this->userGroup('archmage', CarbonImmutable::parse('2026-11-20 18:00:00', 'Europe/Budapest')->getTimestamp());
 
-        $this->stats()->assertJsonPath('data.rank', ['group' => 'archmage', 'name' => 'Archmage', 'expires_at' => '2026-11-20T17:00:00+00:00']);
+        $this->stats()->assertJsonPath('data.rank', ['group' => 'archmage', 'name' => 'Archmage', 'expires_at' => '2026-11-20T17:00:00+00:00', 'color' => null]);
+    }
+
+    public function test_the_rank_has_the_colour_set_on_its_group_with_lp_meta_set_color(): void
+    {
+        $this->groupWeight('default', 0);
+        $this->groupWeight('manager', 700);
+        $this->groupColor('default', '#AAAAAA');
+        $this->groupColor('manager', '#E5675A');
+        $this->userGroup('manager');
+
+        $this->stats()->assertJsonPath('data.rank.color', '#E5675A');
+    }
+
+    public function test_a_colour_set_for_one_server_only_is_not_the_websites(): void
+    {
+        $this->groupWeight('manager', 700);
+        $this->userGroup('manager');
+        $this->plugin('luckperms', 'luckperms_group_permissions')->insert([
+            'name' => 'manager', 'permission' => 'meta.color.#E5675A', 'value' => 1, 'server' => 'survival', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}',
+        ]);
+
+        $this->stats()->assertJsonPath('data.rank.color', null);
+    }
+
+    /**
+     * @return array<string, array{string, string|null}>
+     */
+    public static function colourValues(): array
+    {
+        return [
+            'lower case, no #' => ['e5675a', '#E5675A'],
+            'a Minecraft colour code' => ['&c', null],
+            'a colour name' => ['red', null],
+            'too short' => ['#E5675', null],
+        ];
+    }
+
+    #[DataProvider('colourValues')]
+    public function test_only_a_hex_colour_is_used(string $value, ?string $color): void
+    {
+        $this->groupWeight('manager', 700);
+        $this->groupColor('manager', $value);
+        $this->userGroup('manager');
+
+        $this->stats()->assertJsonPath('data.rank.color', $color);
     }
 
     public function test_an_expired_rank_no_longer_counts(): void
