@@ -8,7 +8,7 @@ import { z } from 'zod'
 /** Minecraft name: what Account::NAME_PATTERN accepts. */
 const NAME_PATTERN = /^[A-Za-z0-9_]{3,16}$/
 
-/** RegisterRequest::EMAIL_PATTERN: ASCII address with a dotted domain. */
+/** Account::EMAIL_PATTERN: ASCII address with a dotted domain. */
 const EMAIL_PATTERN = /^[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
 
 /**

@@ -21,7 +21,10 @@ class VerifyRegistrationRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * The code must be a string: a JSON number would lose leading zeros.
+     * The code must be a string: a JSON number would lose leading zeros. The
+     * email follows the registration's ASCII format, so an accented variant
+     * of an address (which MySQL matches to the same pending registration)
+     * cannot get a rate limit counter of its own.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -30,7 +33,7 @@ class VerifyRegistrationRequest extends FormRequest
         $length = config('auth.registration_code.length');
 
         return [
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.Account::EMAIL_PATTERN, 'email'],
             'code' => ['required', 'string', 'regex:/\A\d{'.$length.'}\z/'],
         ];
     }

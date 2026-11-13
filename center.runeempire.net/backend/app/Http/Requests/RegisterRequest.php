@@ -12,13 +12,6 @@ use Illuminate\Validation\Rule;
 class RegisterRequest extends FormRequest
 {
     /**
-     * ASCII-only address with a dotted domain. ASCII keeps lowercasing an exact
-     * match under MySQL's accent-insensitive collations, and rules out
-     * addresses that would only bounce (localhost, IP literals, spaces).
-     */
-    private const EMAIL_PATTERN = '/\A[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+\z/';
-
-    /**
      * The email is validated and stored trimmed and lowercased.
      */
     protected function prepareForValidation(): void
@@ -43,7 +36,7 @@ class RegisterRequest extends FormRequest
     {
         return [
             'display_name' => ['bail', 'required', 'string', 'regex:'.Account::NAME_PATTERN, self::nameIsFree()],
-            'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.self::EMAIL_PATTERN, 'email', Rule::unique(Account::class, 'email')],
+            'email' => ['bail', 'required', 'string', 'max:255', 'regex:'.Account::EMAIL_PATTERN, 'email', Rule::unique(Account::class, 'email')],
             'password' => ['required', 'string', 'confirmed', new PlayablePassword],
             'terms' => ['accepted'],
             'age_confirmed' => ['accepted'],

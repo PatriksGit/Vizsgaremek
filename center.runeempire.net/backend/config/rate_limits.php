@@ -42,9 +42,12 @@ return [
 
     /*
      * At most one registration code is mailed to an address within this window.
+     * 10 minutes (owner, 2026-11-13): without a daily cap, this is what keeps
+     * anyone from flooding a player's inbox with codes (at most 144 a day),
+     * and the code itself stays valid longer than the wait.
      */
     'registration_mail' => [
-        'cooldown_seconds' => max(1, (int) env('RATE_LIMITS_REGISTRATION_MAIL_COOLDOWN_SECONDS', 60)),
+        'cooldown_seconds' => max(1, (int) env('RATE_LIMITS_REGISTRATION_MAIL_COOLDOWN_SECONDS', 600)),
     ],
 
 ];

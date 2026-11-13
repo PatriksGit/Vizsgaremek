@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -117,6 +118,23 @@ class VerifyRegistrationControllerTest extends TestCase
             'too long' => ['1234567', $format],
             'letter' => ['12a456', $format],
         ];
+    }
+
+    /**
+     * MySQL matches "pátrik@…" to the pending "patrik@…" (accent-insensitive
+     * collation), so an accented variant must not even reach the lookup: it
+     * would give an outsider a fresh guess counter for the same registration.
+     */
+    public function test_returns_422_for_an_accented_variant_of_the_address_without_counting_a_guess(): void
+    {
+        $pending = $this->pending();
+
+        $this->verify('654321', 'pátrik@example.com')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email' => 'E-mail cím formátuma érvénytelen.']);
+
+        $this->assertDatabaseHas('pending_registrations', ['id' => $pending->id, 'attempts' => 0]);
+        $this->assertSame(0, RateLimiter::attempts('registration-verify-outsider:pátrik@example.com'));
     }
 
     public function test_returns_422_and_counts_an_attempt_for_a_wrong_code(): void

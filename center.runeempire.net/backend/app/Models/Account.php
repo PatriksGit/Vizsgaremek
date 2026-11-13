@@ -51,6 +51,15 @@ class Account extends Model implements AuthenticatableContract
     public const NAME_PATTERN = '/\A[A-Za-z0-9_]{3,16}\z/';
 
     /**
+     * ASCII-only address with a dotted domain, for every request that takes
+     * an email. ASCII keeps lowercasing an exact match under MySQL's accent-
+     * insensitive collations (otherwise "pátrik@…" would find "patrik@…" and
+     * count as a different address in rate limits), and rules out addresses
+     * that would only bounce (localhost, IP literals, spaces).
+     */
+    public const EMAIL_PATTERN = '/\A[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+\z/';
+
+    /**
      * Cap on a typed password before it is checked against a hash, so oversized
      * input never reaches argon2 (well above the 64-unit policy maximum).
      */
