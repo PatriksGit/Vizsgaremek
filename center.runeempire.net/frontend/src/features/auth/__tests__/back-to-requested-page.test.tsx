@@ -1,6 +1,6 @@
 /**
  * After logging in, the player lands on the page they asked for (owner,
- * 2026-11-13, frontend review 2026-11-13d question 1): a link to /rangok
+ * 2026-11-13, frontend review 2026-11-13d question 1): a link to /jatekosok
  * opened while logged out, or a session that ran out on a subpage, comes back
  * to that page, not to the home page. Opening the login page itself still
  * leads home.
@@ -33,7 +33,8 @@ async function openAsGuest(path: string) {
 }
 
 async function logIn() {
-  const loginForm = (await screen.findAllByRole('button', { name: 'Belépés' }))[0].closest('form')!
+  // The freshly imported app first answers /auth/me: under the full parallel suite that can pass findBy's 1 s.
+  const loginForm = (await screen.findAllByRole('button', { name: 'Belépés' }, { timeout: 5000 }))[0].closest('form')!
   fireEvent.change(within(loginForm).getByLabelText('Játékosnév'), { target: { value: 'Steve_01' } })
   fireEvent.change(within(loginForm).getByLabelText('Jelszó'), { target: { value: 'jelszo-2026' } })
   fireEvent.click(within(loginForm).getByRole('button', { name: 'Belépés' }))
@@ -45,11 +46,11 @@ describe('where the player lands after logging in', { timeout: 15_000 }, () => {
   afterEach(cleanup)
 
   it('a page opened while logged out is shown after the login', async () => {
-    await openAsGuest('/rangok')
+    await openAsGuest('/jatekosok')
     await logIn()
 
     await screen.findByText('Ez az oldal hamarosan elkészül.')
-    expect(window.location.pathname).toBe('/rangok')
+    expect(window.location.pathname).toBe('/jatekosok')
   })
 
   it('logging out on a page and in again leads home, not back to that page', async () => {
