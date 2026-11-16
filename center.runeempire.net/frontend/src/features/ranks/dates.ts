@@ -1,6 +1,6 @@
 import type { MyStats } from '@/features/home/stats'
 
-import type { Rank } from './ranks'
+import type { Rank } from './api'
 
 const DAY_MS = 86_400_000
 
@@ -38,12 +38,12 @@ export function timeLeft(ms: number) {
  */
 export function ownedUntil(rank: Rank, stats: MyStats | undefined, now: Date): Date | null {
   const current = stats?.rank
-  if (!current || current.group !== rank.id || current.expires_at === null) return null
+  if (!current || current.group !== rank.group || current.expires_at === null) return null
   const until = new Date(current.expires_at)
   return until > now ? until : null
 }
 
 /** Whether a seasonal rank's buying time is over. */
 export function seasonOver(rank: Rank, now: Date) {
-  return rank.seasonEndsAt !== undefined && now >= new Date(rank.seasonEndsAt)
+  return rank.seasonEndsAt !== null && now >= new Date(rank.seasonEndsAt)
 }

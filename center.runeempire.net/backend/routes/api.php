@@ -13,6 +13,7 @@ use App\Http\Controllers\DiscordWidgetController;
 use App\Http\Controllers\MyFriendsController;
 use App\Http\Controllers\MyStatsController;
 use App\Http\Controllers\PlayerSkinController;
+use App\Http\Controllers\RanksController;
 use Illuminate\Support\Facades\Route;
 
 // Public, like Discord's own widget; cached, so Discord is asked at most once a minute.
@@ -24,6 +25,9 @@ Route::get('/players/{name}/skin', PlayerSkinController::class)
     ->where('name', '[A-Za-z0-9_]{3,16}')
     ->middleware('throttle:skins')
     ->name('players.skin');
+
+// Public: the ranks the shop sells (the management section will edit them later).
+Route::get('/ranks', RanksController::class)->name('ranks');
 
 // The logged-in player's numbers and friends for the overview.
 Route::get('/me/stats', MyStatsController::class)->middleware('auth:sanctum')->name('me.stats');

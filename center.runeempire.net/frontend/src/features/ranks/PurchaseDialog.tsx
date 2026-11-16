@@ -8,9 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { NO_DATA, runeCountFormat } from '@/features/home/stats'
 import { cn } from '@/lib/utils'
 
+import type { Rank } from './api'
 import { addDays, budapestDay } from './dates'
 import { RankBanner } from './RankParts'
-import { DURATIONS, type Duration, type Rank } from './ranks'
 
 type PurchaseDialogProps = {
   /** The rank being bought; null keeps the dialog shut. */
@@ -26,7 +26,7 @@ type PurchaseDialogProps = {
 const runes = (amount: number) => `${runeCountFormat.format(amount)} rúna`
 
 /**
- * Buying or extending a rank: 30 or 90 days, the price, the balance and the
+ * Buying or extending a rank: one of its durations, the price, the balance and the
  * new expiry. Buying is not wired yet (frontend only), so the final button is
  * off; not enough runes offers topping up instead.
  */
@@ -34,18 +34,21 @@ export function PurchaseDialog({ rank, ownedUntil, balance, now, onClose }: Purc
   return (
     <Dialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[calc(100svh-2rem)] gap-0 overflow-y-auto rounded-2xl border border-line bg-card p-0 ring-0 sm:max-w-115">
-        {/* Keyed by rank: a new purchase starts at 30 days. */}
-        {rank && <PurchaseForm key={rank.id} rank={rank} ownedUntil={ownedUntil} balance={balance} now={now} />}
+        {/* Keyed by rank: a new purchase starts at the shortest duration. */}
+        {rank && <PurchaseForm key={rank.group} rank={rank} ownedUntil={ownedUntil} balance={balance} now={now} />}
       </DialogContent>
     </Dialog>
   )
 }
 
 function PurchaseForm({ rank, ownedUntil, balance, now }: Omit<PurchaseDialogProps, 'rank' | 'onClose'> & { rank: Rank }) {
-  const [duration, setDuration] = useState<Duration>(30)
+  const [duration, setDuration] = useState(rank.prices[0]?.days ?? 0)
   const extending = ownedUntil !== null
-  const price = rank.prices[duration]
+  const price = (rank.prices.find((option) => option.days === duration) ?? rank.prices[0])?.runes ?? 0
   const short = typeof balance === 'number' && balance < price
+  // The cheapest per day is marked when there is a choice.
+  const perDay = (option: { days: number; runes: number }) => option.runes / option.days
+  const best = rank.prices.length > 1 ? rank.prices.reduce((a, b) => (perDay(b) < perDay(a) ? b : a)).days : null
 
   return (
     <div className="flex flex-col gap-5 p-6">
@@ -58,7 +61,7 @@ function PurchaseForm({ rank, ownedUntil, balance, now }: Omit<PurchaseDialogPro
       </div>
 
       <div role="radiogroup" aria-label="Időtartam" className="grid grid-cols-2 gap-3">
-        {DURATIONS.map((days) => {
+        {rank.prices.map(({ days, runes: optionRunes }) => {
           const active = days === duration
           return (
             <button
@@ -83,10 +86,10 @@ function PurchaseForm({ rank, ownedUntil, balance, now }: Omit<PurchaseDialogPro
               <span className="text-xl font-extrabold">{days} nap</span>
               <span className="flex items-center gap-1.5 text-sm font-bold text-soft">
                 <FontAwesomeIcon icon={faCoins} aria-hidden="true" className="size-3.5 text-primary" />
-                {runes(rank.prices[days])}
+                {runes(optionRunes)}
               </span>
-              <span className="text-xs font-semibold text-faint">≈ {runeCountFormat.format(Math.round(rank.prices[days] / days))} rúna / nap</span>
-              {days === 90 && (
+              <span className="text-xs font-semibold text-faint">≈ {runeCountFormat.format(Math.round(optionRunes / days))} rúna / nap</span>
+              {days === best && (
                 <span className="inline-flex h-5 items-center rounded-full bg-ok/14 px-2 text-xs font-extrabold text-ok">Kedvezőbb</span>
               )}
             </button>

@@ -4,15 +4,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { cn } from '@/lib/utils'
 
 import { timeLeft } from './dates'
-import type { Rank } from './ranks'
+import type { Rank } from './api'
 
-/** The rank's animated banner, 3:1; a dashed box until it has one. */
+/** The rank's animated banner, 2:1 with a small inset; a dashed box until it has one. */
 export function RankBanner({ rank, className, decorative = false }: { rank: Rank; className?: string; decorative?: boolean }) {
   return (
-    <div className={cn('flex aspect-3/1 items-center justify-center border-b border-border bg-background px-4 py-3.5', className)}>
-      {rank.gif ? (
+    <div className={cn('flex aspect-2/1 items-center justify-center border-b border-border bg-background p-2', className)}>
+      {rank.gifUrl ? (
         <img
-          src={rank.gif}
+          src={rank.gifUrl}
           alt={decorative ? '' : `${rank.name} rang animációja`}
           aria-hidden={decorative || undefined}
           className="size-full object-contain"

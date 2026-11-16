@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { addDays, budapestDay, ownedUntil, seasonOver, timeLeft } from '@/features/ranks/dates'
-import type { Rank } from '@/features/ranks/ranks'
+import type { Rank } from '@/features/ranks/api'
 import type { MyStats } from '@/features/home/stats'
 
-const dragon: Rank = { id: 'dragon', name: 'Dragon', description: '', perks: [], prices: { 30: 1000, 90: 2500 } }
+const dragon: Rank = { group: 'dragon', name: 'Dragon', details: '', gifUrl: null, prices: [{ days: 30, runes: 1000 }], seasonEndsAt: null }
 const NOW = new Date('2026-11-16T12:00:00Z')
 
 function stats(rank: MyStats['rank']): MyStats {

@@ -1,7 +1,8 @@
 /**
- * The rank shop (owner's design, Claude Design "Asztali – Rangok"), frontend
- * only: the cards, the "Mit kapsz?" dialog and the purchase dialog, whose final
- * button stays disabled until buying is wired.
+ * The rank shop (owner's design, Claude Design "Asztali – Rangok"): the ranks
+ * come from GET /api/ranks (the database), "Mit kapsz?" shows each rank's
+ * Markdown text, and the purchase dialog's final button stays off until buying
+ * is wired.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
@@ -25,13 +26,30 @@ const account = { uuid: '00000000-0000-0000-0000-000000000009', username: 'shopp
 const NOW = new Date('2026-11-16T12:00:00Z')
 const SEASON_END = new Date('2026-12-26T23:00:00Z')
 
+const DETAILS = 'Egy erős rang.\n\n## Globális\n- Repülés\n- Napi rúna\n\n## Kingdoms\n- Extractor'
+const prices = (thirty: number) => [
+  { days: 30, runes: thirty },
+  { days: 90, runes: Math.round(thirty * 2.6) },
+]
+
+/** As GET /api/ranks answers, in shop order. */
+const RANKS = [
+  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString() },
+  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prices: prices(2000), season_ends_at: null },
+  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prices: prices(1000), season_ends_at: null },
+]
+
 function statsWith(rank: MyStats['rank'], runes = 5000): MyStats {
   return { runes, playtime: null, streak: null, rank, punishment: null, unavailable: [] }
 }
 
-function backend(stats: MyStats | 'fails') {
+function backend(stats: MyStats | 'fails', ranks: typeof RANKS | 'fails' = RANKS) {
   getMock.mockImplementation(async (url: string) => {
     if (url === '/auth/me') return { data: { data: account } }
+    if (url === '/ranks') {
+      if (ranks === 'fails') throw new Error('ranks down')
+      return { data: { data: ranks } }
+    }
     if (url === '/me/stats') {
       if (stats === 'fails') throw new Error('stats down')
       return { data: { data: stats } }
@@ -63,21 +81,23 @@ afterEach(() => {
 })
 
 describe('the rank cards', { timeout: 15_000 }, () => {
-  it('lists every rank; the one the player has shows until when, with an extend button', async () => {
+  it('lists the ranks from the database; the one the player has shows until when, with an extend button', async () => {
     backend(statsWith({ group: 'dragon', name: 'Dragon', expires_at: '2026-11-20T12:00:00Z', color: null }))
     renderPage()
 
     expect(await screen.findByText('Aktív eddig: 2026.11.20.')).toBeTruthy()
-    expect(screen.getAllByRole('article')).toHaveLength(6)
+    expect(screen.getAllByRole('article')).toHaveLength(3)
     expect(within(card('Dragon')).getByRole('button', { name: 'Meghosszabbítás' })).toBeTruthy()
-    expect(within(card('[KARÁCSONYI RANG]')).getByRole('button', { name: 'Megvásárlás' })).toBeTruthy()
+    expect(within(card('Mage')).getByRole('button', { name: 'Megvásárlás' })).toBeTruthy()
+    expect(within(card('Mage')).getByText('rúnától').parentElement?.textContent).toContain('1000')
+    expect(within(card('Mage')).getByText('30 vagy 90 nap')).toBeTruthy()
     expect(within(card('Dragon')).getByRole('img', { name: 'Dragon rang animációja' })).toBeTruthy()
   })
 
   it('a seasonal rank counts down, then can no longer be bought', async () => {
     backend(statsWith(null))
     renderPage()
-    const xmas = card('[KARÁCSONYI RANG]')
+    const xmas = await screen.findByRole('heading', { name: 'Karácsony' }).then(() => card('Karácsony'))
 
     expect(within(xmas).getByText('Szezonális')).toBeTruthy()
     expect(within(xmas).getByRole('timer').textContent).toContain('Még 40 nap 11:00:00')
@@ -90,28 +110,40 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     expect(within(xmas).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
   })
 
-  it('without stats the page still works and no rank looks owned', async () => {
+  it('without stats the ranks still show and none looks owned', async () => {
     backend('fails')
     renderPage()
 
-    await act(() => vi.advanceTimersByTimeAsync(100))
-    expect(screen.getAllByRole('article')).toHaveLength(6)
+    await screen.findByRole('heading', { name: 'Dragon' })
+    expect(screen.getAllByRole('article')).toHaveLength(3)
     expect(screen.queryByText(/Aktív eddig/)).toBeNull()
+  })
+
+  it('when the ranks cannot be loaded it says so and can try again', async () => {
+    backend(statsWith(null), 'fails')
+    renderPage()
+
+    expect(await screen.findByText('A rangokat most nem sikerült betölteni.')).toBeTruthy()
+
+    backend(statsWith(null))
+    fireEvent.click(screen.getByRole('button', { name: 'Újrapróbálás' }))
+    expect(await screen.findByRole('heading', { name: 'Dragon' })).toBeTruthy()
   })
 })
 
 describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
-  it('shows the perks of each server, and leads to buying', async () => {
+  it('shows the rank text as one document, and leads to buying', async () => {
     backend(statsWith(null))
     renderPage()
+    await screen.findByRole('heading', { name: 'Dragon' })
     fireEvent.click(within(card('Dragon')).getByRole('button', { name: /Mit kapsz/ }))
 
     const dialog = await screen.findByRole('dialog', { name: 'Dragon' })
-    expect(within(dialog).getByText('Előnyök szerverenként')).toBeTruthy()
-    expect(within(dialog).getByText('[Szerver 1 – előny 1]')).toBeTruthy()
-
-    fireEvent.click(within(dialog).getByRole('tab', { name: '[Szerver 2]' }))
-    expect(await within(dialog).findByText('[Szerver 2 – előny 1]')).toBeTruthy()
+    expect(within(dialog).getByText('Egy erős rang.')).toBeTruthy()
+    expect(within(dialog).getByRole('heading', { name: 'Globális' })).toBeTruthy()
+    expect(within(dialog).getByRole('heading', { name: 'Kingdoms' })).toBeTruthy()
+    expect(within(dialog).getByText('Repülés')).toBeTruthy()
+    expect(within(dialog).queryByRole('tab')).toBeNull()
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Megvásárlás' }))
     expect(await screen.findByText('Mennyi időre szeretnéd?')).toBeTruthy()
@@ -120,8 +152,9 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
   it('the season ending while it is open turns its button off', async () => {
     backend(statsWith(null))
     renderPage()
-    fireEvent.click(within(card('[KARÁCSONYI RANG]')).getByRole('button', { name: /Mit kapsz/ }))
-    const dialog = await screen.findByRole('dialog', { name: '[KARÁCSONYI RANG]' })
+    await screen.findByRole('heading', { name: 'Karácsony' })
+    fireEvent.click(within(card('Karácsony')).getByRole('button', { name: /Mit kapsz/ }))
+    const dialog = await screen.findByRole('dialog', { name: 'Karácsony' })
 
     act(() => vi.setSystemTime(SEASON_END))
     await act(() => vi.advanceTimersByTimeAsync(1000))

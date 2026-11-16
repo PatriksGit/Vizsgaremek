@@ -8,9 +8,19 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { PurchaseDialog } from '@/features/ranks/PurchaseDialog'
-import type { Rank } from '@/features/ranks/ranks'
+import type { Rank } from '@/features/ranks/api'
 
-const dragon: Rank = { id: 'dragon', name: 'Dragon', description: 'Leírás', perks: [], prices: { 30: 2000, 90: 5200 } }
+const dragon: Rank = {
+  group: 'dragon',
+  name: 'Dragon',
+  details: 'Leírás',
+  gifUrl: null,
+  prices: [
+    { days: 30, runes: 2000 },
+    { days: 90, runes: 5200 },
+  ],
+  seasonEndsAt: null,
+}
 const NOW = new Date('2026-11-16T12:00:00Z')
 
 function renderDialog(props: Partial<Parameters<typeof PurchaseDialog>[0]> = {}) {

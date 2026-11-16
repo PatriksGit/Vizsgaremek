@@ -4,9 +4,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { runeCountFormat } from '@/features/home/stats'
 import { cn } from '@/lib/utils'
 
+import type { Rank } from './api'
 import { budapestDay, seasonOver } from './dates'
 import { BuyButton, NoLongerSold, RankBanner, SeasonCountdown } from './RankParts'
-import type { Rank } from './ranks'
 
 type RankCardProps = {
   rank: Rank
@@ -17,9 +17,16 @@ type RankCardProps = {
   onBuy: () => void
 }
 
-/** One rank in the shop: its banner, name, short description, price and buy (or extend) button. */
+/** How the durations read on a card: "30 vagy 90 nap". */
+function durationsText(rank: Rank) {
+  const days = rank.prices.map((price) => price.days)
+  return days.length > 1 ? `${days.slice(0, -1).join(', ')} vagy ${days.at(-1)} nap` : `${days[0] ?? 0} nap`
+}
+
+/** One rank in the shop: its banner, name, price and buy (or extend) button; the rest is in "Mit kapsz?". */
 export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardProps) {
   const over = seasonOver(rank, now)
+  const cheapest = Math.min(...rank.prices.map((price) => price.runes))
 
   return (
     <article
@@ -41,7 +48,6 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardPr
         <div className="flex flex-col gap-2">
           <h3 className="font-heading text-2xl leading-tight font-bold wrap-anywhere text-foreground">{rank.name}</h3>
           {rank.seasonEndsAt && <SeasonCountdown endsAt={rank.seasonEndsAt} now={now} />}
-          <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{rank.description}</p>
           <button
             type="button"
             onClick={onDetails}
@@ -60,16 +66,16 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardPr
                   <FontAwesomeIcon icon={faCheck} aria-hidden="true" className="size-3.5" />
                   Aktív eddig: {budapestDay(ownedUntil)}
                 </span>
-                <span className="text-xs font-semibold text-faint">+30 vagy 90 nap</span>
+                <span className="text-xs font-semibold text-faint">+{durationsText(rank)}</span>
               </>
             ) : (
               <>
                 <span className="flex items-baseline gap-1.5 text-lg font-extrabold text-foreground">
                   <FontAwesomeIcon icon={faCoins} aria-hidden="true" className="size-4 self-center text-primary" />
-                  {runeCountFormat.format(rank.prices[30])}
+                  {runeCountFormat.format(cheapest)}
                   <span className="text-[13px] font-semibold text-muted-foreground">rúnától</span>
                 </span>
-                <span className="text-xs font-semibold text-faint">30 vagy 90 nap</span>
+                <span className="text-xs font-semibold text-faint">{durationsText(rank)}</span>
               </>
             )}
           </div>
