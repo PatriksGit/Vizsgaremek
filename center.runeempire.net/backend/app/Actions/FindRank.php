@@ -21,12 +21,14 @@ class FindRank
     }
 
     /**
-     * Each player's rank in LuckPerms, in three queries whatever their number.
+     * Each player's rank in LuckPerms, in two queries whatever their number.
      *
-     * The rank is the heaviest group a player has: the primary group plus
-     * every group node given to them (global, not expired), weighted by the
-     * groups' `weight.<n>` nodes; a player LuckPerms has never seen is in
-     * `default`. A group given both for a while and for good counts for good.
+     * The rank is the heaviest group a player has: every group node given to
+     * them (global, not expired), weighted by the groups' `weight.<n>` nodes;
+     * a player without one is in `default`. A group given both for a while and
+     * for good counts for good. The luckperms_players.primary_group column is
+     * not used: with the default primary-group-calculation (parents-by-weight)
+     * `parent remove` can leave a group there the player no longer has.
      * `expires_at` is when that group runs out (UTC ISO 8601), null for good.
      *
      * The colour is what `/lp group <group> meta set color #RRGGBB` set on the
@@ -44,13 +46,6 @@ class FindRank
 
         /** @var array<string, array<string, int|null>> $groups uuid => group => when it runs out (null: for good) */
         $groups = array_fill_keys($uuids, []);
-
-        $primary = PluginDatabase::table('luckperms', 'luckperms_players')->whereIn('uuid', $uuids)->pluck('primary_group', 'uuid');
-        foreach ($primary as $uuid => $group) {
-            if (is_string($group)) {
-                $groups[$uuid][$group] = null;
-            }
-        }
 
         $given = PluginDatabase::table('luckperms', 'luckperms_user_permissions')
             ->whereIn('uuid', $uuids)

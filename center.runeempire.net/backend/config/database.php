@@ -57,7 +57,19 @@ return [
             // The time zone of the MySQL server's own clock (CURRENT_TIMESTAMP
             // defaults such as accounts.created_at). Not Laravel's 'timezone'
             // key, which would change that clock for the website's inserts.
-            'clock_timezone' => env('DB_GLOBAL_CLOCK_TIMEZONE', 'Europe/Budapest'),
+            // Only Carbon reads it, so any zone PHP takes is kept as written
+            // (an offset, lower case); one PHP refuses (a typo, empty) falls
+            // back to Budapest, the server's clock, instead of breaking every
+            // answer that carries an account.
+            'clock_timezone' => (static function (mixed $zone): string {
+                try {
+                    new DateTimeZone((string) $zone);
+
+                    return (string) $zone;
+                } catch (Exception) {
+                    return 'Europe/Budapest';
+                }
+            })(env('DB_GLOBAL_CLOCK_TIMEZONE', 'Europe/Budapest')),
         ],
 
     ],

@@ -24,8 +24,9 @@ class StartPasswordReset
      * previous code.
      *
      * An unknown address is said plainly (the owner's choice, like at
-     * registration). The mail is sent after the code is committed, so a slow
-     * SMTP server never holds locks. At most one code is mailed to an account
+     * registration). The mail is sent before the code is stored, outside the
+     * transaction, so a slow SMTP server never holds locks and a failed mail
+     * leaves the previous code working. At most one code is mailed to an account
      * per rate_limits.registration_mail.cooldown_seconds, and none once its
      * daily wrong-guess budget is spent (it could not be used).
      *
@@ -60,6 +61,17 @@ class StartPasswordReset
         $code = RegistrationCode::generate();
         $expiresInMinutes = config('auth.registration_code.expires_minutes');
 
+        // Mailed before the previous code is replaced: when the mail fails,
+        // the code the player already has keeps working.
+        try {
+            Notification::route('mail', $email)->notify(new PasswordResetCodeNotification($code, $expiresInMinutes, $account->display_name));
+        } catch (Throwable $exception) {
+            RateLimiter::clear($cooldownKey);
+            report($exception);
+
+            throw SendFailed::resetCode($exception);
+        }
+
         try {
             $resetCode = DB::transaction(function () use ($account, $code, $expiresInMinutes): PasswordResetCode {
                 PasswordResetCode::query()->where('expires_at', '<=', now())->delete();
@@ -75,16 +87,6 @@ class StartPasswordReset
             RateLimiter::clear($cooldownKey);
 
             throw $exception;
-        }
-
-        try {
-            Notification::route('mail', $email)->notify(new PasswordResetCodeNotification($code, $expiresInMinutes, $account->display_name));
-        } catch (Throwable $exception) {
-            RateLimiter::clear($cooldownKey);
-            $resetCode->delete();
-            report($exception);
-
-            throw SendFailed::resetCode($exception);
         }
 
         return $resetCode;

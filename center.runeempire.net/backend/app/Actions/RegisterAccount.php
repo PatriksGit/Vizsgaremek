@@ -18,7 +18,7 @@ class RegisterAccount
      * the code is mailed, and the cast would refuse it if the operator lowered
      * a PASSWORD_ARGON2_* setting before the code was redeemed.
      *
-     * @throws ValidationException when the name was taken between validation and insert
+     * @throws ValidationException when the name or the email was taken between validation and insert
      */
     public function handle(string $displayName, string $email, #[SensitiveParameter] string $passwordHash): Account
     {
@@ -34,10 +34,11 @@ class RegisterAccount
             $account->save();
 
             return $account;
-        } catch (UniqueConstraintViolationException) {
-            throw ValidationException::withMessages([
-                'username' => __('validation.custom.username.unique'),
-            ]);
+        } catch (UniqueConstraintViolationException $exception) {
+            // MySQL names the violated key (uq_accounts_email) in its error.
+            throw ValidationException::withMessages(str_contains($exception->getMessage(), 'uq_accounts_email')
+                ? ['email' => __('validation.custom.email.unique')]
+                : ['username' => __('validation.custom.username.unique')]);
         }
     }
 }

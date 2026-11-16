@@ -15,7 +15,12 @@ return [
     /*
      * Website origins that get session login and CSRF protection; the dev
      * frontend by default, center.runeempire.net in production via .env.
+     * Sanctum compares hosts (with the port), so a scheme or a trailing slash
+     * an operator writes with an origin is dropped here.
      */
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost:5173')),
+    'stateful' => array_map(
+        fn (string $domain): string => preg_replace('#^\s*https?://|/+\s*$#i', '', $domain),
+        explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost:5173')),
+    ),
 
 ];

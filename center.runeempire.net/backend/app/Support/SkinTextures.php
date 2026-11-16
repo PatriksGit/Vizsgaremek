@@ -20,6 +20,11 @@ class SkinTextures
     private const int MAX_BYTES = 64 * 1024;
 
     /**
+     * Set while textures.minecraft.net could not be reached.
+     */
+    private const string OUTAGE_KEY = 'skin-textures-unreachable';
+
+    /**
      * The PNG of a Mojang skin texture, or null when it cannot be had now.
      *
      * A texture never changes under its hash, so each is downloaded once and
@@ -32,6 +37,11 @@ class SkinTextures
         $cached = Cache::get($key);
 
         if ($cached === null) {
+            // Mojang unreachable a moment ago: no new wait for this head either.
+            if (Cache::has(self::OUTAGE_KEY)) {
+                return null;
+            }
+
             $png = $this->download($hash);
 
             if ($png === null) {
@@ -53,6 +63,9 @@ class SkinTextures
         try {
             $response = Http::timeout(5)->get("https://textures.minecraft.net/texture/{$hash}");
         } catch (ConnectionException) {
+            // Remembered for every texture, not only this one.
+            Cache::put(self::OUTAGE_KEY, true, self::FAILURE_CACHE_SECONDS);
+
             return null;
         }
 
@@ -67,7 +80,7 @@ class SkinTextures
      */
     private static function isSkinImage(string $bytes): bool
     {
-        if (! str_starts_with($bytes, "\x89PNG\r\n\x1a\n") || substr($bytes, 12, 4) !== 'IHDR') {
+        if (strlen($bytes) < 24 || ! str_starts_with($bytes, "\x89PNG\r\n\x1a\n") || substr($bytes, 12, 4) !== 'IHDR') {
             return false;
         }
 

@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 /**
  * The named rate limiters behind the routes' throttle:... middleware. The
@@ -24,32 +25,42 @@ class RateLimitServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('register', fn (Request $request): array => [
-            Limit::perMinute(config('rate_limits.register.per_minute'))->by('minute:'.$request->ip())->response(self::tooManyAttempts()),
-            Limit::perHour(config('rate_limits.register.per_hour'))->by('hour:'.$request->ip())->response(self::tooManyAttempts()),
+            Limit::perMinute(config('rate_limits.register.per_minute'))->by('minute:'.self::client($request))->response(self::tooManyAttempts()),
+            Limit::perHour(config('rate_limits.register.per_hour'))->by('hour:'.self::client($request))->response(self::tooManyAttempts()),
         ]);
 
-        RateLimiter::for('register-verify', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.register_verify.per_minute'))->by($request->ip())->response(self::tooManyAttempts()));
+        RateLimiter::for('register-verify', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.register_verify.per_minute'))->by(self::client($request))->response(self::tooManyAttempts()));
 
         RateLimiter::for('login', function (Request $request): array {
             $username = $request->input('username');
             $usernameKey = is_string($username) ? Account::usernameFor($username) : '';
 
             return [
-                Limit::perMinute(config('rate_limits.login.per_minute'))->by('user:'.$usernameKey.'|'.$request->ip())->response(self::tooManyAttempts()),
-                Limit::perMinute(config('rate_limits.login.per_minute_per_ip'))->by('ip:'.$request->ip())->response(self::tooManyAttempts()),
+                Limit::perMinute(config('rate_limits.login.per_minute'))->by('user:'.$usernameKey.'|'.self::client($request))->response(self::tooManyAttempts()),
+                Limit::perMinute(config('rate_limits.login.per_minute_per_ip'))->by('ip:'.self::client($request))->response(self::tooManyAttempts()),
             ];
         });
 
         RateLimiter::for('password-change', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.password_change.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));
 
         RateLimiter::for('password-forgot', fn (Request $request): array => [
-            Limit::perMinute(config('rate_limits.password_forgot.per_minute'))->by('minute:'.$request->ip())->response(self::tooManyAttempts()),
-            Limit::perHour(config('rate_limits.password_forgot.per_hour'))->by('hour:'.$request->ip())->response(self::tooManyAttempts()),
+            Limit::perMinute(config('rate_limits.password_forgot.per_minute'))->by('minute:'.self::client($request))->response(self::tooManyAttempts()),
+            Limit::perHour(config('rate_limits.password_forgot.per_hour'))->by('hour:'.self::client($request))->response(self::tooManyAttempts()),
         ]);
 
-        RateLimiter::for('password-reset', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.password_reset.per_minute'))->by($request->ip())->response(self::tooManyAttempts()));
+        RateLimiter::for('password-reset', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.password_reset.per_minute'))->by(self::client($request))->response(self::tooManyAttempts()));
 
-        RateLimiter::for('skins', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.skins.per_minute'))->by($request->ip())->response(self::tooManyAttempts()));
+        RateLimiter::for('skins', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.skins.per_minute'))->by(self::client($request))->response(self::tooManyAttempts()));
+    }
+
+    /**
+     * The client a per-IP limit counts: the IPv4 address, or the /64 network
+     * of an IPv6 address (one connection or machine gets a whole /64, so a
+     * single address would give it 2^64 fresh budgets).
+     */
+    private static function client(Request $request): string
+    {
+        return IpUtils::anonymize((string) $request->ip(), 0, 8);
     }
 
     /**

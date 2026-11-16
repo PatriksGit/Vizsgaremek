@@ -2,6 +2,11 @@
 
 use App\Models\Account;
 
+$passwordLengths = [
+    min(128, max(8, (int) env('PASSWORD_MIN_LENGTH', 8) ?: 8)),
+    min(128, max(8, (int) env('PASSWORD_MAX_LENGTH', 64) ?: 64)),
+];
+
 /*
  * Only the overrides; Laravel merges the rest from its own config/auth.php.
  */
@@ -22,11 +27,12 @@ return [
      * the password set here.
      * A typo or an empty value would read as 0 (every password too long, or a
      * 1-character one accepted): it falls back to the default instead, and
-     * both values stay within 8..128.
+     * both values stay within 8..128. A minimum above the maximum (the two
+     * swapped) would refuse every password: the smaller one is the minimum.
      */
     'password_length' => [
-        'min' => min(128, max(8, (int) env('PASSWORD_MIN_LENGTH', 8) ?: 8)),
-        'max' => min(128, max(8, (int) env('PASSWORD_MAX_LENGTH', 64) ?: 64)),
+        'min' => min($passwordLengths),
+        'max' => max($passwordLengths),
     ],
 
     /*
@@ -35,7 +41,8 @@ return [
      * at least 1 minute, 1-255 attempts (the attempts column is a tinyint).
      */
     'registration_code' => [
-        'length' => max(4, min(12, (int) env('REGISTRATION_CODE_LENGTH', 6))),
+        // An empty, zero or mistyped value is the default 6, not the shortest 4.
+        'length' => max(4, min(12, (int) env('REGISTRATION_CODE_LENGTH', 6) ?: 6)),
         'expires_minutes' => max(1, (int) env('REGISTRATION_CODE_EXPIRES_MINUTES', 15)),
         'max_attempts' => max(1, min(255, (int) env('REGISTRATION_CODE_MAX_ATTEMPTS', 5))),
     ],

@@ -100,7 +100,12 @@ class ConfigDefaultsTest extends TestCase
     public static function outOfRangeCodeSettings(): array
     {
         return [
-            'zero length' => ['REGISTRATION_CODE_LENGTH', '0', 'length', 4],
+            // An empty, zero or mistyped length is the default 6, not the shortest 4 (owner, 2026-11-16):
+            // a 4-digit reset code would be 100 times easier to guess.
+            'zero length' => ['REGISTRATION_CODE_LENGTH', '0', 'length', 6],
+            'empty length' => ['REGISTRATION_CODE_LENGTH', '', 'length', 6],
+            'mistyped length' => ['REGISTRATION_CODE_LENGTH', 'six', 'length', 6],
+            'too short a length' => ['REGISTRATION_CODE_LENGTH', '2', 'length', 4],
             'huge length' => ['REGISTRATION_CODE_LENGTH', '50', 'length', 12],
             'zero expiry' => ['REGISTRATION_CODE_EXPIRES_MINUTES', '0', 'expires_minutes', 1],
             'zero attempts' => ['REGISTRATION_CODE_MAX_ATTEMPTS', '0', 'max_attempts', 1],
@@ -136,6 +141,34 @@ class ConfigDefaultsTest extends TestCase
     public function test_runeactivity_days_are_cut_in_budapest_time_by_default(): void
     {
         $this->assertSame('Europe/Budapest', $this->configWith('runeactivity.php', ['RUNEACTIVITY_TIMEZONE' => null])['timezone']);
+    }
+
+    /**
+     * Only Carbon reads the MySQL clock's zone, so every zone Carbon takes is
+     * kept as written (an offset, lower case, an abbreviation), and only one
+     * it refuses falls back to Budapest (review 2026-11-16, PLATFORM-2).
+     *
+     * @return array<string, array{string, string}>
+     */
+    public static function clockZones(): array
+    {
+        return [
+            'a zone name' => ['Europe/Budapest', 'Europe/Budapest'],
+            'an offset' => ['+01:00', '+01:00'],
+            'lower case' => ['utc', 'utc'],
+            'lower-case name' => ['europe/budapest', 'europe/budapest'],
+            'an abbreviation' => ['CEST', 'CEST'],
+            'a typo' => ['Europe/Budapset', 'Europe/Budapest'],
+            'empty' => ['', 'Europe/Budapest'],
+        ];
+    }
+
+    #[DataProvider('clockZones')]
+    public function test_the_mysql_clock_zone_falls_back_only_when_carbon_refuses_it(string $value, string $expected): void
+    {
+        $config = $this->configWith('database.php', ['DB_GLOBAL_CLOCK_TIMEZONE' => $value]);
+
+        $this->assertSame($expected, $config['connections']['global']['clock_timezone']);
     }
 
     public function test_a_mistyped_runeactivity_time_zone_falls_back_to_budapest(): void

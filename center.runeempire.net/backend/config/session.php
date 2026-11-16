@@ -13,4 +13,11 @@ return [
      */
     'driver' => env('SESSION_DRIVER', 'redis'),
 
+    /*
+     * Minutes of inactivity before the login expires. (int) turns an empty
+     * value or a typo into 0, and a lifetime of 0 stores no session at all
+     * (nobody stays logged in, every form answers 419): fall back to 120.
+     */
+    'lifetime' => max(1, (int) env('SESSION_LIFETIME', 120) ?: 120),
+
 ];

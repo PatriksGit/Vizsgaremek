@@ -2,8 +2,8 @@
 
 use App\Exceptions\ApiErrorResponse;
 use App\Http\Middleware\LogOutBlockedAccounts;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // After the session has started: a session whose account was locked meanwhile ends.
         $middleware->api(append: [LogOutBlockedAccounts::class]);
+        // ...and before auth:sanctum, which the framework would otherwise sort
+        // ahead of it: the blocked session's request must reach it as a guest's.
+        $middleware->prependToPriorityList(AuthenticatesRequests::class, LogOutBlockedAccounts::class);
 
         // An API has no login page: guests get a JSON 401, never a redirect.
         $middleware->redirectGuestsTo(fn () => null);
@@ -38,10 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // (the exception is still reported to the log).
         $exceptions->render(fn (RedisException $exception) => ApiErrorResponse::make('server_error', 'Váratlan hiba történt.', 500));
 
-        // The framework's own 401 and 419 messages are fixed English strings.
-        $exceptions->render(fn (AuthenticationException $exception, Request $request) => $request->is('api/*')
-            ? ApiErrorResponse::make('unauthenticated', 'Ehhez be kell jelentkezned.', 401)
-            : null);
+        // The framework's own 419 message is a fixed English string.
         $exceptions->render(fn (HttpException $exception, Request $request) => $exception->getStatusCode() === 419 && $request->is('api/*')
             ? ApiErrorResponse::make('session_expired', 'A munkamenet lejárt. Frissítsd az oldalt, és próbáld újra.', 419)
             : null);

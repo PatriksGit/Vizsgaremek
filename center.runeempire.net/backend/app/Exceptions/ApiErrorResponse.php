@@ -23,7 +23,7 @@ final class ApiErrorResponse
     /**
      * The codes of errors that are not our own exceptions, by status (null:
      * any other 4xx / 5xx), with the Hungarian text they get. Only Laravel's
-     * validation messages are kept; our 401, 419 and named-limiter 429
+     * validation messages are kept; our 419 and named-limiter 429
      * renderers bring their own code and text, so these defaults are for
      * everything else (a bare throttle:x,y route, a stray HttpException).
      *

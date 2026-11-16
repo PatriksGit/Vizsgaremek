@@ -239,6 +239,21 @@ class MyStatsControllerTest extends TestCase
         $this->stats()->assertJsonPath('data.rank', ['group' => 'manager', 'name' => 'Manager', 'expires_at' => null, 'color' => null]);
     }
 
+    /**
+     * With LuckPerms' default primary-group-calculation (parents-by-weight),
+     * `parent remove` can leave the removed group in primary_group (review
+     * 2026-11-16, PLAYER-6): only the group nodes say what the player has.
+     */
+    public function test_a_stale_primary_group_does_not_count(): void
+    {
+        $this->plugin('luckperms', 'luckperms_players')->insert(['uuid' => $this->account->uuid, 'username' => 'patrikt', 'primary_group' => 'vip']);
+        $this->groupWeight('vip', 50);
+        $this->groupWeight('helper', 30);
+        $this->userGroup('helper');
+
+        $this->stats()->assertJsonPath('data.rank.group', 'helper');
+    }
+
     public function test_a_temporary_rank_shows_when_it_ends(): void
     {
         $this->groupWeight('archmage', 11);
