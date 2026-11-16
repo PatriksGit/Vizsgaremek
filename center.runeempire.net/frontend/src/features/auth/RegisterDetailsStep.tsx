@@ -28,7 +28,7 @@ type RegisterDetailsStepProps = {
 export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode }: RegisterDetailsStepProps) {
   const form = useFormContext<RegisterValues>()
   const { errors, isSubmitting } = form.formState
-  // A 429: a code went to this address a moment ago (or too many tries); that code may still be in the mailbox.
+  // A code went to this address a moment ago (not just any 429: a per-IP throttle says nothing about the mailbox).
   const [codeMayBeOut, setCodeMayBeOut] = useState(false)
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode 
       setCodeMayBeOut(false)
       await onSubmit(values)
     } catch (error) {
-      setCodeMayBeOut(error instanceof ApiError && error.status === 429)
+      setCodeMayBeOut(error instanceof ApiError && error.code === 'auth.code_recently_sent')
       applyApiError(error, form.setError, registerFieldForKey)
     }
   })

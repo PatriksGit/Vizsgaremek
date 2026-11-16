@@ -13,11 +13,25 @@ export const GENERIC_ERROR = 'Váratlan hiba történt, próbáld újra később
 export class ApiError extends Error {
   readonly status: number
   readonly fieldErrors: Record<string, string>
+  /** The backend's stable reason (e.g. 'auth.code_recently_sent'); null when no backend answered. */
+  readonly code: string | null
+  /** Extra data of that code, e.g. resend_at. */
+  readonly details: Record<string, unknown>
+  /** Seconds from the Retry-After header: a duration, so the visitor's clock does not matter. */
+  readonly retryAfter: number | null
 
-  constructor(status: number, message: string, fieldErrors: Record<string, string> = {}) {
+  constructor(
+    status: number,
+    message: string,
+    fieldErrors: Record<string, string> = {},
+    { code = null, details = {}, retryAfter = null }: { code?: string | null; details?: Record<string, unknown>; retryAfter?: number | null } = {},
+  ) {
     super(message)
     this.status = status
     this.fieldErrors = fieldErrors
+    this.code = code
+    this.details = details
+    this.retryAfter = retryAfter
   }
 }
 
@@ -60,7 +74,7 @@ http.interceptors.response.use(undefined, async (error: unknown) => {
   throw toApiError(error)
 })
 
-type ErrorBody = { message?: unknown; errors?: Record<string, unknown> }
+type ErrorBody = { message?: unknown; code?: unknown; errors?: Record<string, unknown>; details?: unknown }
 
 function toApiError(error: AxiosError): ApiError {
   const response = error.response
@@ -79,18 +93,31 @@ function toApiError(error: AxiosError): ApiError {
     }
   }
 
+  const code = typeof body.code === 'string' ? body.code : null
+  const retryAfterHeader = Number(response.headers?.['retry-after'])
+  const extra = {
+    code,
+    details: typeof body.details === 'object' && body.details !== null ? (body.details as Record<string, unknown>) : {},
+    retryAfter: Number.isInteger(retryAfterHeader) && retryAfterHeader >= 0 ? retryAfterHeader : null,
+  }
+
   if (response.status === 419) {
-    return new ApiError(419, 'A munkamenet lejárt. Frissítsd az oldalt, és ellenőrizd, hogy a sütik engedélyezve vannak.')
+    return new ApiError(419, 'A munkamenet lejárt. Frissítsd az oldalt, és ellenőrizd, hogy a sütik engedélyezve vannak.', {}, extra)
+  }
+
+  // Every coded backend message is written for players, whatever the status;
+  // server_error's may hold raw exception text while the backend runs in debug mode.
+  if (code && code !== 'server_error') {
+    return new ApiError(response.status, backendMessage ?? GENERIC_ERROR, fieldErrors, extra)
   }
 
   // A proxy (Vite in dev, Cloudflare in production) answering for a backend that is down.
   if (!backendMessage && [502, 503, 504, 530].includes(response.status)) {
-    return new ApiError(response.status, 'A szerver most nem érhető el, próbáld újra később.')
+    return new ApiError(response.status, 'A szerver most nem érhető el, próbáld újra később.', {}, extra)
   }
 
-  // Only these statuses carry a message meant for players. Other 5xx bodies
-  // can hold raw exception text while the backend runs in debug mode.
-  const message = backendMessage && [403, 422, 429, 503].includes(response.status) ? backendMessage : GENERIC_ERROR
+  // Without a code only these statuses carry a message meant for players.
+  const message = backendMessage && !code && [403, 422, 429, 503].includes(response.status) ? backendMessage : GENERIC_ERROR
 
-  return new ApiError(response.status, message, fieldErrors)
+  return new ApiError(response.status, message, fieldErrors, extra)
 }

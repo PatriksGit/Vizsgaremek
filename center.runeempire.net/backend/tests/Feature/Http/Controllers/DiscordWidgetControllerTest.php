@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers;
 
-use App\Http\Controllers\DiscordWidgetController;
+use App\Exceptions\Discord\WidgetUnavailable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -113,7 +113,7 @@ class DiscordWidgetControllerTest extends TestCase
 
         $this->getJson('/api/discord-widget')
             ->assertServiceUnavailable()
-            ->assertExactJson(['message' => DiscordWidgetController::UNAVAILABLE]);
+            ->assertExactJson(['message' => WidgetUnavailable::MESSAGE, 'code' => 'discord.unavailable']);
     }
 
     public function test_remembers_a_failure_for_15_seconds(): void
@@ -138,7 +138,7 @@ class DiscordWidgetControllerTest extends TestCase
 
         $this->getJson('/api/discord-widget')
             ->assertServiceUnavailable()
-            ->assertExactJson(['message' => DiscordWidgetController::UNAVAILABLE]);
+            ->assertExactJson(['message' => WidgetUnavailable::MESSAGE, 'code' => 'discord.unavailable']);
     }
 
     public function test_returns_503_without_asking_discord_when_no_server_is_set(): void

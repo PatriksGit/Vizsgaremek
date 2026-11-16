@@ -155,7 +155,10 @@ class ForgotPasswordControllerTest extends TestCase
         $this->forgot()
             ->assertTooManyRequests()
             ->assertJson(['message' => 'Erre az e-mail címre nemrég küldtünk kódot, próbáld újra kicsit később.'])
-            ->assertHeader('Retry-After');
+            ->assertJsonPath('code', 'auth.code_recently_sent')
+            ->assertHeader('Retry-After')
+            // When a new code may be asked: within the cooldown (60 s in phpunit.xml).
+            ->assertJsonPath('details.resend_at', fn (string $at): bool => now()->diffInSeconds($at) > 55 && now()->diffInSeconds($at) <= 60);
 
         Notification::assertSentOnDemandTimes(PasswordResetCodeNotification::class, 1);
     }
@@ -169,7 +172,7 @@ class ForgotPasswordControllerTest extends TestCase
             PasswordResetGuesses::count($account->id);
         }
 
-        $this->forgot()->assertTooManyRequests()->assertJson(['message' => self::BUDGET_SPENT])->assertHeader('Retry-After');
+        $this->forgot()->assertTooManyRequests()->assertJson(['message' => self::BUDGET_SPENT, 'code' => 'auth.reset_guesses_spent'])->assertHeader('Retry-After');
 
         Notification::assertNothingSent();
         $this->assertDatabaseCount('password_reset_codes', 0);
@@ -183,7 +186,7 @@ class ForgotPasswordControllerTest extends TestCase
 
         $this->forgot()
             ->assertServiceUnavailable()
-            ->assertJson(['message' => 'A kódot most nem sikerült elküldeni, próbáld újra később.']);
+            ->assertJson(['message' => 'A kódot most nem sikerült elküldeni, próbáld újra később.', 'code' => 'mail.send_failed']);
 
         $this->assertDatabaseCount('password_reset_codes', 0);
         Exceptions::assertReported(TransportException::class);
@@ -208,6 +211,7 @@ class ForgotPasswordControllerTest extends TestCase
             $this->forgot("senki{$request}@example.com")->assertUnprocessable();
         }
 
-        $this->forgot('senki6@example.com')->assertTooManyRequests();
+        // The per-IP throttle is not the mail cooldown: no code is said to be on its way.
+        $this->forgot('senki6@example.com')->assertTooManyRequests()->assertJsonPath('code', 'too_many_requests')->assertHeader('Retry-After');
     }
 }

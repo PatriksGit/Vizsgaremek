@@ -23,7 +23,10 @@ function registrationBackend() {
     'POST /auth/register': (config): Reply => {
       const { email } = JSON.parse(config.data as string) as { email: string }
       requests.push(email)
-      if (mailed.has(email)) return { status: 429, data: { message: COOLDOWN } }
+      if (mailed.has(email)) {
+        const resendAt = new Date(Date.now() + 600_000).toISOString()
+        return { status: 429, data: { message: COOLDOWN, code: 'auth.code_recently_sent', details: { resend_at: resendAt } } }
+      }
       mailed.add(email)
       return { status: 202, data: { data: { email, expires_at: new Date(Date.now() + 15 * 60_000).toISOString() } } }
     },
@@ -120,5 +123,18 @@ describe('a mailed registration code can always be entered', () => {
 
     expect(codeField()).not.toBeNull()
     expect(screen.getByText('steve@example.com')).toBeTruthy()
+  })
+
+  it('a per-IP throttle is not the cooldown: no code is said to be on its way', async () => {
+    const THROTTLED = 'Túl sok próbálkozás. Próbáld újra 1 perc múlva.'
+    installFakeBackend({
+      'POST /auth/register': (): Reply => ({ status: 429, data: { message: THROTTLED, code: 'too_many_requests' } }),
+    })
+    renderRegisterForm()
+    fillDetails('steve@example.com')
+    fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
+    await screen.findByText(THROTTLED)
+
+    expect(screen.queryByRole('button', { name: 'Írd be' })).toBeNull()
   })
 })

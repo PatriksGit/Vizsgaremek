@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Actions\VerifyPasswordReset;
+use App\Exceptions\Auth\WebsiteOnly;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VerifyPasswordResetCodeRequest;
 use App\Support\PasswordResetPermission;
@@ -16,7 +17,9 @@ class VerifyPasswordResetCodeController extends Controller
      */
     public function __invoke(VerifyPasswordResetCodeRequest $request, VerifyPasswordReset $verifyPasswordReset): Response
     {
-        abort_unless($request->hasSession(), 403, 'A jelszó-visszaállítás csak a weboldalról lehetséges.');
+        if (! $request->hasSession()) {
+            throw WebsiteOnly::passwordReset();
+        }
 
         $account = $verifyPasswordReset->handle($request->validated('email'), $request->validated('code'));
 

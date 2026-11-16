@@ -6,9 +6,14 @@ use App\Models\Account;
 use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Assert;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Response;
+use Tests\Support\ErrorCatalogue;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -399,5 +404,29 @@ abstract class TestCase extends BaseTestCase
         );
 
         $this->assertSame([], array_values($queries), $message);
+    }
+
+    /**
+     * The API error contract, checked on every test request: an api/* JSON
+     * error always has a string message and a code from the catalogue.
+     *
+     * @param  Response  $response
+     * @param  Request  $request
+     * @return TestResponse<Response>
+     */
+    protected function createTestResponse($response, $request)
+    {
+        $testResponse = parent::createTestResponse($response, $request);
+
+        if ($request->is('api/*') && $response->getStatusCode() >= 400 && str_contains((string) $response->headers->get('Content-Type'), 'json')) {
+            $body = json_decode((string) $response->getContent(), true);
+            $where = "{$request->method()} {$request->path()} answered {$response->getStatusCode()}: ".$response->getContent();
+
+            Assert::assertIsArray($body, "Error body is not a JSON object. {$where}");
+            Assert::assertIsString($body['message'] ?? null, "Error body has no message. {$where}");
+            Assert::assertContains($body['code'] ?? null, ErrorCatalogue::codes(), "Error body has no known code. {$where}");
+        }
+
+        return $testResponse;
     }
 }

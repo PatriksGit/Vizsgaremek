@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Exceptions\Auth\ResetExpired;
+use App\Exceptions\Auth\WebsiteOnly;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Models\Account;
@@ -9,7 +11,6 @@ use App\Support\PasswordResetPermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class ResetPasswordController extends Controller
 {
@@ -24,13 +25,15 @@ class ResetPasswordController extends Controller
      */
     public function __invoke(ResetPasswordRequest $request): JsonResponse
     {
-        abort_unless($request->hasSession(), 403, 'A jelszó-visszaállítás csak a weboldalról lehetséges.');
+        if (! $request->hasSession()) {
+            throw WebsiteOnly::passwordReset();
+        }
 
         $accountId = PasswordResetPermission::accountId($request->session());
         $account = $accountId === null ? null : Account::find($accountId);
 
         if ($account === null) {
-            throw ValidationException::withMessages(['reset' => 'A jelszó-visszaállítás lejárt, kérj új kódot.']);
+            throw new ResetExpired;
         }
 
         $account->update(['password_hash' => Hash::make($request->validated('password'))]);

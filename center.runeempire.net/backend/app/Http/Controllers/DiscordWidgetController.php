@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\Discord\WidgetUnavailable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -9,8 +10,6 @@ use Illuminate\Support\Facades\Http;
 
 class DiscordWidgetController extends Controller
 {
-    public const string UNAVAILABLE = 'A Discord most nem elérhető.';
-
     /**
      * How long one answer from Discord is reused.
      */
@@ -42,9 +41,11 @@ class DiscordWidgetController extends Controller
             Cache::put($key, $widget, $widget === false ? self::FAILURE_CACHE_SECONDS : self::CACHE_SECONDS);
         }
 
-        return $widget === false
-            ? response()->json(['message' => self::UNAVAILABLE], 503)
-            : response()->json(['data' => $widget]);
+        if ($widget === false) {
+            throw new WidgetUnavailable;
+        }
+
+        return response()->json(['data' => $widget]);
     }
 
     /**

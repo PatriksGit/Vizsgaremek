@@ -2,18 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Exceptions\Auth\InvalidCredentials;
 use App\Models\Account;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LoginRequest extends FormRequest
 {
-    public const INVALID_CREDENTIALS = 'Hibás játékosnév vagy jelszó.';
-
-    public const ACCOUNT_LOCKED = 'Ez a fiók zárolva van, ezért most nem tudsz belépni. Ha szerinted tévedés, írj nekünk Discordon.';
-
-    public const TWO_FACTOR_IN_GAME_ONLY = 'A fiókodon kétlépcsős azonosítás van bekapcsolva, ezzel a weboldalon még nem tudsz belépni.';
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -32,14 +28,15 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * A malformed name gets the same answer as wrong credentials.
-     *
-     * @return array<string, string>
+     * A malformed name gets the same answer as wrong credentials, message and
+     * code alike: no name breaking the pattern can have an account.
      */
-    public function messages(): array
+    protected function failedValidation(Validator $validator): void
     {
-        return [
-            'username.regex' => self::INVALID_CREDENTIALS,
-        ];
+        if (isset($validator->failed()['username']['Regex'])) {
+            throw new InvalidCredentials;
+        }
+
+        parent::failedValidation($validator);
     }
 }

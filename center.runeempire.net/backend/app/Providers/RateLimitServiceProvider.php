@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Exceptions\ApiErrorResponse;
 use App\Models\Account;
 use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -63,7 +64,7 @@ class RateLimitServiceProvider extends ServiceProvider
             $seconds = (int) $headers['Retry-After'];
             $wait = $seconds < 60 ? $seconds.' másodperc' : (int) ceil($seconds / 60).' perc';
 
-            return response()->json(['message' => "Túl sok próbálkozás. Próbáld újra {$wait} múlva."], 429, $headers);
+            return ApiErrorResponse::make('too_many_requests', "Túl sok próbálkozás. Próbáld újra {$wait} múlva.", 429, $headers);
         };
     }
 }

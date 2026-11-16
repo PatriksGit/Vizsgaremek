@@ -178,7 +178,7 @@ class PlayerSkinControllerTest extends TestCase
 
     public function test_an_unknown_player_is_not_found(): void
     {
-        $this->get('/api/players/NoSuchPlayer/skin')->assertNotFound();
+        $this->get('/api/players/NoSuchPlayer/skin')->assertNotFound()->assertExactJson(['message' => 'Nincs ilyen játékos.', 'code' => 'players.not_found']);
     }
 
     public function test_a_name_that_cannot_be_a_player_is_not_found(): void
@@ -206,7 +206,7 @@ class PlayerSkinControllerTest extends TestCase
         Account::factory()->create(['display_name' => 'TervMinta']);
         Http::fake(['*' => Http::failedConnection('timed out')]);
 
-        $this->getJson('/api/players/TervMinta/skin')->assertStatus(503)->assertJson(['message' => 'A skin most nem érhető el.']);
+        $this->getJson('/api/players/TervMinta/skin')->assertStatus(503)->assertExactJson(['message' => 'A skin most nem érhető el.', 'code' => 'players.skin_unavailable']);
         $this->getJson('/api/players/TervMinta/skin')->assertStatus(503);
 
         Http::assertSentCount(1);

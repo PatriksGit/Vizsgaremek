@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ApiErrorResponse;
 use App\Http\Middleware\LogOutBlockedAccounts;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
@@ -35,15 +36,19 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Sessions live in Redis; when it is down, players get a plain message
         // (the exception is still reported to the log).
-        $exceptions->render(fn (RedisException $exception) => response()->json(['message' => 'Váratlan hiba történt.'], 500));
+        $exceptions->render(fn (RedisException $exception) => ApiErrorResponse::make('server_error', 'Váratlan hiba történt.', 500));
 
         // The framework's own 401 and 419 messages are fixed English strings.
         $exceptions->render(fn (AuthenticationException $exception, Request $request) => $request->is('api/*')
-            ? response()->json(['message' => 'Ehhez be kell jelentkezned.'], 401)
+            ? ApiErrorResponse::make('unauthenticated', 'Ehhez be kell jelentkezned.', 401)
             : null);
         $exceptions->render(fn (HttpException $exception, Request $request) => $exception->getStatusCode() === 419 && $request->is('api/*')
-            ? response()->json(['message' => 'A munkamenet lejárt. Frissítsd az oldalt, és próbáld újra.'], 419)
+            ? ApiErrorResponse::make('session_expired', 'A munkamenet lejárt. Frissítsd az oldalt, és próbáld újra.', 419)
             : null);
+
+        // Every other API error gets its status's generic code (our own
+        // exceptions in app/Exceptions bring their own).
+        $exceptions->respond(ApiErrorResponse::finalize(...));
     })
     // Runs only if the server's cron calls `php artisan schedule:run` every minute.
     ->withSchedule(function (Schedule $schedule): void {

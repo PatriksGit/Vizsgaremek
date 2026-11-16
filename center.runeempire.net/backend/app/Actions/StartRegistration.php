@@ -2,19 +2,19 @@
 
 namespace App\Actions;
 
+use App\Exceptions\Auth\CodeRecentlySent;
+use App\Exceptions\Mail\SendFailed;
 use App\Models\Account;
 use App\Models\PendingRegistration;
 use App\Notifications\RegistrationCodeNotification;
 use App\Support\RegistrationCode;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use SensitiveParameter;
-use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Throwable;
 
 class StartRegistration
@@ -31,9 +31,9 @@ class StartRegistration
      * (null outside the website); only that session may replace the pending
      * registration before it expires.
      *
-     * @throws ThrottleRequestsException when a code was mailed to this address within the cooldown
+     * @throws CodeRecentlySent when a code was mailed to this address within the cooldown
      * @throws ValidationException when another session's pending registration holds the name or the email
-     * @throws ServiceUnavailableHttpException when the mail could not be sent
+     * @throws SendFailed when the mail could not be sent
      */
     public function handle(
         string $displayName,
@@ -46,10 +46,7 @@ class StartRegistration
         // Claim the cooldown slot up front: a parallel request for the same
         // address must already be refused while this one waits on SMTP.
         if (RateLimiter::hit($cooldownKey, config('rate_limits.registration_mail.cooldown_seconds')) > 1) {
-            throw new ThrottleRequestsException(
-                'Erre az e-mail címre nemrég küldtünk kódot, próbáld újra kicsit később.',
-                headers: ['Retry-After' => RateLimiter::availableIn($cooldownKey)],
-            );
+            throw new CodeRecentlySent(RateLimiter::availableIn($cooldownKey));
         }
 
         $code = RegistrationCode::generate();
@@ -72,7 +69,7 @@ class StartRegistration
             $pending->delete();
             report($exception);
 
-            throw new ServiceUnavailableHttpException(message: 'A megerősítő e-mailt most nem sikerült elküldeni, próbáld újra később.');
+            throw SendFailed::registrationCode($exception);
         }
 
         return $pending;

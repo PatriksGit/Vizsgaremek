@@ -153,7 +153,7 @@ class ChangePasswordControllerTest extends TestCase
     {
         $this->changePassword()
             ->assertUnauthorized()
-            ->assertExactJson(['message' => 'Ehhez be kell jelentkezned.']);
+            ->assertExactJson(['message' => 'Ehhez be kell jelentkezned.', 'code' => 'unauthenticated']);
     }
 
     public function test_other_sessions_are_logged_out_but_this_browser_stays_under_a_new_session_id(): void

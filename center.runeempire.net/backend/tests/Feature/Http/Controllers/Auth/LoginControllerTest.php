@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Http\Controllers\Auth;
 
-use App\Http\Requests\LoginRequest;
+use App\Exceptions\Auth\AccountLocked;
+use App\Exceptions\Auth\InvalidCredentials;
+use App\Exceptions\Auth\TwoFactorEnabled;
 use App\Models\Account;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -102,7 +104,8 @@ class LoginControllerTest extends TestCase
 
         $this->login(...$credentials)
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => LoginRequest::INVALID_CREDENTIALS]);
+            ->assertJsonValidationErrors(['username' => InvalidCredentials::MESSAGE])
+            ->assertJsonPath('code', 'auth.invalid_credentials');
 
         $this->assertGuest('web');
     }
@@ -119,29 +122,30 @@ class LoginControllerTest extends TestCase
     }
 
     #[DataProvider('malformedUsernames')]
-    public function test_returns_422_for_a_malformed_username_without_querying_the_username_column(mixed $username, string $message): void
+    public function test_returns_422_for_a_malformed_username_without_querying_the_username_column(mixed $username, string $message, string $code): void
     {
         $this->logAuthQueries();
 
-        $this->login($username)->assertUnprocessable()->assertJsonValidationErrors(['username' => $message]);
+        $this->login($username)->assertUnprocessable()->assertJsonValidationErrors(['username' => $message])->assertJsonPath('code', $code);
 
         $this->assertNoQueryMentions('global', 'username', 'Non-ASCII input would make MySQL fail on the ascii username column.');
         $this->assertGuest('web');
     }
 
     /**
-     * A name breaking the pattern gets the same message as wrong credentials.
+     * A name breaking the pattern gets the same answer as wrong credentials,
+     * message and code alike: the code never tells more than the message.
      *
-     * @return array<string, array{mixed, string}>
+     * @return array<string, array{mixed, string, string}>
      */
     public static function malformedUsernames(): array
     {
         return [
-            'missing' => [null, 'Játékosnév megadása kötelező.'],
-            'array' => [['PatrikT'], 'Játékosnév csak szöveg lehet.'],
-            'accented' => ['őrült', LoginRequest::INVALID_CREDENTIALS],
-            'too short' => ['ab', LoginRequest::INVALID_CREDENTIALS],
-            'space inside' => ['Patrik T', LoginRequest::INVALID_CREDENTIALS],
+            'missing' => [null, 'Játékosnév megadása kötelező.', 'validation_failed'],
+            'array' => [['PatrikT'], 'Játékosnév csak szöveg lehet.', 'validation_failed'],
+            'accented' => ['őrült', InvalidCredentials::MESSAGE, 'auth.invalid_credentials'],
+            'too short' => ['ab', InvalidCredentials::MESSAGE, 'auth.invalid_credentials'],
+            'space inside' => ['Patrik T', InvalidCredentials::MESSAGE, 'auth.invalid_credentials'],
         ];
     }
 
@@ -178,24 +182,24 @@ class LoginControllerTest extends TestCase
      * @param  array<string, bool>  $flags
      */
     #[DataProvider('accountsKeptOffTheWebsite')]
-    public function test_returns_422_for_a_blocked_account_with_the_right_password(array $flags, string $message): void
+    public function test_returns_422_for_a_blocked_account_with_the_right_password(array $flags, string $message, string $code): void
     {
         $this->blockAccount($this->account(), $flags);
 
-        $this->login()->assertUnprocessable()->assertJsonValidationErrors(['username' => $message]);
+        $this->login()->assertUnprocessable()->assertJsonValidationErrors(['username' => $message])->assertJsonPath('code', $code);
 
         $this->assertGuest('web');
     }
 
     /**
-     * @return array<string, array{array<string, bool>, string}>
+     * @return array<string, array{array<string, bool>, string, string}>
      */
     public static function accountsKeptOffTheWebsite(): array
     {
         return [
-            'locked' => [['locked' => true], LoginRequest::ACCOUNT_LOCKED],
-            'two-factor' => [['twofa_enabled' => true], LoginRequest::TWO_FACTOR_IN_GAME_ONLY],
-            'locked and two-factor' => [['locked' => true, 'twofa_enabled' => true], LoginRequest::ACCOUNT_LOCKED],
+            'locked' => [['locked' => true], AccountLocked::MESSAGE, 'auth.account_locked'],
+            'two-factor' => [['twofa_enabled' => true], TwoFactorEnabled::MESSAGE, 'auth.two_factor_enabled'],
+            'locked and two-factor' => [['locked' => true, 'twofa_enabled' => true], AccountLocked::MESSAGE, 'auth.account_locked'],
         ];
     }
 
@@ -205,7 +209,8 @@ class LoginControllerTest extends TestCase
 
         $this->login('PatrikT', 'rossz-jelszo')
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => LoginRequest::INVALID_CREDENTIALS]);
+            ->assertJsonValidationErrors(['username' => InvalidCredentials::MESSAGE])
+            ->assertJsonPath('code', 'auth.invalid_credentials');
     }
 
     public function test_returns_403_from_outside_the_website(): void
@@ -214,7 +219,7 @@ class LoginControllerTest extends TestCase
 
         $this->login(fromWebsite: false)
             ->assertForbidden()
-            ->assertJson(['message' => 'A bejelentkezés csak a weboldalról lehetséges.']);
+            ->assertJson(['message' => 'A bejelentkezés csak a weboldalról lehetséges.', 'code' => 'auth.website_only']);
 
         $this->assertGuest('web');
     }
@@ -252,7 +257,7 @@ class LoginControllerTest extends TestCase
         $response = $this->login('PatrikT', 'rossz-jelszo');
 
         $response->assertTooManyRequests()
-            ->assertExactJson(['message' => 'Túl sok próbálkozás. Próbáld újra 1 perc múlva.'])
+            ->assertExactJson(['message' => 'Túl sok próbálkozás. Próbáld újra 1 perc múlva.', 'code' => 'too_many_requests'])
             ->assertHeader('Retry-After', '60');
     }
 
@@ -266,6 +271,6 @@ class LoginControllerTest extends TestCase
         $response = $this->login('PatrikT', 'rossz-jelszo');
 
         $response->assertTooManyRequests()
-            ->assertExactJson(['message' => 'Túl sok próbálkozás. Próbáld újra 25 másodperc múlva.']);
+            ->assertExactJson(['message' => 'Túl sok próbálkozás. Próbáld újra 25 másodperc múlva.', 'code' => 'too_many_requests']);
     }
 }

@@ -65,7 +65,7 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
     {
         $resetCode = $this->resetCode();
 
-        $this->verify('654321')->assertUnprocessable()->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
+        $this->verify('654321')->assertUnprocessable()->assertJsonValidationErrors(['code' => self::INVALID_CODE])->assertJsonPath('code', 'validation_failed');
 
         $this->assertDatabaseHas('password_reset_codes', ['id' => $resetCode->id, 'attempts' => 1]);
         $this->assertSame(1, $this->guesses());
@@ -123,6 +123,7 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
 
         $this->verify('123456')
             ->assertTooManyRequests()
+            ->assertJsonPath('code', 'auth.reset_guesses_spent')
             ->assertJson(['message' => 'Túl sok hibás kódpróbálkozás volt ezzel a címmel. Próbáld újra holnap, vagy írj nekünk Discordon.'])
             ->assertHeader('Retry-After');
 
@@ -149,7 +150,9 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
             $this->verify('654321')->assertUnprocessable();
         }
 
-        $this->verify('222222')->assertTooManyRequests();
+        // Past the per-IP minute (10 verifies), so the answer is the budget's, not the throttle's.
+        $this->travel(61)->seconds();
+        $this->verify('222222')->assertTooManyRequests()->assertJsonPath('code', 'auth.reset_guesses_spent');
         $this->assertNull(session('password_reset'));
     }
 
@@ -159,7 +162,7 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
             $this->verify('123456', "senki{$request}@example.com")->assertUnprocessable();
         }
 
-        $this->verify('123456', 'senki11@example.com')->assertTooManyRequests();
+        $this->verify('123456', 'senki11@example.com')->assertTooManyRequests()->assertJsonPath('code', 'too_many_requests');
     }
 
     public function test_an_accented_variant_cannot_get_more_guesses(): void
@@ -217,6 +220,6 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
 
         $this->verify('123456', headers: [])
             ->assertForbidden()
-            ->assertJson(['message' => 'A jelszó-visszaállítás csak a weboldalról lehetséges.']);
+            ->assertJson(['message' => 'A jelszó-visszaállítás csak a weboldalról lehetséges.', 'code' => 'auth.website_only']);
     }
 }

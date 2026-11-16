@@ -21,7 +21,7 @@ class RedisOutageTest extends TestCase
 
         $this->postJson('/api/auth/login', ['username' => 'PatrikT', 'password' => 'titkos-jelszo'], ['Origin' => 'http://localhost:5173'])
             ->assertInternalServerError()
-            ->assertExactJson(['message' => 'Váratlan hiba történt.']);
+            ->assertExactJson(['message' => 'Váratlan hiba történt.', 'code' => 'server_error']);
 
         Exceptions::assertReported(RedisException::class);
     }

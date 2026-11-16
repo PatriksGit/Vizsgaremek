@@ -2,17 +2,18 @@
 
 namespace App\Actions;
 
+use App\Exceptions\Auth\CodeRecentlySent;
+use App\Exceptions\Auth\ResetGuessesSpent;
+use App\Exceptions\Mail\SendFailed;
 use App\Models\Account;
 use App\Models\PasswordResetCode;
 use App\Notifications\PasswordResetCodeNotification;
 use App\Support\PasswordResetGuesses;
 use App\Support\RegistrationCode;
-use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Throwable;
 
 class StartPasswordReset
@@ -28,8 +29,9 @@ class StartPasswordReset
      * daily wrong-guess budget is spent (it could not be used).
      *
      * @throws ValidationException when no account has this email
-     * @throws ThrottleRequestsException within the cooldown or with the guess budget spent
-     * @throws ServiceUnavailableHttpException when the mail could not be sent
+     * @throws CodeRecentlySent within the cooldown
+     * @throws ResetGuessesSpent with the guess budget spent
+     * @throws SendFailed when the mail could not be sent
      */
     public function handle(string $email): PasswordResetCode
     {
@@ -51,10 +53,7 @@ class StartPasswordReset
         // Claim the cooldown slot up front: a parallel request for the same
         // account must already be refused while this one waits on SMTP.
         if (RateLimiter::hit($cooldownKey, config('rate_limits.registration_mail.cooldown_seconds')) > 1) {
-            throw new ThrottleRequestsException(
-                'Erre az e-mail címre nemrég küldtünk kódot, próbáld újra kicsit később.',
-                headers: ['Retry-After' => RateLimiter::availableIn($cooldownKey)],
-            );
+            throw new CodeRecentlySent(RateLimiter::availableIn($cooldownKey));
         }
 
         $code = RegistrationCode::generate();
@@ -84,7 +83,7 @@ class StartPasswordReset
             $resetCode->delete();
             report($exception);
 
-            throw new ServiceUnavailableHttpException(message: 'A kódot most nem sikerült elküldeni, próbáld újra később.');
+            throw SendFailed::resetCode($exception);
         }
 
         return $resetCode;

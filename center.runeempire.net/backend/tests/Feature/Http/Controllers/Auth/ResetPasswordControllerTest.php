@@ -2,7 +2,8 @@
 
 namespace Tests\Feature\Http\Controllers\Auth;
 
-use App\Http\Requests\LoginRequest;
+use App\Exceptions\Auth\AccountLocked;
+use App\Exceptions\Auth\InvalidCredentials;
 use App\Models\Account;
 use App\Models\PasswordResetCode;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -96,14 +97,14 @@ class ResetPasswordControllerTest extends TestCase
         $this->defaultCookies = [];
         $this->postJson('/api/auth/login', ['username' => 'PatrikT', 'password' => 'regi-jelszo'], self::FROM_WEBSITE)
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => LoginRequest::INVALID_CREDENTIALS]);
+            ->assertJsonValidationErrors(['username' => InvalidCredentials::MESSAGE]);
     }
 
     public function test_without_a_verified_code_it_says_to_start_again(): void
     {
         $account = $this->account();
 
-        $this->reset()->assertUnprocessable()->assertJsonValidationErrors(['reset' => self::START_AGAIN]);
+        $this->reset()->assertUnprocessable()->assertJsonValidationErrors(['reset' => self::START_AGAIN])->assertJsonPath('code', 'auth.reset_expired');
 
         $this->assertPasswordUnchanged($account);
     }
@@ -115,7 +116,7 @@ class ResetPasswordControllerTest extends TestCase
 
         $this->travel(11)->minutes();
 
-        $this->asBrowserWithSession($session)->reset()->assertUnprocessable()->assertJsonValidationErrors(['reset' => self::START_AGAIN]);
+        $this->asBrowserWithSession($session)->reset()->assertUnprocessable()->assertJsonValidationErrors(['reset' => self::START_AGAIN])->assertJsonPath('code', 'auth.reset_expired');
         $this->assertPasswordUnchanged($account);
     }
 
@@ -127,7 +128,7 @@ class ResetPasswordControllerTest extends TestCase
         $this->asBrowserWithSession($this->lastSessionId())
             ->reset(['password' => 'harmadik-jelszo', 'password_confirmation' => 'harmadik-jelszo'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['reset' => self::START_AGAIN]);
+            ->assertJsonValidationErrors(['reset' => self::START_AGAIN])->assertJsonPath('code', 'auth.reset_expired');
 
         $this->assertTrue(Hash::check('uj-titkos-jelszo', $account->fresh()->password_hash));
     }
@@ -141,7 +142,7 @@ class ResetPasswordControllerTest extends TestCase
         $this->asBrowserWithSession($session)
             ->reset(['password' => 'harmadik-jelszo', 'password_confirmation' => 'harmadik-jelszo'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['reset' => self::START_AGAIN]);
+            ->assertJsonValidationErrors(['reset' => self::START_AGAIN])->assertJsonPath('code', 'auth.reset_expired');
 
         $this->assertTrue(Hash::check('uj-titkos-jelszo', $account->fresh()->password_hash));
     }
@@ -153,7 +154,7 @@ class ResetPasswordControllerTest extends TestCase
 
         $this->app['session']->driver()->flush();
         $this->defaultCookies = [];
-        $this->reset()->assertUnprocessable()->assertJsonValidationErrors(['reset' => self::START_AGAIN]);
+        $this->reset()->assertUnprocessable()->assertJsonValidationErrors(['reset' => self::START_AGAIN])->assertJsonPath('code', 'auth.reset_expired');
 
         $this->assertPasswordUnchanged($account);
     }
@@ -164,7 +165,7 @@ class ResetPasswordControllerTest extends TestCase
         $session = $this->verifiedBrowser($account);
         DB::connection('global')->table('accounts')->where('id', $account->id)->delete();
 
-        $this->asBrowserWithSession($session)->reset()->assertUnprocessable()->assertJsonValidationErrors(['reset' => self::START_AGAIN]);
+        $this->asBrowserWithSession($session)->reset()->assertUnprocessable()->assertJsonValidationErrors(['reset' => self::START_AGAIN])->assertJsonPath('code', 'auth.reset_expired');
     }
 
     public function test_refuses_a_password_breaking_the_policy_and_keeps_the_permission(): void
@@ -225,7 +226,7 @@ class ResetPasswordControllerTest extends TestCase
         $this->defaultCookies = [];
         $this->postJson('/api/auth/login', ['username' => 'PatrikT', 'password' => 'uj-titkos-jelszo'], self::FROM_WEBSITE)
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['username' => LoginRequest::ACCOUNT_LOCKED]);
+            ->assertJsonValidationErrors(['username' => AccountLocked::MESSAGE]);
     }
 
     public function test_a_two_factor_account_can_reset(): void
@@ -253,7 +254,7 @@ class ResetPasswordControllerTest extends TestCase
 
         $this->reset(headers: [])
             ->assertForbidden()
-            ->assertJson(['message' => 'A jelszó-visszaállítás csak a weboldalról lehetséges.']);
+            ->assertJson(['message' => 'A jelszó-visszaállítás csak a weboldalról lehetséges.', 'code' => 'auth.website_only']);
 
         $this->assertPasswordUnchanged($account);
     }

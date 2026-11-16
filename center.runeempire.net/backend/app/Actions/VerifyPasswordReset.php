@@ -2,11 +2,11 @@
 
 namespace App\Actions;
 
+use App\Exceptions\Auth\ResetGuessesSpent;
 use App\Models\Account;
 use App\Models\PasswordResetCode;
 use App\Support\PasswordResetGuesses;
 use App\Support\RegistrationCode;
-use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use SensitiveParameter;
@@ -25,7 +25,7 @@ class VerifyPasswordReset
      * thrown, inside the transaction: throwing would roll back the counts.
      *
      * @throws ValidationException when the code is missing, expired or wrong
-     * @throws ThrottleRequestsException when the account's guess budget is spent
+     * @throws ResetGuessesSpent when the account's guess budget is spent
      */
     public function handle(string $email, #[SensitiveParameter] string $code): Account
     {
@@ -36,7 +36,7 @@ class VerifyPasswordReset
             throw self::invalidCode();
         }
 
-        $failure = DB::transaction(function () use ($account, $code): ValidationException|ThrottleRequestsException|null {
+        $failure = DB::transaction(function () use ($account, $code): ValidationException|ResetGuessesSpent|null {
             $resetCode = PasswordResetCode::query()->where('account_id', $account->id)->lockForUpdate()->first();
 
             if (PasswordResetGuesses::spent($account->id)) {

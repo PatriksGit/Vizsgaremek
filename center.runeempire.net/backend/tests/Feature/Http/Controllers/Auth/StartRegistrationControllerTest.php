@@ -458,7 +458,7 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->register()
             ->assertServiceUnavailable()
-            ->assertJson(['message' => 'A megerősítő e-mailt most nem sikerült elküldeni, próbáld újra később.']);
+            ->assertJson(['message' => 'A megerősítő e-mailt most nem sikerült elküldeni, próbáld újra később.', 'code' => 'mail.send_failed']);
 
         $this->assertDatabaseCount('pending_registrations', 0);
         $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A failed send must not start the cooldown.');
@@ -486,7 +486,11 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->registerFromBrowser()
             ->assertTooManyRequests()
-            ->assertJson(['message' => 'Erre az e-mail címre nemrég küldtünk kódot, próbáld újra kicsit később.']);
+            ->assertJson(['message' => 'Erre az e-mail címre nemrég küldtünk kódot, próbáld újra kicsit később.'])
+            ->assertJsonPath('code', 'auth.code_recently_sent')
+            ->assertHeader('Retry-After')
+            // When a new code may be asked: within the cooldown (60 s in phpunit.xml).
+            ->assertJsonPath('details.resend_at', fn (string $at): bool => now()->diffInSeconds($at) > 55 && now()->diffInSeconds($at) <= 60);
 
         $this->travel(61)->seconds();
         $this->registerFromBrowser()->assertAccepted();
@@ -534,7 +538,8 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->postJson('/api/auth/register', ['display_name' => 'ab'])
             ->assertTooManyRequests()
-            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'));
+            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'))
+            ->assertJsonPath('code', 'too_many_requests');
     }
 
     public function test_returns_429_after_the_per_hour_limit_from_config(): void
@@ -547,6 +552,7 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->postJson('/api/auth/register', ['display_name' => 'ab'])
             ->assertTooManyRequests()
-            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'));
+            ->assertJsonPath('message', fn (string $message): bool => str_starts_with($message, 'Túl sok próbálkozás.'))
+            ->assertJsonPath('code', 'too_many_requests');
     }
 }

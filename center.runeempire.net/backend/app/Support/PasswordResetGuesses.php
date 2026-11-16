@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use App\Exceptions\Auth\ResetGuessesSpent;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
@@ -42,12 +42,9 @@ class PasswordResetGuesses
     /**
      * The 429 answer once the budget is spent.
      */
-    public static function exception(int $accountId): ThrottleRequestsException
+    public static function exception(int $accountId): ResetGuessesSpent
     {
-        return new ThrottleRequestsException(
-            'Túl sok hibás kódpróbálkozás volt ezzel a címmel. Próbáld újra holnap, vagy írj nekünk Discordon.',
-            headers: ['Retry-After' => RateLimiter::availableIn(self::key($accountId))],
-        );
+        return new ResetGuessesSpent(RateLimiter::availableIn(self::key($accountId)));
     }
 
     private static function key(int $accountId): string
