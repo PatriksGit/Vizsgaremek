@@ -56,6 +56,16 @@ class SanctumStatefulDomainsTest extends TestCase
         $this->assertSame(200, $this->loginStatusWith('http://localhost:5173'), 'login from the website with SANCTUM_STATEFUL_DOMAINS=http://localhost:5173');
     }
 
+    /**
+     * A list written with a space after the comma: Sanctum trims each entry
+     * itself (EnsureFrontendRequestsAreStateful::fromFrontend), so the
+     * config needs no trim of its own. Pins that for an upgrade.
+     */
+    public function test_a_list_with_spaces_after_the_commas_still_lets_the_website_log_in(): void
+    {
+        $this->assertSame(200, $this->loginStatusWith('center.runeempire.net, localhost:5173'), 'login with "center.runeempire.net, localhost:5173"');
+    }
+
     public function test_a_plain_domain_lets_the_website_log_in(): void
     {
         $this->assertSame(200, $this->loginStatusWith('localhost:5173'));
