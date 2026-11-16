@@ -17,8 +17,9 @@ return [
     /*
      * Password length limits (registration and password change, see
      * App\Rules\PlayablePassword). The maximum must not exceed 128, the
-     * longest password the launcher and the Rune Gateway accept, otherwise
-     * the player could not log in to the game with the password set here.
+     * longest password the in-game /login accepts (a chat line holds 256
+     * characters), otherwise the player could not log in to the game with
+     * the password set here.
      * A typo or an empty value would read as 0 (every password too long, or a
      * 1-character one accepted): it falls back to the default instead, and
      * both values stay within 8..128.

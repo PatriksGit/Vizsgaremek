@@ -4,9 +4,8 @@ import {
   faCircleInfo,
   faComments,
   faCompass,
-  faDesktop,
-  faDownload,
   faFileContract,
+  faGamepad,
   faScroll,
   faTrophy,
   faUserLock,
@@ -26,9 +25,6 @@ export const site = {
 
   /** Where players can write to the team; null hides the e-mail button on the error page. */
   contactEmail: null as string | null,
-
-  /** Where the RuneEmpire client can be downloaded; null until it is public. */
-  clientDownloadUrl: null as string | null,
 
   /** The game server's address, for a later "copy the server IP" button; null until it is decided (nothing reads it yet). */
   serverAddress: null as string | null,
@@ -59,9 +55,9 @@ export const site = {
       text: 'A szerver weboldala: itt kezeled a fiókod, és itt látod, ki van fent a Discordon. Itt látod a statisztikáidat és a barátaidat is, hamarosan pedig a webshop is ide költözik.',
     },
     {
-      icon: faDesktop,
-      title: 'Saját kliens',
-      text: 'A szerverre a saját kliensünkkel lépsz fel, ugyanazzal a névvel és jelszóval, mint itt.',
+      icon: faGamepad,
+      title: 'Egy fiók mindenhez',
+      text: 'A szerveren a /login paranccsal lépsz be, ugyanazzal a játékosnévvel és jelszóval, mint itt.',
     },
   ],
 
@@ -69,7 +65,6 @@ export const site = {
     {
       title: 'Szerver',
       links: [
-        { label: 'Kliens letöltése', href: '#', icon: faDownload },
         { label: 'Ranglisták', href: '#', icon: faTrophy },
         { label: 'Webshop', href: '#', icon: faCartShopping },
         { label: 'Szabályzat', href: '#', icon: faScroll },

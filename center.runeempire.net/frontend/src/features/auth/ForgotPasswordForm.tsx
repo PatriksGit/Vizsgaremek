@@ -301,7 +301,7 @@ export function ForgotPasswordForm() {
               <PasswordField
                 label="Új jelszó"
                 autoComplete="new-password"
-                description={`Min. ${PASSWORD_MIN_LENGTH} karakter: magyar vagy angol betűk, számok és egyszerű szimbólumok.`}
+                description={`Min. ${PASSWORD_MIN_LENGTH} karakter, szóköz nélkül: magyar vagy angol betűk, számok és egyszerű szimbólumok.`}
                 error={passwordForm.formState.errors.password?.message}
                 {...passwordForm.register('password')}
               />

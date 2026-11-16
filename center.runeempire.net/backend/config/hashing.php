@@ -3,8 +3,8 @@
 /*
  * Only the overrides; Laravel merges the rest from its own config/hashing.php.
  *
- * Passwords are verified by the Rune Gateway too (launcher login), so they
- * must be argon2id.
+ * Passwords are verified by the game's auth plugin too (the in-game
+ * /login), so they must be argon2id.
  */
 return [
 
@@ -21,7 +21,7 @@ return [
 
     /*
      * Never rewrite a hash on login: the accounts table is shared with the
-     * Rune Gateway, and logging in must not write to it.
+     * game's auth plugin, and logging in must not write to it.
      */
     'rehash_on_login' => false,
 

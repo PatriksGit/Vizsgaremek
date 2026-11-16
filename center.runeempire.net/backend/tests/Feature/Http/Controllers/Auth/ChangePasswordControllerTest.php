@@ -52,7 +52,7 @@ class ChangePasswordControllerTest extends TestCase
         $this->actingAs($account, 'web')->changePassword()->assertNoContent();
 
         $hash = $account->fresh()->password_hash;
-        $this->assertStringStartsWith('$argon2id$', $hash, 'The Rune Gateway verifies argon2id at launcher login.');
+        $this->assertStringStartsWith('$argon2id$', $hash, 'The game\'s auth plugin verifies argon2id at the in-game /login.');
         $this->assertTrue(Hash::check('uj-titkos-jelszo', $hash));
         $this->assertFalse(Hash::check('regi-jelszo', $hash));
     }
@@ -144,7 +144,7 @@ class ChangePasswordControllerTest extends TestCase
         $this->actingAs($account, 'web')
             ->changePassword(['password' => 'uj-titkos-jelszo😀', 'password_confirmation' => 'uj-titkos-jelszo😀'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'Jelszó csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.']);
+            ->assertJsonValidationErrors(['password' => 'Jelszó csak a magyar és az angol ábécé betűit, számokat és egyszerű szimbólumokat tartalmazhat, szóközt nem.']);
 
         $this->assertPasswordUnchanged($account);
     }

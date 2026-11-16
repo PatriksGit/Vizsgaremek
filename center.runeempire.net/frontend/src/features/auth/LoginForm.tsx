@@ -70,7 +70,7 @@ export function LoginForm() {
           />
           {/* The panel slides in on the same card, so what was typed here stays. */}
           <Link
-            to="/elfelejtett-jelszo"
+            to="/forgot-password"
             className="self-end rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             Elfelejtetted a jelszavad?

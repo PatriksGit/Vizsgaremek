@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /**
  * A player account in the Auth database's accounts table (global connection).
  *
- * The table is shared with the Rune Gateway and RuneAuth and changed by hand,
+ * The table is shared with the game's auth plugin and changed by hand,
  * never by a migration: created_at is filled by the database and there is no
  * updated_at column. Only the columns the website uses are listed; locked
  * comes from RuneAuth's account_locks table (the lock relation).
@@ -66,7 +66,7 @@ class Account extends Model implements AuthenticatableContract
     public const PASSWORD_INPUT_MAX_LENGTH = 128;
 
     /**
-     * The lowercase name accounts are looked up by (the website, the Rune Gateway and RuneAuth).
+     * The lowercase name accounts are looked up by (the website and the game's auth plugin).
      */
     public static function usernameFor(string $displayName): string
     {

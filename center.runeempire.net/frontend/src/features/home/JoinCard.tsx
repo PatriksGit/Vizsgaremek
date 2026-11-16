@@ -1,22 +1,19 @@
 import { faDiscord } from '@fortawesome/free-brands-svg-icons'
-import { faDownload, faGamepad } from '@fortawesome/free-solid-svg-icons'
+import { faGamepad } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { IconBadge } from '@/components/app/IconBadge'
 import { Panel } from '@/components/app/Panel'
-import { SoonButton } from '@/components/app/SoonButton'
 import { buttonVariants } from '@/components/ui/button'
 import { site } from '@/config/site'
 import { enterAfter } from '@/lib/motion'
 
 /**
- * How a new player gets into the game: the client, and the same name and
- * password as here. While the client cannot be downloaded yet, the card still
- * ends on something that works: the Discord, where its release is announced.
+ * How a new player gets into the game: the same name in Minecraft, and the
+ * same password typed into the server's /login. The card ends on the Discord,
+ * where the news are.
  */
 export function JoinCard() {
-  const clientReady = site.clientDownloadUrl !== null
-
   return (
     <Panel
       as="section"
@@ -31,33 +28,24 @@ export function JoinCard() {
             Így csatlakozol a szerverhez
           </h2>
           <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            Töltsd le a RuneEmpire klienst, és lépj be ugyanazzal a játékosnévvel és jelszóval, amivel itt regisztráltál.
-            {!clientReady && ' A kliens hamarosan letölthető: a Discordon szólunk, amint elérhető.'}
+            Lépj fel a szerverre azzal a játékosnévvel, amivel itt regisztráltál, és írd be:{' '}
+            <code className="rounded bg-raised px-1.5 py-0.5 font-mono text-foreground">/login &lt;jelszavad&gt;</code>, ugyanazzal a
+            jelszóval, mint itt.
           </p>
         </div>
       </div>
 
       <div className="flex shrink-0 flex-wrap gap-2">
-        {site.clientDownloadUrl ? (
-          <a href={site.clientDownloadUrl} className={buttonVariants({ size: 'lg', className: 'h-11 px-4' })}>
-            <FontAwesomeIcon icon={faDownload} aria-hidden="true" />
-            Kliens letöltése
-          </a>
-        ) : (
-          <>
-            <a
-              href={site.discordInviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={buttonVariants({ variant: 'outline', size: 'lg', className: 'h-11 border-discord/40 px-4 hover:bg-discord/15' })}
-            >
-              <FontAwesomeIcon icon={faDiscord} className="text-discord" aria-hidden="true" />
-              Csatlakozás a Discordhoz
-              <span className="sr-only"> (új lapon nyílik)</span>
-            </a>
-            <SoonButton icon={faDownload}>Kliens letöltése</SoonButton>
-          </>
-        )}
+        <a
+          href={site.discordInviteUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonVariants({ variant: 'outline', size: 'lg', className: 'h-11 border-discord/40 px-4 hover:bg-discord/15' })}
+        >
+          <FontAwesomeIcon icon={faDiscord} className="text-discord" aria-hidden="true" />
+          Csatlakozás a Discordhoz
+          <span className="sr-only"> (új lapon nyílik)</span>
+        </a>
       </div>
     </Panel>
   )

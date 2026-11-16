@@ -12,7 +12,7 @@ use Tests\TestCase;
  */
 class PlayablePasswordTest extends TestCase
 {
-    private const CHARACTERS = 'Jelszó csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.';
+    private const CHARACTERS = 'Jelszó csak a magyar és az angol ábécé betűit, számokat és egyszerű szimbólumokat tartalmazhat, szóközt nem.';
 
     /**
      * @return array<int, string>
@@ -35,9 +35,8 @@ class PlayablePasswordTest extends TestCase
     {
         return [
             'letters and digits' => ['TitkosJelszo2026'],
-            'every plain symbol' => [' !"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~'],
-            'spaces inside and at the ends' => [' titkos jelszo '],
-            'Hungarian accented letters' => ['árvíztűrő tükörfúrógép ÁRVÍZTŰRŐ TÜKÖRFÚRÓGÉP'],
+            'every plain symbol' => ['!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~'],
+            'Hungarian accented letters' => ['árvíztűrő-tükörfúrógép_ÁRVÍZTŰRŐ-TÜKÖRFÚRÓGÉP'],
             'exactly 8 characters' => ['12345678'],
             'exactly 64 characters' => [str_repeat('a', 64)],
             'exactly 64 accented characters' => [str_repeat('ő', 64)],
@@ -58,6 +57,9 @@ class PlayablePasswordTest extends TestCase
         return [
             'too short' => ['1234567', 'Jelszó legalább 8 karakter legyen.'],
             'too long' => [str_repeat('a', 65), 'Jelszó legfeljebb 64 karakter lehet.'],
+            // The in-game `/login <jelszó>` command splits at a space (owner, 2026-11-16).
+            'a space inside' => ['titkos jelszo', self::CHARACTERS],
+            'a space at the end' => ['titkosjelszo ', self::CHARACTERS],
             'emoji' => ['titkos-jelszo😀', self::CHARACTERS],
             'copied symbol' => ['titkos™jelszo', self::CHARACTERS],
             'arrow' => ['titkos→jelszo', self::CHARACTERS],

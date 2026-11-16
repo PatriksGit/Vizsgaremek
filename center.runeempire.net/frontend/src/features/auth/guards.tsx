@@ -36,6 +36,8 @@ export function GuestOnly({ children }: { children: ReactNode }) {
   const from = (location.state as FromState)?.from
 
   if (!isFetched) return null
-  if (account && !matchPath('/elfelejtett-jelszo', location.pathname)) return <Navigate to={from?.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />
+  if (account && !matchPath('/forgot-password', location.pathname)) {
+    return <Navigate to={from?.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />
+  }
   return children
 }

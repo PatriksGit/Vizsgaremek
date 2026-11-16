@@ -56,7 +56,7 @@ function backend(routes: Record<string, Handler> = {}) {
 function renderPanel() {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={['/elfelejtett-jelszo']}>
+      <MemoryRouter initialEntries={['/forgot-password']}>
         <ForgotPasswordForm />
         <Toaster />
       </MemoryRouter>
@@ -303,7 +303,7 @@ describe('after a reset', { timeout: 15_000 }, () => {
       'POST /auth/password/forgot/verify': verify,
       'POST /auth/password/reset': () => ({ status: 200, data: { data: { username: 'Steve_01' } } }),
     })
-    window.history.pushState({}, '', failedLoginFirst ? '/login' : '/elfelejtett-jelszo')
+    window.history.pushState({}, '', failedLoginFirst ? '/login' : '/forgot-password')
     const { default: App } = await import('@/App')
     render(<App />)
     if (failedLoginFirst) {

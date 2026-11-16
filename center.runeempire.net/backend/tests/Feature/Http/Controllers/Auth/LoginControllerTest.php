@@ -46,6 +46,17 @@ class LoginControllerTest extends TestCase
         return $this->postJson('/api/auth/login', ['username' => $username, 'password' => $password], $fromWebsite ? self::FROM_WEBSITE : []);
     }
 
+    /**
+     * New passwords may not contain a space any more (the in-game /login
+     * splits at it), but a password set before that still logs in here.
+     */
+    public function test_an_older_password_with_a_space_still_logs_in(): void
+    {
+        Account::factory()->withPassword('titkos jelszo')->create(['display_name' => 'PatrikT']);
+
+        $this->login('PatrikT', 'titkos jelszo')->assertOk();
+    }
+
     public function test_returns_200_with_the_account_and_logs_in(): void
     {
         $account = $this->account();

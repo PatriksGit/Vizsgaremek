@@ -13,10 +13,11 @@ const EMAIL_PATTERN = /^[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
 
 /**
  * PlayablePassword::ALLOWED_PATTERN: what a keyboard types -- the English letters,
- * digits, space and plain symbols (printable ASCII) plus the Hungarian accented
- * letters. No emoji, copied symbols, other alphabets or separate accent marks.
+ * digits and plain symbols (printable ASCII without the space: the in-game
+ * `/login <jelszó>` splits at it) plus the Hungarian accented letters. No emoji,
+ * copied symbols, other alphabets or separate accent marks.
  */
-const ALLOWED_PASSWORD_PATTERN = /^[\x20-\x7EáéíóöőúüűÁÉÍÓÖŐÚÜŰ]+$/
+const ALLOWED_PASSWORD_PATTERN = /^[\x21-\x7EáéíóöőúüűÁÉÍÓÖŐÚÜŰ]+$/
 
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 64
@@ -34,7 +35,7 @@ const password = z
   .string()
   .min(1, { error: 'Adj meg egy jelszót.' })
   .refine((value) => ALLOWED_PASSWORD_PATTERN.test(value), {
-    error: 'Csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.',
+    error: 'Csak a magyar és az angol ábécé betűit, számokat és egyszerű szimbólumokat tartalmazhat, szóközt nem.',
   })
   // Every allowed character is one UTF-16 unit, so .length counts characters like the backend.
   .refine((value) => value.length >= PASSWORD_MIN_LENGTH, { error: `Legalább ${PASSWORD_MIN_LENGTH} karakter legyen.` })

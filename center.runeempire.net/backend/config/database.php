@@ -34,7 +34,7 @@ return [
 
         /*
          * The network's shared Auth database: accounts (created by the website,
-         * read by the Rune Gateway and RuneAuth) and RuneAuth's account_locks.
+         * read by the game's auth plugin) and RuneAuth's account_locks.
          * The website creates no tables here; its user needs only SELECT,
          * INSERT and UPDATE on accounts and SELECT on account_locks.
          */

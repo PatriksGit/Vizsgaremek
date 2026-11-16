@@ -348,7 +348,7 @@ class StartRegistrationControllerTest extends TestCase
     {
         $this->register(['password' => 'titkos-jelszo😀', 'password_confirmation' => 'titkos-jelszo😀'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['password' => 'Jelszó csak a magyar és az angol ábécé betűit, számokat, szóközt és egyszerű szimbólumokat tartalmazhat.']);
+            ->assertJsonValidationErrors(['password' => 'Jelszó csak a magyar és az angol ábécé betűit, számokat és egyszerű szimbólumokat tartalmazhat, szóközt nem.']);
 
         $this->assertDatabaseCount('pending_registrations', 0);
     }

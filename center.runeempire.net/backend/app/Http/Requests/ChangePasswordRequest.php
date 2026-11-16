@@ -13,8 +13,8 @@ class ChangePasswordRequest extends FormRequest
      * Get the validation rules that apply to the request.
      *
      * bail keeps a non-string current password away from the hash check. The
-     * new password follows the registration policy, so it keeps working in
-     * the launcher's login form.
+     * new password follows the registration policy, so it can be typed in the
+     * in-game /login too.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */

@@ -18,7 +18,7 @@ const TITLES: Record<AuthMode, string> = { login: 'Belépés', register: 'Regisz
 /** Matched like the routes themselves: /register/ and /Register open the registration form too. */
 function modeFor(pathname: string): AuthMode {
   if (matchPath('/register', pathname)) return 'register'
-  if (matchPath('/elfelejtett-jelszo', pathname)) return 'forgot'
+  if (matchPath('/forgot-password', pathname)) return 'forgot'
   return 'login'
 }
 

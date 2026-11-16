@@ -1,7 +1,7 @@
 /**
- * The forgotten password panel has its own address (RuneLauncher's link points
- * to it) on the login card, and a logged-in visitor may open it too: the
- * settings page will link here for a forgotten current password.
+ * The forgotten password panel has its own address on the login card, and a
+ * logged-in visitor may open it too: the settings page will link here for a
+ * forgotten current password.
  */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -38,7 +38,7 @@ describe('the forgotten password address', { timeout: 15_000 }, () => {
   afterEach(cleanup)
 
   it('opens the panel for a guest, with its title and a way back to the login', async () => {
-    await open('/elfelejtett-jelszo')
+    await open('/forgot-password')
 
     expect(await forgotPanelIsActive()).toBe(true)
     expect(document.title).toBe('Elfelejtett jelszó | RuneEmpire')
@@ -53,13 +53,13 @@ describe('the forgotten password address', { timeout: 15_000 }, () => {
   })
 
   it('a shared link with a trailing slash or capitals opens it too', async () => {
-    await open('/Elfelejtett-Jelszo/')
+    await open('/Forgot-Password/')
 
     expect(await forgotPanelIsActive()).toBe(true)
   })
 
   it('a logged-in visitor is not sent away, and goes back to the settings', async () => {
-    await open('/elfelejtett-jelszo', ACCOUNT)
+    await open('/forgot-password', ACCOUNT)
 
     expect(await forgotPanelIsActive()).toBe(true)
     expect(screen.getByRole('link', { name: '← Vissza' }).getAttribute('href')).toBe('/beallitasok')

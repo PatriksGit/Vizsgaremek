@@ -53,7 +53,7 @@ function backend(routes: Record<string, Handler> = {}) {
 function renderPanel(queryClient = new QueryClient()) {
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/elfelejtett-jelszo']}>
+      <MemoryRouter initialEntries={['/forgot-password']}>
         <ForgotPasswordForm />
         <Toaster />
       </MemoryRouter>
