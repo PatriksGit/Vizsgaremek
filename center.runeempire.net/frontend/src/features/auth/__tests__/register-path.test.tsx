@@ -24,12 +24,12 @@ async function openAsGuest(path: string) {
   window.history.pushState({}, '', path)
   const { default: App } = await import('@/App')
   render(<App />)
-  await screen.findByRole('button', { name: 'Kód küldése' })
+  await screen.findByLabelText('Jelszó újra')
 }
 
-/** The form the visitor can use: the other one waits off to the side, inert. */
+/** The form the visitor can use: the others wait off to the side, inert. ("Jelszó újra" is only in the registration.) */
 function activeForm() {
-  const registerSlide = screen.getByRole('button', { name: 'Kód küldése' }).closest('[inert]')
+  const registerSlide = screen.getByLabelText('Jelszó újra').closest('[inert]')
   const loginSlide = screen.getByRole('button', { name: 'Belépés' }).closest('[inert]')
   return { register: registerSlide === null, login: loginSlide === null, title: document.title }
 }

@@ -40,6 +40,12 @@ const password = z
   .refine((value) => value.length >= PASSWORD_MIN_LENGTH, { error: `Legalább ${PASSWORD_MIN_LENGTH} karakter legyen.` })
   .refine((value) => value.length <= PASSWORD_MAX_LENGTH, { error: `Legfeljebb ${PASSWORD_MAX_LENGTH} karakter lehet.` })
 
+const email = z
+  .string()
+  .trim()
+  .min(1, { error: 'Add meg az e-mail címed.' })
+  .regex(EMAIL_PATTERN, { error: 'Ez nem tűnik e-mail címnek.' })
+
 export const registerSchema = z
   .object({
     name: z
@@ -47,11 +53,7 @@ export const registerSchema = z
       .trim()
       .min(1, { error: 'Add meg a játékosneved.' })
       .regex(NAME_PATTERN, { error: '3–16 karakter lehet, csak betű, szám és aláhúzás (_).' }),
-    email: z
-      .string()
-      .trim()
-      .min(1, { error: 'Add meg az e-mail címed.' })
-      .regex(EMAIL_PATTERN, { error: 'Ez nem tűnik e-mail címnek.' }),
+    email,
     password,
     passwordConfirmation: z.string(),
     termsAccepted: z.boolean().refine((accepted) => accepted, { error: 'A regisztrációhoz el kell fogadnod az ÁSZF-et.' }),
@@ -80,3 +82,18 @@ export const codeSchema = z.object({
 })
 
 export type CodeValues = z.infer<typeof codeSchema>
+
+/** The forgotten password panel, step 1: the account's e-mail address. */
+export const forgotEmailSchema = z.object({ email })
+
+export type ForgotEmailValues = z.infer<typeof forgotEmailSchema>
+
+/** The forgotten password panel, last step: the new password, typed twice. */
+export const newPasswordSchema = z
+  .object({ password, passwordConfirmation: z.string() })
+  .refine((values) => values.password === values.passwordConfirmation, {
+    error: 'A két jelszó nem egyezik.',
+    path: ['passwordConfirmation'],
+  })
+
+export type NewPasswordValues = z.infer<typeof newPasswordSchema>

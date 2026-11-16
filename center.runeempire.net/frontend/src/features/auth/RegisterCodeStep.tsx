@@ -2,15 +2,13 @@ import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useRef, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
-import { cn } from '@/lib/utils'
 
 import type { PendingRegistration } from './api'
+import { CodeField } from './CodeField'
 import { applyApiError, formMessage } from './errors'
 import { FormAlert } from './FormAlert'
 import { useVerifyRegistration } from './queries'
@@ -81,46 +79,7 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
 
       <FormAlert message={errors.root?.server?.message} />
 
-      <Controller
-        control={form.control}
-        name="code"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.error ? true : undefined}>
-            <FieldLabel htmlFor="registration-code" className="text-foreground">
-              Megerősítő kód
-            </FieldLabel>
-            <InputOTP
-              id="registration-code"
-              ref={field.ref}
-              maxLength={CODE_LENGTH}
-              inputMode="numeric"
-              pattern="^[0-9]*$"
-              // A pasted "123 456" or " 123456" keeps only its digits.
-              pasteTransformer={(pasted) => pasted.replace(/\D/g, '')}
-              autoComplete="one-time-code"
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              aria-invalid={fieldState.error ? true : undefined}
-              aria-describedby={fieldState.error ? 'registration-code-error' : undefined}
-            >
-              <InputOTPGroup className="w-full gap-2">
-                {Array.from({ length: CODE_LENGTH }, (_, index) => (
-                  <InputOTPSlot
-                    key={index}
-                    index={index}
-                    className={cn(
-                      'h-12 flex-1 rounded-lg border border-white/10 bg-black/40 text-xl font-semibold text-foreground tabular-nums shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] first:rounded-lg last:rounded-lg',
-                      fieldState.error && 'border-destructive',
-                    )}
-                  />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
-            <FieldError id="registration-code-error">{fieldState.error?.message}</FieldError>
-          </Field>
-        )}
-      />
+      <CodeField id="registration-code" label="Megerősítő kód" control={form.control} />
 
       <div className="flex flex-col gap-3">
         <Button

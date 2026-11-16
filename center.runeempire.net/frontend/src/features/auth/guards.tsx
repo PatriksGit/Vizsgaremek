@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Navigate, useLocation } from 'react-router'
+import { matchPath, Navigate, useLocation } from 'react-router'
 
 import { endedByLogout, useAccount } from './queries'
 
@@ -27,13 +27,15 @@ export function RequireAccount({ children }: { children: ReactNode }) {
 /**
  * Only for guests; a logged-in player is sent to the page they asked for
  * before logging in (owner, 2026-11-13), or home. A path starting with "//"
- * would be another site's address, so it leads home instead.
+ * would be another site's address, so it leads home instead. The forgotten
+ * password panel is the exception: a logged-in player may reset too.
  */
 export function GuestOnly({ children }: { children: ReactNode }) {
   const { data: account, isFetched } = useAccount()
-  const from = (useLocation().state as FromState)?.from
+  const location = useLocation()
+  const from = (location.state as FromState)?.from
 
   if (!isFetched) return null
-  if (account) return <Navigate to={from?.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />
+  if (account && !matchPath('/elfelejtett-jelszo', location.pathname)) return <Navigate to={from?.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />
   return children
 }

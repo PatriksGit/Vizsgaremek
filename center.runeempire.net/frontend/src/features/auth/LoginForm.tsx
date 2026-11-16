@@ -1,18 +1,21 @@
 import { faRightToBracket, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
+import { Link, useLocation } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
-import { site } from '@/config/site'
 
 import { formMessage } from './errors'
 import { PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
 import { useLogin } from './queries'
 import { loginSchema, type LoginValues } from './schemas'
+
+/** Router state the forgotten password panel leaves after a reset: the name to log in with. */
+type ResetState = { username?: string } | null
 
 export function LoginForm() {
   const login = useLogin()
@@ -21,6 +24,18 @@ export function LoginForm() {
     defaultValues: { username: '', password: '' },
   })
   const { errors, isSubmitting } = form.formState
+
+  // This form stays mounted behind the other panels, so the name comes in later, not as a default.
+  const resetUsername = (useLocation().state as ResetState)?.username
+  useEffect(() => {
+    if (resetUsername) {
+      // The failed login that sent the player to the reset is over too.
+      form.clearErrors()
+      form.setValue('username', resetUsername)
+      form.setValue('password', '')
+      form.setFocus('password')
+    }
+  }, [resetUsername, form])
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
@@ -53,18 +68,13 @@ export function LoginForm() {
             error={errors.password?.message}
             {...form.register('password')}
           />
-          {/* A link would leave the page and lose what was typed; the reset page does not exist yet. */}
-          <button
-            type="button"
-            onClick={() =>
-              toast.info('A jelszó-visszaállítás még nem érhető el. Írj nekünk a Discordon, és segítünk.', {
-                action: { label: 'Discord', onClick: () => window.open(site.discordInviteUrl, '_blank', 'noopener') },
-              })
-            }
+          {/* The panel slides in on the same card, so what was typed here stays. */}
+          <Link
+            to="/elfelejtett-jelszo"
             className="self-end rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             Elfelejtetted a jelszavad?
-          </button>
+          </Link>
         </div>
         <Button
           type="submit"

@@ -24,6 +24,8 @@ class ForgotPasswordController extends Controller
         return response()->json(['data' => [
             'email' => $email,
             'expires_at' => $resetCode->expires_at->toIso8601ZuluString(),
+            // When "Kód újraküldése" may be used; the page counts down to it.
+            'resend_at' => StartPasswordReset::resendAt($resetCode->account_id)->toIso8601ZuluString(),
         ]], 202);
     }
 }

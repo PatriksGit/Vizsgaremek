@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { matchPath, useLocation } from 'react-router'
+import { Link, matchPath, useLocation } from 'react-router'
 
 import { ServerBackdrop } from '@/components/ServerBackdrop'
 import { site } from '@/config/site'
@@ -8,22 +8,33 @@ import { cn } from '@/lib/utils'
 
 import { AuthShowcase } from './AuthShowcase'
 import { AuthTabs, type AuthMode } from './AuthTabs'
+import { ForgotPasswordForm } from './ForgotPasswordForm'
 import { LoginForm } from './LoginForm'
+import { useAccount } from './queries'
 import { RegisterForm } from './RegisterForm'
 
+const TITLES: Record<AuthMode, string> = { login: 'Belépés', register: 'Regisztráció', forgot: 'Elfelejtett jelszó' }
+
+/** Matched like the routes themselves: /register/ and /Register open the registration form too. */
+function modeFor(pathname: string): AuthMode {
+  if (matchPath('/register', pathname)) return 'register'
+  if (matchPath('/elfelejtett-jelszo', pathname)) return 'forgot'
+  return 'login'
+}
+
 /**
- * Login and registration on one glass card: the info panel stays on the
- * left, and the forms slide past each other on the right. Both forms stay
- * mounted, so switching back and forth keeps what was typed.
+ * Login, registration and the forgotten password on one glass card: the info
+ * panel stays on the left, and the forms slide past each other on the right
+ * (login on the left of the other two). Every form stays mounted, so
+ * switching back and forth keeps what was typed.
  */
 export function AuthPage() {
   const { pathname } = useLocation()
-  // Matched like the route itself: /register/ and /Register open the registration form too.
-  const mode: AuthMode = matchPath('/register', pathname) ? 'register' : 'login'
+  const mode = modeFor(pathname)
 
   return (
     <div className="relative isolate flex min-h-dvh items-center justify-center bg-background px-4 py-10 sm:px-6">
-      <title>{`${mode === 'register' ? 'Regisztráció' : 'Belépés'} | ${site.name}`}</title>
+      <title>{`${TITLES[mode]} | ${site.name}`}</title>
       <ServerBackdrop />
 
       <div className="card-rise glass grid w-full max-w-4xl overflow-hidden md:grid-cols-2">
@@ -38,6 +49,9 @@ export function AuthPage() {
           <FormSlide mode={mode} active={mode === 'register'} from="right">
             <RegisterForm />
           </FormSlide>
+          <FormSlide mode={mode} active={mode === 'forgot'} from="right" header={<BackLink />}>
+            <ForgotPasswordForm />
+          </FormSlide>
         </div>
       </div>
     </div>
@@ -48,6 +62,8 @@ type FormSlideProps = {
   mode: AuthMode
   active: boolean
   from: 'left' | 'right'
+  /** What sits above the form: the Belépés/Regisztráció tabs unless given. */
+  header?: ReactNode
   children: ReactNode
 }
 
@@ -57,7 +73,7 @@ type FormSlideProps = {
  * show only the active form, so the card is not as tall as the longer one,
  * and the form arriving there glides in from its side instead of sliding.
  */
-function FormSlide({ mode, active, from, children }: FormSlideProps) {
+function FormSlide({ mode, active, from, header, children }: FormSlideProps) {
   return (
     <div
       inert={!active}
@@ -73,8 +89,22 @@ function FormSlide({ mode, active, from, children }: FormSlideProps) {
           : cn('opacity-0 max-md:hidden', from === 'left' ? '-translate-x-full' : 'translate-x-full'),
       )}
     >
-      <AuthTabs mode={mode} />
+      {header ?? <AuthTabs mode={mode} />}
       {children}
     </div>
+  )
+}
+
+/** Back from the forgotten password panel: to the login, or for a logged-in player to the settings. */
+function BackLink() {
+  const { data: account } = useAccount()
+
+  return (
+    <Link
+      to={account ? '/beallitasok' : '/login'}
+      className="self-start rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      {account ? '← Vissza' : '← Vissza a belépéshez'}
+    </Link>
   )
 }

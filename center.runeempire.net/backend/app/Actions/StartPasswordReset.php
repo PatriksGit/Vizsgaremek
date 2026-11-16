@@ -10,6 +10,7 @@ use App\Models\PasswordResetCode;
 use App\Notifications\PasswordResetCodeNotification;
 use App\Support\PasswordResetGuesses;
 use App\Support\RegistrationCode;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
@@ -48,7 +49,7 @@ class StartPasswordReset
             throw PasswordResetGuesses::exception($account->id);
         }
 
-        $cooldownKey = 'password-reset-mail:'.$account->id;
+        $cooldownKey = self::cooldownKey($account->id);
 
         // Claim the cooldown slot up front: a parallel request for the same
         // account must already be refused while this one waits on SMTP.
@@ -87,5 +88,19 @@ class StartPasswordReset
         }
 
         return $resetCode;
+    }
+
+    /**
+     * When the account may ask for its next code: the end of the mail
+     * cooldown its last code started.
+     */
+    public static function resendAt(int $accountId): CarbonInterface
+    {
+        return now()->addSeconds(RateLimiter::availableIn(self::cooldownKey($accountId)));
+    }
+
+    private static function cooldownKey(int $accountId): string
+    {
+        return 'password-reset-mail:'.$accountId;
     }
 }

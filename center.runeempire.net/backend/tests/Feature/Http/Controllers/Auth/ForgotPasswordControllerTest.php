@@ -73,6 +73,20 @@ class ForgotPasswordControllerTest extends TestCase
         $this->assertTrue(RegistrationCode::matches($this->mailedCode(), PasswordResetCode::query()->sole()->code_hash));
     }
 
+    /**
+     * The page counts down to it instead of guessing the cooldown
+     * (60 s in phpunit.xml, 600 s in production).
+     */
+    public function test_tells_when_a_new_code_may_be_asked(): void
+    {
+        Notification::fake();
+        $this->account();
+
+        $this->forgot()
+            ->assertAccepted()
+            ->assertJsonPath('data.resend_at', fn (string $at): bool => now()->diffInSeconds($at) > 55 && now()->diffInSeconds($at) <= 60);
+    }
+
     public function test_finds_the_account_with_capitals_and_spaces_in_the_address(): void
     {
         Notification::fake();

@@ -1,6 +1,16 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
-import { fetchCurrentAccount, login, logout, startRegistration, verifyRegistration, type Account } from './api'
+import {
+  fetchCurrentAccount,
+  login,
+  logout,
+  requestPasswordReset,
+  resetPassword,
+  startRegistration,
+  verifyRegistration,
+  verifyResetCode,
+  type Account,
+} from './api'
 
 /** The logged-in account (null for a guest); every login, logout and 401 updates it. */
 export const accountQueryKey = ['account'] as const
@@ -62,6 +72,44 @@ export function useLogout() {
 
 export function useStartRegistration() {
   return useMutation({ mutationFn: startRegistration })
+}
+
+export function useRequestPasswordReset() {
+  return useMutation({ mutationFn: requestPasswordReset })
+}
+
+export function useVerifyResetCode() {
+  return useMutation({ mutationFn: verifyResetCode })
+}
+
+/**
+ * Sets the new password, then asks the backend who is logged in now: a reset
+ * of the logged-in account ended this session too, a reset of another one did
+ * not. Resolves with the name and that account (null = logged out). The
+ * password has changed by then, so a failing check does not fail the reset:
+ * the visitor counts as logged out and the account is checked again later.
+ */
+export function useResetPassword() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (request: { password: string; passwordConfirmation: string }) => {
+      const { username } = await resetPassword(request)
+      await queryClient.cancelQueries()
+      let account: Account | null
+      try {
+        account = await fetchCurrentAccount()
+      } catch {
+        // Not the cached account (it may be the one just reset): logged out until the next check says otherwise.
+        await setAccount(queryClient, null)
+        // Not awaited: a backend gone quiet must not hold the finished reset.
+        void queryClient.invalidateQueries({ queryKey: accountQueryKey })
+        return { username, account: null }
+      }
+      await setAccount(queryClient, account)
+      return { username, account }
+    },
+  })
 }
 
 export function useVerifyRegistration() {

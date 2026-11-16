@@ -88,6 +88,8 @@ const router = createBrowserRouter([
         children: [
           { path: 'login', element: null },
           { path: 'register', element: null },
+          // RuneLauncher's "forgotten password" link; a logged-in visitor may open it too (GuestOnly lets it through).
+          { path: 'elfelejtett-jelszo', element: null },
         ],
       },
       { path: '*', element: <Navigate to="/" replace /> },
