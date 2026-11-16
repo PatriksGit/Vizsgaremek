@@ -14,7 +14,7 @@ import { ApiError } from '@/lib/api'
 import { resendAtFromError } from './api'
 import { CodeField } from './CodeField'
 import { applyApiError, formMessage } from './errors'
-import { PasswordField, TextField } from './fields'
+import { HoneypotField, PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
 import { useRequestPasswordReset, useResetPassword, useVerifyResetCode } from './queries'
 import {
@@ -61,7 +61,7 @@ export function ForgotPasswordForm() {
   const saving = useRef(false)
   const secondsLeft = useCountdown(sent?.resendAt ?? null)
 
-  const emailForm = useForm<ForgotEmailValues>({ resolver: zodResolver(forgotEmailSchema), defaultValues: { email: '' } })
+  const emailForm = useForm<ForgotEmailValues>({ resolver: zodResolver(forgotEmailSchema), defaultValues: { email: '', newsletter: false } })
   const codeForm = useForm<CodeValues>({ resolver: zodResolver(codeSchema), defaultValues: { code: '' } })
   const passwordForm = useForm<NewPasswordValues>({
     resolver: zodResolver(newPasswordSchema),
@@ -111,7 +111,7 @@ export function ForgotPasswordForm() {
   }
 
   // The handlers run only from events (handleSubmit is called there), never during render.
-  const onEmail = async ({ email }: ForgotEmailValues) => {
+  const onEmail = async ({ email, newsletter }: ForgotEmailValues) => {
     // Enter in the locked address field: the code step is already past or open.
     if (step !== 'email') return
     setCodeMayBeOut(null)
@@ -122,7 +122,7 @@ export function ForgotPasswordForm() {
       return
     }
     try {
-      toCodeStep(await requestReset.mutateAsync(email))
+      toCodeStep(await requestReset.mutateAsync({ email, newsletter }))
     } catch (error) {
       const resendAt = resendAtFromError(error)
       if (resendAt !== null) setCodeMayBeOut({ email: email.toLowerCase(), resendAt })
@@ -160,7 +160,7 @@ export function ForgotPasswordForm() {
     setResending(true)
     codeForm.clearErrors()
     try {
-      const next = await requestReset.mutateAsync(sent.email)
+      const next = await requestReset.mutateAsync({ email: sent.email })
       setSent(next)
       codeForm.reset({ code: '' })
       askFocus('code')
@@ -228,6 +228,7 @@ export function ForgotPasswordForm() {
             error={emailErrors.email?.message}
             {...emailForm.register('email')}
           />
+          <HoneypotField {...emailForm.register('newsletter')} />
           {codeMayBeOut && !emailLocked && codeMayBeOut.email === typedEmail.trim().toLowerCase() && (
             <p className="text-sm text-muted-foreground">
               Már megkaptad a kódot?{' '}

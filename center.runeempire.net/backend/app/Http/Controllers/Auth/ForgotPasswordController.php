@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Actions\StartPasswordReset;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ForgotPasswordRequest;
+use App\Support\Honeypot;
 use Illuminate\Http\JsonResponse;
 
 class ForgotPasswordController extends Controller
@@ -19,13 +20,22 @@ class ForgotPasswordController extends Controller
     public function __invoke(ForgotPasswordRequest $request, StartPasswordReset $startPasswordReset): JsonResponse
     {
         $email = $request->validated('email');
-        $resetCode = $startPasswordReset->handle($email);
+
+        if (Honeypot::tripped($request)) {
+            // The same answer as a real code, but nothing is kept or mailed.
+            $expiresAt = now()->addMinutes(config('auth.registration_code.expires_minutes'));
+            $resendAt = now()->addSeconds(config('rate_limits.registration_mail.cooldown_seconds'));
+        } else {
+            $resetCode = $startPasswordReset->handle($email);
+            $expiresAt = $resetCode->expires_at;
+            $resendAt = StartPasswordReset::resendAt($resetCode->account_id);
+        }
 
         return response()->json(['data' => [
             'email' => $email,
-            'expires_at' => $resetCode->expires_at->toIso8601ZuluString(),
+            'expires_at' => $expiresAt->toIso8601ZuluString(),
             // When "Kód újraküldése" may be used; the page counts down to it.
-            'resend_at' => StartPasswordReset::resendAt($resetCode->account_id)->toIso8601ZuluString(),
+            'resend_at' => $resendAt->toIso8601ZuluString(),
         ]], 202);
     }
 }

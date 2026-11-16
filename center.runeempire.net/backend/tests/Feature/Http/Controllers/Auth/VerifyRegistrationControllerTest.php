@@ -139,37 +139,64 @@ class VerifyRegistrationControllerTest extends TestCase
 
     public function test_returns_422_and_counts_an_attempt_for_a_wrong_code(): void
     {
-        $pending = $this->pending();
+        [$code, $session] = $this->pendingFromBrowser();
 
-        $this->verify('654321')->assertUnprocessable()->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
+        $this->asBrowserWithSession($session)->verify(self::wrongCode($code), headers: self::FROM_WEBSITE)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
 
-        $this->assertDatabaseHas('pending_registrations', ['id' => $pending->id, 'attempts' => 1]);
+        $this->assertDatabaseHas('pending_registrations', ['email' => 'patrik@example.com', 'attempts' => 1]);
         $this->assertDatabaseCount('accounts', 0, 'global');
     }
 
     public function test_pending_registration_is_dropped_after_the_configured_max_attempts(): void
     {
         config(['auth.registration_code.max_attempts' => 3]);
-        $pending = $this->pending();
-        $this->verify('654321')->assertUnprocessable();
-        $this->verify('654321')->assertUnprocessable();
+        [$code, $session] = $this->pendingFromBrowser();
+        foreach (range(1, 3) as $guess) {
+            $this->asBrowserWithSession($session)->verify(self::wrongCode($code), headers: self::FROM_WEBSITE)->assertUnprocessable();
+        }
 
-        $this->verify('654321')->assertUnprocessable();
-
-        $this->assertModelMissing($pending);
-        $this->verify('123456')->assertUnprocessable()->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
+        $this->assertDatabaseCount('pending_registrations', 0);
+        $this->asBrowserWithSession($session)->verify($code, headers: self::FROM_WEBSITE)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
         $this->assertDatabaseCount('accounts', 0, 'global');
     }
 
     public function test_returns_422_for_a_correct_code_once_attempts_reached_the_limit(): void
     {
-        $pending = $this->pending();
-        PendingRegistration::query()->whereKey($pending->getKey())->update(['attempts' => 5]);
+        [$code, $session] = $this->pendingFromBrowser();
+        PendingRegistration::query()->where('email', 'patrik@example.com')->update(['attempts' => 5]);
 
-        $this->verify('123456')->assertUnprocessable()->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
+        $this->asBrowserWithSession($session)->verify($code, headers: self::FROM_WEBSITE)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
 
         $this->assertDatabaseCount('accounts', 0, 'global');
-        $this->assertModelMissing($pending);
+        $this->assertDatabaseCount('pending_registrations', 0);
+    }
+
+    /**
+     * Requests without a session own no row (CodeRabbit, 2026-11-16): two
+     * registrations started outside the website may share an address, and
+     * each one's code must still work; a wrong code counts on the address's
+     * outsider budget, not on either row.
+     */
+    public function test_rows_started_outside_the_website_are_matched_by_their_code(): void
+    {
+        $this->pending('123456');
+        PendingRegistration::factory()->withCode('654321')->withPassword('masik-jelszo')->create([
+            'username' => 'masik',
+            'display_name' => 'Masik',
+            'email' => 'patrik@example.com',
+        ]);
+
+        $this->verify('111111')->assertUnprocessable();
+        $this->assertDatabaseMissing('pending_registrations', ['attempts' => 1]);
+
+        $this->verify('654321')->assertCreated();
+        $this->assertSame('Masik', Account::query()->sole()->display_name);
     }
 
     public function test_returns_422_for_an_expired_code(): void
@@ -391,6 +418,82 @@ class VerifyRegistrationControllerTest extends TestCase
         $this->asOtherBrowser()->verify($code, headers: self::FROM_WEBSITE)->assertCreated();
 
         $this->assertDatabaseCount('accounts', 1, 'global');
+    }
+
+    /**
+     * A stranger's pending registration of the same address (owner, 2026-11-16:
+     * the address is not reserved before it is verified), with its own code
+     * that only reached the address's mailbox.
+     */
+    private function strangersPending(string $code): PendingRegistration
+    {
+        return PendingRegistration::factory()->withCode($code)->withPassword('tamado-jelszo')->create([
+            'username' => 'tamado',
+            'display_name' => 'Tamado',
+            'email' => 'patrik@example.com',
+            'owner_hash' => PendingRegistration::ownerHashFor('a stranger\'s session'),
+        ]);
+    }
+
+    public function test_the_owner_verifying_first_wins_and_the_strangers_registration_goes(): void
+    {
+        [$code, $session] = $this->pendingFromBrowser();
+        $this->strangersPending(self::wrongCode($code));
+
+        $this->asBrowserWithSession($session)->verify($code, headers: self::FROM_WEBSITE)->assertCreated();
+
+        $account = Account::query()->sole();
+        $this->assertSame('PatrikT', $account->display_name);
+        $this->assertTrue(Hash::check('titkos-jelszo', $account->password_hash));
+        $this->assertDatabaseCount('pending_registrations', 0);
+    }
+
+    /**
+     * The owner typing the stranger's code (it reached the owner's mailbox)
+     * from the owner's own browser must not create the stranger's account,
+     * with the stranger's password: a session checks only its own row.
+     */
+    public function test_the_strangers_code_typed_in_the_owners_browser_creates_nothing(): void
+    {
+        [$code, $session] = $this->pendingFromBrowser();
+        $stranger = $this->strangersPending(self::wrongCode($code));
+
+        $this->asBrowserWithSession($session)->verify(self::wrongCode($code), headers: self::FROM_WEBSITE)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
+
+        $this->assertDatabaseCount('accounts', 0, 'global');
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'PatrikT', 'attempts' => 1]);
+        $this->assertDatabaseHas('pending_registrations', ['id' => $stranger->id, 'attempts' => 0]);
+    }
+
+    /**
+     * The owner's own row expired (not yet swept) and the newest mail in the
+     * owner's box is the stranger's: typed in the owner's browser, it must
+     * not create the stranger's account either.
+     */
+    public function test_the_strangers_code_typed_after_the_owners_row_expired_creates_nothing(): void
+    {
+        [$code, $session] = $this->pendingFromBrowser();
+        $this->travel(16)->minutes();
+        $this->strangersPending(self::wrongCode($code));
+
+        $this->asBrowserWithSession($session)->verify(self::wrongCode($code), headers: self::FROM_WEBSITE)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
+
+        $this->assertDatabaseCount('accounts', 0, 'global');
+    }
+
+    public function test_another_device_with_one_rows_right_code_creates_that_rows_account(): void
+    {
+        [$code] = $this->pendingFromBrowser();
+        $this->strangersPending(self::wrongCode($code));
+
+        $this->asOtherBrowser()->verify(self::wrongCode($code), headers: self::FROM_WEBSITE)->assertCreated();
+
+        $this->assertSame('Tamado', Account::query()->sole()->display_name);
+        $this->assertDatabaseCount('pending_registrations', 0);
     }
 
     public function test_wrong_codes_from_the_registering_browser_still_cancel_it(): void

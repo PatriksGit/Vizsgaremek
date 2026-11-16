@@ -17,6 +17,22 @@ type TextFieldProps = Omit<ComponentProps<'input'>, 'id'> & {
   trailing?: ReactNode
 }
 
+/**
+ * The bot trap (owner, 2026-11-16): a checkbox no person sees, reaches with Tab
+ * or hears from a screen reader. A form-filling bot that ticks it gets a
+ * normal-looking answer from the backend, but nothing is mailed.
+ */
+export function HoneypotField(props: Omit<ComponentProps<'input'>, 'type'>) {
+  return (
+    <div aria-hidden="true" className="absolute -left-[9999px] top-0 size-px overflow-hidden">
+      <label>
+        Kérek hírlevelet
+        <input type="checkbox" tabIndex={-1} autoComplete="off" {...props} />
+      </label>
+    </div>
+  )
+}
+
 /** A labelled glass input, with its hint or error below. */
 export function TextField({
   label,

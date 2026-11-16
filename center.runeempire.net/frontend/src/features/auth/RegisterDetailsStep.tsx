@@ -9,7 +9,7 @@ import { Field, FieldContent, FieldError, FieldGroup } from '@/components/ui/fie
 import { ApiError } from '@/lib/api'
 
 import { applyApiError } from './errors'
-import { PasswordField, TextField } from './fields'
+import { HoneypotField, PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
 import { LegalDialog } from './LegalDialog'
 import { PASSWORD_MIN_LENGTH, registerFieldForKey, type RegisterValues } from './schemas'
@@ -79,6 +79,7 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode 
           error={errors.email?.message}
           {...form.register('email')}
         />
+        <HoneypotField {...form.register('newsletter')} />
         <div className="grid items-start gap-4 sm:grid-cols-2">
           <PasswordField
             label="Jelszó"

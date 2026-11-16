@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Exceptions\Auth\AddressMailLimit;
 use App\Exceptions\Auth\CodeRecentlySent;
 use App\Exceptions\Mail\SendFailed;
 use App\Models\Account;
@@ -20,19 +21,35 @@ use Throwable;
 class StartRegistration
 {
     /**
+     * How long the per-address mail cap counts.
+     */
+    private const ADDRESS_WINDOW_SECONDS = 3600;
+
+    /**
      * Park validated registration input until its emailed code is redeemed,
-     * replacing this email's pending registration, and mail the code.
+     * and mail the code.
      *
-     * The mail is sent after the transaction commits, so a slow SMTP server
-     * never holds locks in the database. At most one code is mailed to an
-     * address per rate_limits.registration_mail.cooldown_seconds.
+     * The address is not reserved (owner, 2026-11-16, like Discord): other
+     * browsers may have their own pending registration of it, and the first
+     * one verified with the mailed code wins -- only the address's owner gets
+     * the codes. The name stays reserved while pending.
+     *
+     * Mail limits: one code per address and client (rate_limits.registration_mail.cooldown_seconds,
+     * the client being the IP or its IPv6 /64, so a stranger's requests never
+     * hold up the owner's), and at most registration_mail.per_address_per_hour
+     * to an address from all clients together (against mail bombing).
+     *
+     * The mail goes out before this session's earlier rows are replaced, so a
+     * failed send leaves its still valid earlier code working. A refusal found
+     * only after the mail (a name taken at the same moment) keeps the limiter
+     * counts: the mail went out.
      *
      * $ownerToken identifies the browser session that starts the registration
-     * (null outside the website); only that session may replace the pending
-     * registration before it expires.
+     * (null outside the website); only that session replaces its own rows.
      *
-     * @throws CodeRecentlySent when a code was mailed to this address within the cooldown
-     * @throws ValidationException when another session's pending registration holds the name or the email
+     * @throws ValidationException when another session's pending registration holds the name
+     * @throws CodeRecentlySent when this client mailed a code to this address within the cooldown
+     * @throws AddressMailLimit when the address got its hourly number of codes
      * @throws SendFailed when the mail could not be sent
      */
     public function handle(
@@ -40,54 +57,94 @@ class StartRegistration
         string $email,
         #[SensitiveParameter] string $password,
         #[SensitiveParameter] ?string $ownerToken = null,
+        string $client = 'unknown',
     ): PendingRegistration {
-        $cooldownKey = 'registration-mail:'.$email;
+        $username = Account::usernameFor($displayName);
+        $ownerHash = PendingRegistration::ownerHashFor($ownerToken);
 
-        // Claim the cooldown slot up front: a parallel request for the same
-        // address must already be refused while this one waits on SMTP.
-        if (RateLimiter::hit($cooldownKey, config('rate_limits.registration_mail.cooldown_seconds')) > 1) {
+        // Before any limiter slot: a refusal found here mails and counts nothing.
+        if (self::nameHeldByAnother($username, $ownerHash)) {
+            throw self::nameHeld();
+        }
+
+        $cooldownKey = 'registration-mail:'.$email.'|'.$client;
+        $addressKey = 'registration-mail-address:'.$email;
+        $cooldownSeconds = config('rate_limits.registration_mail.cooldown_seconds');
+
+        // This client's own code first: only code_recently_sent tells the player
+        // the code may be in the mailbox. Checked without counting, so a refused
+        // request holds no slot.
+        if (RateLimiter::tooManyAttempts($cooldownKey, 1)) {
             throw new CodeRecentlySent(RateLimiter::availableIn($cooldownKey));
         }
 
-        $code = RegistrationCode::generate();
-        $username = Account::usernameFor($displayName);
-        $expiresInMinutes = config('auth.registration_code.expires_minutes');
+        $perAddress = config('rate_limits.registration_mail.per_address_per_hour');
 
-        try {
-            $ownerHash = PendingRegistration::ownerHashFor($ownerToken);
-            $pending = $this->replacePendingRegistration($username, $displayName, $email, Hash::make($password), $code, $expiresInMinutes, $ownerHash);
-        } catch (Throwable $exception) {
-            RateLimiter::clear($cooldownKey);
-
-            throw $exception;
+        if (RateLimiter::tooManyAttempts($addressKey, $perAddress)) {
+            throw new AddressMailLimit(RateLimiter::availableIn($addressKey));
         }
+
+        // The checks above only answer the common case; the slots are claimed
+        // here, each in one atomic step, so parallel requests cannot both pass.
+        // A refused request gives back what it claimed, so a later failed send
+        // returns the counts to where they were. The cooldown slot is claimed
+        // up front: a parallel request of the same client must already be
+        // refused while this one waits on SMTP.
+        if (RateLimiter::hit($cooldownKey, $cooldownSeconds) > 1) {
+            RateLimiter::decrement($cooldownKey, $cooldownSeconds);
+
+            throw new CodeRecentlySent(RateLimiter::availableIn($cooldownKey));
+        }
+
+        if (RateLimiter::hit($addressKey, self::ADDRESS_WINDOW_SECONDS) > $perAddress) {
+            RateLimiter::decrement($addressKey, self::ADDRESS_WINDOW_SECONDS);
+            RateLimiter::decrement($cooldownKey, $cooldownSeconds);
+
+            throw new AddressMailLimit(RateLimiter::availableIn($addressKey));
+        }
+
+        $code = RegistrationCode::generate();
+        $expiresInMinutes = config('auth.registration_code.expires_minutes');
+        $passwordHash = Hash::make($password);
 
         try {
             Notification::route('mail', $email)->notify(new RegistrationCodeNotification($code, $expiresInMinutes, $displayName));
         } catch (Throwable $exception) {
-            RateLimiter::clear($cooldownKey);
-            $pending->delete();
+            // Nothing went out: give back this request's slots, not other clients' counts.
+            RateLimiter::decrement($cooldownKey, $cooldownSeconds);
+            RateLimiter::decrement($addressKey, self::ADDRESS_WINDOW_SECONDS);
             report($exception);
 
             throw SendFailed::registrationCode($exception);
         }
 
-        return $pending;
+        return $this->replaceOwnRegistrations($username, $displayName, $email, $passwordHash, $code, $expiresInMinutes, $ownerHash);
     }
 
     /**
-     * Replace this session's pending registrations of the name or the email,
-     * sweeping expired ones. A live one started by another session (or outside
-     * the website) is refused, so nobody can cancel or take over another
-     * player's registration; the same session may, e.g. to fix a mistyped
-     * email. A registration that takes the name or the email at the same
-     * moment hits a unique index and gets the matching answer. Retried on
-     * deadlock: two registrations at the same moment can deadlock on InnoDB
-     * gap locks.
-     *
-     * @throws ValidationException when another session's pending registration holds the name or the email
+     * Whether another session's live pending registration holds the name.
      */
-    private function replacePendingRegistration(
+    private static function nameHeldByAnother(string $username, ?string $ownerHash): bool
+    {
+        return PendingRegistration::query()
+            ->where('username', $username)
+            ->where('expires_at', '>', now())
+            ->get()
+            ->contains(fn (PendingRegistration $pending): bool => ! $pending->isOwnedBy($ownerHash));
+    }
+
+    /**
+     * Replace this session's pending registrations of the name or the email
+     * with the new one, sweeping expired ones. Other sessions' rows of the
+     * address stay (nobody cancels another player's registration); a live
+     * one of another session holding the name is refused. A registration
+     * that takes the name at the same moment hits the unique index and gets
+     * the same answer. Retried on deadlock: two registrations at the same
+     * moment can deadlock on InnoDB gap locks.
+     *
+     * @throws ValidationException when another session's pending registration holds the name
+     */
+    private function replaceOwnRegistrations(
         string $username,
         string $displayName,
         string $email,
@@ -103,17 +160,13 @@ class StartRegistration
                 $held = PendingRegistration::query()
                     ->where(fn ($query) => $query->where('username', $username)->orWhere('email', $email))
                     ->get();
-                $heldByOthers = $held->reject(fn (PendingRegistration $pending): bool => $pending->isOwnedBy($ownerHash));
 
-                if ($heldByOthers->contains('username', $username)) {
+                if ($held->contains(fn (PendingRegistration $pending): bool => $pending->username === $username && ! $pending->isOwnedBy($ownerHash))) {
                     throw self::nameHeld();
                 }
 
-                if ($heldByOthers->isNotEmpty()) {
-                    throw self::emailHeld();
-                }
-
-                PendingRegistration::query()->whereKey($held->modelKeys())->delete();
+                $own = $held->filter(fn (PendingRegistration $pending): bool => $pending->isOwnedBy($ownerHash));
+                PendingRegistration::query()->whereKey($own->modelKeys())->delete();
 
                 return PendingRegistration::create([
                     'username' => $username,
@@ -125,26 +178,10 @@ class StartRegistration
                     'expires_at' => now()->addMinutes($expiresInMinutes),
                 ]);
             }, attempts: 3);
-        } catch (UniqueConstraintViolationException $exception) {
-            throw self::hitEmailIndex($exception) ? self::emailHeld() : self::nameHeld();
+        } catch (UniqueConstraintViolationException) {
+            // The name is the only unique key left.
+            throw self::nameHeld();
         }
-    }
-
-    /**
-     * Whether the violated index is the email one: MySQL names the key
-     * (pending_registrations_email_unique) in its error. Names cannot contain
-     * "@" or dots, so a duplicate value never looks like it.
-     */
-    private static function hitEmailIndex(UniqueConstraintViolationException $exception): bool
-    {
-        return str_contains($exception->getMessage(), 'pending_registrations_email_unique');
-    }
-
-    private static function emailHeld(): ValidationException
-    {
-        return ValidationException::withMessages([
-            'email' => 'Erre az e-mail címre már folyamatban van egy regisztráció. Használd a levélben kapott kódot, vagy próbáld újra, ha lejárt.',
-        ]);
     }
 
     private static function nameHeld(): ValidationException

@@ -48,6 +48,8 @@ export type RegistrationRequest = {
   passwordConfirmation: string
   termsAccepted: boolean
   ageConfirmed: boolean
+  /** The hidden bot trap ticked: sent only then, so a person's request never carries it. */
+  newsletter?: boolean
 }
 
 export type PendingRegistration = {
@@ -69,6 +71,7 @@ export async function startRegistration(request: RegistrationRequest): Promise<P
     password_confirmation: request.passwordConfirmation,
     terms: request.termsAccepted,
     age_confirmed: request.ageConfirmed,
+    ...(request.newsletter ? { newsletter: true } : {}),
   })
   // Counted on the server's clock (its Date header): the visitor's clock can be hours off.
   const serverNow = Date.parse(String(response.headers.date))
@@ -92,9 +95,11 @@ export type ResetCodeSent = {
 }
 
 /** Forgotten password, step 1: mails a code to the account of this address. */
-export async function requestPasswordReset(email: string): Promise<ResetCodeSent> {
+export async function requestPasswordReset({ email, newsletter }: { email: string; newsletter?: boolean }): Promise<ResetCodeSent> {
   const response = await http.post<Wrapped<{ email: string; expires_at: string; resend_at: string }>>('/auth/password/forgot', {
     email,
+    // The hidden bot trap: sent only when ticked.
+    ...(newsletter ? { newsletter: true } : {}),
   })
   const { data } = response.data
   return {

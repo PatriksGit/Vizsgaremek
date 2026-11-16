@@ -137,4 +137,21 @@ describe('a mailed registration code can always be entered', () => {
 
     expect(screen.queryByRole('button', { name: 'Írd be' })).toBeNull()
   })
+
+  it('the address cap is not the cooldown either: the codes went to other people, none to type in', async () => {
+    const CAP = 'Erre az e-mail címre most túl sok kódot kértek, próbáld újra később.'
+    installFakeBackend({
+      'POST /auth/register': (): Reply => ({
+        status: 429,
+        headers: { 'retry-after': '1800' },
+        data: { message: CAP, code: 'auth.address_mail_limit' },
+      }),
+    })
+    renderRegisterForm()
+    fillDetails('steve@example.com')
+    fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
+    await screen.findByText(CAP)
+
+    expect(screen.queryByRole('button', { name: 'Írd be' })).toBeNull()
+  })
 })

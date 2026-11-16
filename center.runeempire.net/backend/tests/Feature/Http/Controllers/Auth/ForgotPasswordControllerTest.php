@@ -228,4 +228,30 @@ class ForgotPasswordControllerTest extends TestCase
         // The per-IP throttle is not the mail cooldown: no code is said to be on its way.
         $this->forgot('senki6@example.com')->assertTooManyRequests()->assertJsonPath('code', 'too_many_requests')->assertHeader('Retry-After');
     }
+
+    /**
+     * The honeypot (owner, 2026-11-16): a hidden checkbox a human never ticks.
+     * A bot that ticks it gets the usual success, but nothing is kept or mailed.
+     */
+    public function test_a_ticked_honeypot_answers_like_a_success_but_keeps_and_mails_nothing(): void
+    {
+        Notification::fake();
+        $this->account();
+
+        $this->postJson('/api/auth/password/forgot', ['email' => 'patrik@example.com', 'newsletter' => true], self::FROM_WEBSITE)
+            ->assertAccepted()
+            ->assertJsonPath('data.email', 'patrik@example.com')
+            ->assertJsonPath('data.expires_at', fn (string $at): bool => abs(now()->addMinutes(15)->diffInSeconds($at)) <= 2)
+            ->assertJsonPath('data.resend_at', fn (string $at): bool => abs(now()->addSeconds(60)->diffInSeconds($at)) <= 2);
+
+        $this->assertDatabaseCount('password_reset_codes', 0);
+        Notification::assertNothingSent();
+    }
+
+    public function test_a_ticked_honeypot_still_gets_the_normal_answer_for_an_invalid_address(): void
+    {
+        $this->postJson('/api/auth/password/forgot', ['email' => 'nem-email', 'newsletter' => true], self::FROM_WEBSITE)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email']);
+    }
 }

@@ -41,13 +41,17 @@ return [
     ],
 
     /*
-     * At most one registration code is mailed to an address within this window.
-     * 10 minutes (owner, 2026-11-13): without a daily cap, this is what keeps
-     * anyone from flooding a player's inbox with codes (at most 144 a day),
-     * and the code itself stays valid longer than the wait.
+     * Registration codes: one per address and client (IP, or IPv6 /64) within
+     * cooldown_seconds, so a stranger's requests never hold up the owner's;
+     * and at most per_address_per_hour to one address from all clients
+     * together, against inbox flooding. The code stays valid longer than the
+     * wait. With a 600 s cooldown one client sends at most 6 an hour, so keep
+     * the cap above that. The cooldown also spaces password reset codes
+     * (per account).
      */
     'registration_mail' => [
         'cooldown_seconds' => max(1, (int) env('RATE_LIMITS_REGISTRATION_MAIL_COOLDOWN_SECONDS', 600)),
+        'per_address_per_hour' => max(1, (int) env('RATE_LIMITS_REGISTRATION_MAIL_PER_ADDRESS_PER_HOUR', 10)),
     ],
 
     /*

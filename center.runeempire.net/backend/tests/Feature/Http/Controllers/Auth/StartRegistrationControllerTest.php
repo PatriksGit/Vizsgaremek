@@ -25,9 +25,14 @@ class StartRegistrationControllerTest extends TestCase
 
     private const NAME_PENDING = 'Ez a név már regisztráció alatt áll.';
 
-    private const EMAIL_PENDING = 'Erre az e-mail címre már folyamatban van egy regisztráció. Használd a levélben kapott kódot, vagy próbáld újra, ha lejárt.';
-
     private const FRONTEND = ['Origin' => 'http://localhost:5173'];
+
+    /**
+     * The cooldown key of the test client (127.0.0.1) for patrik@example.com.
+     */
+    private const COOLDOWN_KEY = 'registration-mail:patrik@example.com|127.0.0.1';
+
+    private const ADDRESS_KEY = 'registration-mail-address:patrik@example.com';
 
     /**
      * The session of the browser that registerFromBrowser() sends from.
@@ -182,7 +187,7 @@ class StartRegistrationControllerTest extends TestCase
         $this->assertDatabaseCount('pending_registrations', 1);
         $this->assertDatabaseHas('pending_registrations', ['email' => 'masik@example.com']);
         Notification::assertNothingSent();
-        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
+        $this->assertSame(0, RateLimiter::attempts(self::COOLDOWN_KEY), 'A refused registration must not start the cooldown.');
     }
 
     public function test_returns_422_not_500_when_a_simultaneous_registration_takes_the_name(): void
@@ -200,14 +205,20 @@ class StartRegistrationControllerTest extends TestCase
             }
         });
 
+        Notification::fake();
+
         $this->register()
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['display_name' => self::NAME_PENDING]);
 
-        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'));
+        // The mail went out before the name was found taken: both limits keep counting it,
+        // or a race on the name would mail the address without limit.
+        Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 1);
+        $this->assertSame(1, RateLimiter::attempts(self::COOLDOWN_KEY));
+        $this->assertSame(1, RateLimiter::attempts(self::ADDRESS_KEY));
     }
 
-    public function test_returns_422_on_email_when_a_simultaneous_registration_takes_the_email(): void
+    public function test_a_simultaneous_registration_of_the_same_email_does_not_refuse(): void
     {
         PendingRegistration::creating(function (PendingRegistration $pending): void {
             if ($pending->display_name === 'PatrikT') {
@@ -222,11 +233,11 @@ class StartRegistrationControllerTest extends TestCase
             }
         });
 
-        $this->register()
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email' => self::EMAIL_PENDING]);
+        Notification::fake();
 
-        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'));
+        $this->register()->assertAccepted();
+
+        $this->assertSame(2, PendingRegistration::query()->where('email', 'patrik@example.com')->count());
     }
 
     public function test_returns_422_when_the_email_has_an_account_regardless_of_case(): void
@@ -253,7 +264,7 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->assertDatabaseCount('pending_registrations', 0);
         Notification::assertNothingSent();
-        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
+        $this->assertSame(0, RateLimiter::attempts(self::COOLDOWN_KEY), 'A refused registration must not start the cooldown.');
     }
 
     #[DataProvider('uncheckedBoxes')]
@@ -396,7 +407,11 @@ class StartRegistrationControllerTest extends TestCase
         $this->postJson('/api/auth/register/verify', ['email' => 'patrik@example.com', 'code' => $this->mailedCode()])->assertCreated();
     }
 
-    public function test_returns_422_and_keeps_the_registration_when_another_browser_reuses_its_email(): void
+    /**
+     * An address is not reserved before it is verified (owner, 2026-11-16): another
+     * browser's registration of it coexists with the first one, which stays.
+     */
+    public function test_another_browser_may_register_an_address_that_has_a_pending_registration(): void
     {
         Notification::fake();
         $this->registerFromBrowser(['display_name' => 'Aldozat'])->assertAccepted();
@@ -404,28 +419,24 @@ class StartRegistrationControllerTest extends TestCase
         $this->newBrowser();
 
         $this->registerFromBrowser(['display_name' => 'Tamado', 'password' => 'tamado-jelszo', 'password_confirmation' => 'tamado-jelszo'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email' => self::EMAIL_PENDING]);
+            ->assertAccepted();
 
-        $this->assertDatabaseCount('pending_registrations', 1);
         $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Aldozat', 'email' => 'patrik@example.com']);
-        Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 1);
-        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A refused registration must not start the cooldown.');
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Tamado', 'email' => 'patrik@example.com']);
+        Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 2);
     }
 
-    public function test_returns_422_when_a_request_without_a_session_reuses_a_pending_email(): void
+    public function test_a_request_without_a_session_may_register_a_pending_address(): void
     {
         Notification::fake();
         $this->registerFromBrowser(['display_name' => 'Aldozat'])->assertAccepted();
         $this->travel(61)->seconds();
         $this->newBrowser();
 
-        $this->register(['display_name' => 'Tamado'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email' => self::EMAIL_PENDING]);
+        $this->register(['display_name' => 'Tamado'])->assertAccepted();
 
         $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Aldozat']);
-        Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 1);
+        $this->assertDatabaseHas('pending_registrations', ['display_name' => 'Tamado']);
     }
 
     public function test_the_password_does_not_reach_the_log_when_the_mail_fails(): void
@@ -461,7 +472,8 @@ class StartRegistrationControllerTest extends TestCase
             ->assertJson(['message' => 'A megerősítő e-mailt most nem sikerült elküldeni, próbáld újra később.', 'code' => 'mail.send_failed']);
 
         $this->assertDatabaseCount('pending_registrations', 0);
-        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com'), 'A failed send must not start the cooldown.');
+        $this->assertSame(0, RateLimiter::attempts(self::COOLDOWN_KEY), 'A failed send must not start the cooldown.');
+        $this->assertSame(0, RateLimiter::attempts(self::ADDRESS_KEY), 'A failed send must not count against the address.');
         Exceptions::assertReported(TransportException::class);
     }
 
@@ -470,7 +482,7 @@ class StartRegistrationControllerTest extends TestCase
         $attemptsDuringSend = null;
         $this->mock(Dispatcher::class, function (MockInterface $mock) use (&$attemptsDuringSend): void {
             $mock->shouldReceive('send')->andReturnUsing(function () use (&$attemptsDuringSend): void {
-                $attemptsDuringSend = RateLimiter::attempts('registration-mail:patrik@example.com');
+                $attemptsDuringSend = RateLimiter::attempts(self::COOLDOWN_KEY);
             });
         });
 
@@ -507,6 +519,112 @@ class StartRegistrationControllerTest extends TestCase
 
         $this->travel(60)->seconds();
         $this->registerFromBrowser()->assertAccepted();
+    }
+
+    /**
+     * A stranger's cooldown is not the owner's: it counts per address and client
+     * (the IP, an IPv6 /64), so a request from another network is not refused.
+     */
+    public function test_another_client_is_not_held_up_by_a_strangers_cooldown(): void
+    {
+        Notification::fake();
+        $this->registerFromBrowser(['display_name' => 'Tamado'])->assertAccepted();
+        $this->newBrowser();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.7'])
+            ->registerFromBrowser(['display_name' => 'Aldozat'])
+            ->assertAccepted();
+
+        Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 2);
+    }
+
+    /**
+     * At most rate_limits.registration_mail.per_address_per_hour codes go to one
+     * address within an hour, from all clients together (against mail bombing).
+     */
+    public function test_the_address_cap_refuses_the_mail_over_it_and_frees_that_clients_cooldown(): void
+    {
+        Notification::fake();
+        config(['rate_limits.registration_mail.per_address_per_hour' => 3]);
+
+        foreach (['198.51.100.1', '198.51.100.2', '198.51.100.3'] as $index => $ip) {
+            $this->newBrowser();
+            $this->withServerVariables(['REMOTE_ADDR' => $ip])->registerFromBrowser(['display_name' => 'Jatekos'.$index])->assertAccepted();
+        }
+
+        $this->newBrowser();
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.4'])
+            ->registerFromBrowser(['display_name' => 'Jatekos9'])
+            ->assertTooManyRequests()
+            ->assertJson(['message' => 'Erre az e-mail címre most túl sok kódot kértek, próbáld újra később.', 'code' => 'auth.address_mail_limit'])
+            ->assertHeader('Retry-After');
+
+        Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 3);
+        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com|198.51.100.4'), 'A refused request must not keep its own cooldown slot.');
+    }
+
+    /**
+     * A client that already has a code out hears that, not the address cap:
+     * only code_recently_sent offers "Már megkaptad a kódot? Írd be".
+     */
+    public function test_a_client_within_its_cooldown_hears_of_its_code_even_when_the_address_cap_is_spent(): void
+    {
+        Notification::fake();
+        config(['rate_limits.registration_mail.per_address_per_hour' => 2]);
+        $this->registerFromBrowser()->assertAccepted();
+        $this->newBrowser();
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.1'])->registerFromBrowser(['display_name' => 'Jatekos1'])->assertAccepted();
+        $this->newBrowser();
+
+        // The first client again (a fresh session, as after the cookies were lost).
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->registerFromBrowser(['display_name' => 'Jatekos2'])
+            ->assertTooManyRequests()
+            ->assertJsonPath('code', 'auth.code_recently_sent');
+    }
+
+    /**
+     * Review 2026-11-16, AUTH-5 (registration half): a resend whose mail fails
+     * leaves the session's earlier, still valid code working.
+     */
+    public function test_a_failed_resend_keeps_the_first_code_working(): void
+    {
+        Notification::fake();
+        $this->registerFromBrowser()->assertAccepted();
+        $firstCode = $this->mailedCode();
+        $this->travel(61)->seconds();
+
+        Exceptions::fake();
+        $this->mock(Dispatcher::class, fn (MockInterface $mock) => $mock->shouldReceive('send')->andThrow(new TransportException('SMTP down')));
+        $this->registerFromBrowser()->assertServiceUnavailable();
+
+        $this->asBrowserWithSession((string) $this->browserSession);
+        $this->postJson('/api/auth/register/verify', ['email' => 'patrik@example.com', 'code' => $firstCode], self::FRONTEND)->assertCreated();
+    }
+
+    /**
+     * The honeypot (owner, 2026-11-16): a hidden checkbox a human never ticks.
+     * A bot that ticks it gets the usual success, but nothing is kept or mailed.
+     */
+    public function test_a_ticked_honeypot_answers_like_a_success_but_keeps_and_mails_nothing(): void
+    {
+        Notification::fake();
+
+        $this->register(['newsletter' => true])
+            ->assertAccepted()
+            ->assertJsonPath('data.email', 'patrik@example.com')
+            ->assertJsonPath('data.expires_at', fn (string $at): bool => abs(now()->addMinutes(15)->diffInSeconds($at)) <= 2);
+
+        $this->assertDatabaseCount('pending_registrations', 0);
+        Notification::assertNothingSent();
+        $this->assertSame(0, RateLimiter::attempts(self::COOLDOWN_KEY));
+    }
+
+    public function test_a_ticked_honeypot_still_gets_the_normal_answer_for_invalid_details(): void
+    {
+        $this->register(['newsletter' => true, 'email' => 'nem-email'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email']);
     }
 
     public function test_frontend_origin_passes_cors_preflight_with_credentials(): void

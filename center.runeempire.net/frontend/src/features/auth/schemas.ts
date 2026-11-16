@@ -61,6 +61,8 @@ export const registerSchema = z
     ageConfirmed: z.boolean().refine((confirmed) => confirmed, {
       error: 'A regisztrációhoz 16 évesnek kell lenned, vagy a szülőd hozzájárulása kell.',
     }),
+    /** The hidden bot trap (HoneypotField): only a bot ticks it. */
+    newsletter: z.boolean().optional(),
   })
   .refine((values) => values.password === values.passwordConfirmation, {
     error: 'A két jelszó nem egyezik.',
@@ -85,7 +87,7 @@ export const codeSchema = z.object({
 export type CodeValues = z.infer<typeof codeSchema>
 
 /** The forgotten password panel, step 1: the account's e-mail address. */
-export const forgotEmailSchema = z.object({ email })
+export const forgotEmailSchema = z.object({ email, newsletter: z.boolean().optional() })
 
 export type ForgotEmailValues = z.infer<typeof forgotEmailSchema>
 
