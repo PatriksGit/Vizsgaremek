@@ -35,8 +35,14 @@ const JOIN_HINT_DAYS = 7
  */
 export function HomePage() {
   const { data: account } = useAccount()
-  const { data: stats, isError: statsFailed } = useMyStats()
-  const { data: friends, isError: friendsFailed } = useMyFriends()
+  const { data: stats, isFetched: statsFetched, dataUpdatedAt } = useMyStats()
+  // Failed = answered without data. Not isError: TanStack v5 makes a refetch of a failed query without data
+  // pending again, so the dash would flip to a skeleton on every retry (review 2026-11-17).
+  const statsFailed = !stats && statsFetched
+  /** The moment the numbers are from: their week and today are that moment's, also when a later refresh fails. */
+  const asOf = dataUpdatedAt ? new Date(dataUpdatedAt) : new Date()
+  const { data: friends, isFetched: friendsFetched } = useMyFriends()
+  const friendsFailed = !friends && friendsFetched
 
   /** A part that will not come: its plugin could not be read, or the whole request failed. */
   const missing = (part: StatPart) => (stats ? stats.unavailable.includes(part) : statsFailed)
@@ -48,7 +54,7 @@ export function HomePage() {
     <div className="flex flex-col gap-3.5 md:gap-5">
       <title>{`Főoldal | ${site.name}`}</title>
 
-      <HeroCard streak={shown('streak', (loaded) => loaded.streak)} />
+      <HeroCard streak={shown('streak', (loaded) => loaded.streak)} asOf={asOf} />
 
       {registeredWithin(account, JOIN_HINT_DAYS) && <JoinCard />}
 
@@ -95,6 +101,7 @@ export function HomePage() {
 
       <div className="flex flex-wrap gap-3.5 md:gap-5">
         <PlaytimeCard
+          asOf={asOf}
           week={shown('playtime', (loaded) => loaded.playtime?.week.map((seconds) => (seconds > 0 ? Math.max(1, Math.round(seconds / 60)) : 0)) ?? null)}
           className="min-w-0 flex-[2_1_480px]"
         />

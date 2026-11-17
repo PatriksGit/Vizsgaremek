@@ -3,7 +3,7 @@ import type { Account } from '@/features/auth/api'
 const DAY_MS = 86_400_000
 
 /** "2026. október 16." */
-export const registrationDate = new Intl.DateTimeFormat('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })
+export const registrationDate = new Intl.DateTimeFormat('hu-HU', { timeZone: 'Europe/Budapest', year: 'numeric', month: 'long', day: 'numeric' })
 
 /** Whether the account was created within the last `days` days: a new player still finding their way. */
 export function registeredWithin(account: Account | null | undefined, days: number) {

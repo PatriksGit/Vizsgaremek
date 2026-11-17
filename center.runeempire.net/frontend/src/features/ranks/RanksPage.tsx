@@ -43,11 +43,20 @@ const cellClass =
  * rank from GET /api/me/stats; the final purchase button is off for now.
  */
 export function RanksPage() {
-  const { data: ranks, isError: ranksFailed, isFetching, refetch } = useRanks()
-  const { data: stats, isError: statsFailed } = useMyStats()
+  const { data: ranks, isFetched: ranksFetched, isFetching, refetch } = useRanks()
+  const { data: stats, isFetched: statsFetched } = useMyStats()
+  // Failed = answered without data. Not isError: TanStack v5 makes a refetch of a failed query without data
+  // pending again, which swapped "Újrapróbálás" for skeletons mid-retry (review 2026-11-17).
+  const ranksFailed = !ranks && ranksFetched
+  const statsFailed = !stats && statsFetched
   const now = useNow()
-  const [details, setDetails] = useState<Rank | null>(null)
-  const [buying, setBuying] = useState<{ rank: Rank; days: number } | null>(null)
+  // The open dialogs keep the rank's group, not the rank: a refetch (new price, a rank taken
+  // off sale) shows in an open dialog too, and a removed rank's dialog closes. A closing dialog
+  // keeps its group until its exit animation ends, so it never fades out empty (UI-N2).
+  const [shownDetails, setShownDetails] = useState<{ group: string; open: boolean } | null>(null)
+  const [buying, setBuying] = useState<{ group: string; days: number; open: boolean } | null>(null)
+  const details = ranks?.find((rank) => rank.group === shownDetails?.group) ?? null
+  const buyingRank = ranks?.find((rank) => rank.group === buying?.group) ?? null
   // The "Mit kapsz?" button that opened the details, and where the purchase's
   // focus goes back to: a purchase started in the details returns to that
   // button, since the one that opened it is gone by then (review 2026-11-17,
@@ -63,8 +72,8 @@ export function RanksPage() {
 
   const buy = (rank: Rank, days: number, fromDetails = false) => {
     purchaseReturn.current = fromDetails ? detailsTrigger.current : null
-    setDetails(null)
-    setBuying({ rank, days })
+    setShownDetails((shown) => shown && { ...shown, open: false })
+    setBuying({ group: rank.group, days, open: true })
   }
 
   return (
@@ -92,7 +101,7 @@ export function RanksPage() {
                   now={now}
                   onDetails={(trigger) => {
                     detailsTrigger.current = trigger
-                    setDetails(rank)
+                    setShownDetails({ group: rank.group, open: true })
                   }}
                   onBuy={(days) => buy(rank, days)}
                 />
@@ -123,16 +132,20 @@ export function RanksPage() {
         ownedUntil={until(details)}
         balance={balance}
         now={now}
-        onClose={() => setDetails(null)}
+        open={shownDetails?.open === true && details !== null}
+        onClose={() => setShownDetails((shown) => shown && { ...shown, open: false })}
+        onClosed={() => setShownDetails(null)}
         onBuy={(days) => details && buy(details, days, true)}
       />
       <PurchaseDialog
-        rank={buying?.rank ?? null}
+        rank={buyingRank}
         days={buying?.days ?? 0}
-        ownedUntil={until(buying?.rank ?? null)}
+        ownedUntil={until(buyingRank)}
         balance={balance}
         now={now}
-        onClose={() => setBuying(null)}
+        open={buying?.open === true && buyingRank !== null}
+        onClose={() => setBuying((shown) => shown && { ...shown, open: false })}
+        onClosed={() => setBuying(null)}
         finalFocus={() => purchaseReturn.current ?? true}
       />
     </div>

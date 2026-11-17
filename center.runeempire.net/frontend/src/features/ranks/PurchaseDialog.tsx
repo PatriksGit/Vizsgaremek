@@ -27,6 +27,13 @@ type PurchaseDialogProps = {
   balance: number | null | undefined
   now: Date
   onClose: () => void
+  /**
+   * Open or closing. The rank stays while it closes, so the exit animation shows its content, not an
+   * empty frame (review 2026-11-17, UI-N2); without it, open while there is a rank.
+   */
+  open?: boolean
+  /** The exit animation has finished: the rank can go. */
+  onClosed?: () => void
   /** Where focus goes when it closes (true: back to what opened it). */
   finalFocus?: () => HTMLElement | true
 }
@@ -46,14 +53,28 @@ const buttonLook = 'flex min-h-12 items-center justify-center rounded-full px-4 
  * A shadcn AlertDialog: no X in the corner and a tap beside it does not close
  * it; only its buttons or Esc do.
  */
-export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, finalFocus }: PurchaseDialogProps) {
+export function PurchaseDialog({
+  rank,
+  days,
+  ownedUntil,
+  balance,
+  now,
+  onClose,
+  open = rank !== null,
+  onClosed,
+  finalFocus,
+}: PurchaseDialogProps) {
   const price = rank?.prices.find((option) => option.days === days)?.runes ?? 0
   const extending = ownedUntil !== null
   const missing = typeof balance === 'number' ? price - balance : 0
   const hintId = useId()
 
   return (
-    <AlertDialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(next) => !next && onClose()}
+      onOpenChangeComplete={(next) => !next && onClosed?.()}
+    >
       <AlertDialogContent
         finalFocus={finalFocus}
         className="max-h-[calc(100svh-2rem)] justify-items-center gap-5 overflow-y-auto rounded-2xl border border-line bg-card px-6 pt-8 pb-6 text-center ring-0 data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-100"

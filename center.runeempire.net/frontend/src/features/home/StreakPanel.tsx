@@ -40,6 +40,8 @@ function thisWeek(today = serverToday()) {
 type StreakPanelProps = {
   /** Left out while the stats load (skeletons); null when it could not be loaded (a dash, plain boxes). */
   streak?: Streak | null
+  /** The moment the streak is from (default now). */
+  asOf?: Date
   className?: string
 }
 
@@ -48,9 +50,9 @@ type StreakPanelProps = {
  * record on top, then seven boxes (a check for a day logged in, a cross for
  * a missed one, today pulsing gold with a clock until the login).
  */
-export function StreakPanel({ streak, className }: StreakPanelProps) {
-  const todayIndex = serverTodayIndex()
-  const dates = thisWeek()
+export function StreakPanel({ streak, asOf = new Date(), className }: StreakPanelProps) {
+  const todayIndex = serverTodayIndex(asOf)
+  const dates = thisWeek(serverToday(asOf))
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
@@ -69,7 +71,10 @@ export function StreakPanel({ streak, className }: StreakPanelProps) {
                 <span className="sr-only"> (most nem érhető el)</span>
               </span>
             ) : (
-              <Skeleton className="mt-1 h-6 w-16" />
+              <>
+                <Skeleton className="mt-1 h-6 w-16" />
+                <span className="sr-only">betöltés…</span>
+              </>
             )}
           </span>
         </span>

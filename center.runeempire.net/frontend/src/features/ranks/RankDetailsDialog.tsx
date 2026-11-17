@@ -16,6 +16,13 @@ type RankDetailsDialogProps = {
   balance: number | null | undefined
   now: Date
   onClose: () => void
+  /**
+   * Open or closing. The rank stays while it closes, so the exit animation shows its content, not an
+   * empty frame (review 2026-11-17, UI-N2); without it, open while there is a rank.
+   */
+  open?: boolean
+  /** The exit animation has finished: the rank can go. */
+  onClosed?: () => void
   /** Opens the purchase on this many days. */
   onBuy: (days: number) => void
 }
@@ -27,9 +34,22 @@ type RankDetailsDialogProps = {
  * rank colour, the season, the servers, until when it is the player's) and
  * shows the balance above the buttons (review 2026-11-17).
  */
-export function RankDetailsDialog({ rank, ownedUntil, balance, now, onClose, onBuy }: RankDetailsDialogProps) {
+export function RankDetailsDialog({
+  rank,
+  ownedUntil,
+  balance,
+  now,
+  onClose,
+  open = rank !== null,
+  onClosed,
+  onBuy,
+}: RankDetailsDialogProps) {
   return (
-    <Dialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => !next && onClose()}
+      onOpenChangeComplete={(next) => !next && onClosed?.()}
+    >
       <DialogContent
         style={accentVars(rank?.color ?? null)}
         className="flex max-h-[calc(100svh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border border-line bg-card p-0 ring-0 sm:max-w-160"

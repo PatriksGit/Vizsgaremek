@@ -1,5 +1,5 @@
 import { faGavel } from '@fortawesome/free-solid-svg-icons'
-import type { CSSProperties } from 'react'
+import { type CSSProperties, useRef, useState } from 'react'
 
 import { panelLook } from '@/components/app/Panel'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
@@ -38,11 +38,16 @@ type PunishmentCardProps = {
 
 /**
  * The punishment tile: "Nincsen" in green, or the end date of a mute (yellow)
- * or ban (red), or "Zárolva" with a red edge. Hovering or focusing the value
- * shows when it was given, by whom and why.
+ * or ban (red), or "Zárolva" with a red edge. Hovering, focusing or tapping the
+ * value shows when it was given, by whom and why.
  */
 export function PunishmentCard({ punishment, unavailable = false, className, style }: PunishmentCardProps) {
   const look = punishment && !unavailable ? KIND[punishment.kind] : null
+  // Controlled, so a tap opens the details too: Base UI's preview card opens only on a mouse hover or a
+  // keyboard focus, which a phone never sends (review 2026-11-17, UI-N1).
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  // The pointer of the press that ends in the click; null for a click without one (Enter, Space).
+  const pressedWith = useRef<string | null>(null)
 
   return (
     <li
@@ -69,12 +74,23 @@ export function PunishmentCard({ punishment, unavailable = false, className, sty
         ) : punishment === null || look === null ? (
           <p className="text-2xl leading-none font-extrabold text-ok md:text-3xl">Nincsen</p>
         ) : (
-          <HoverCard>
+          <HoverCard open={detailsOpen} onOpenChange={setDetailsOpen}>
             <HoverCardTrigger
               delay={100}
               render={
                 <button
                   type="button"
+                  onPointerDown={(event) => {
+                    pressedWith.current = event.pointerType
+                  }}
+                  // A tap toggles the details; a mouse click keeps the card its hover opened, and a key opens it.
+                  onClick={(event) => {
+                    // The click's own pointer type where the browser gives one ('' for a key), else the press's.
+                    const pointer = (event.nativeEvent as Partial<PointerEvent>).pointerType || pressedWith.current
+                    const tap = pointer === 'touch' || pointer === 'pen'
+                    pressedWith.current = null
+                    setDetailsOpen((open) => (tap ? !open : true))
+                  }}
                   className="cursor-help self-start rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                 />
               }

@@ -34,7 +34,10 @@ const STATUS: Record<string, { dot: string; label: string }> = {
  * player can try again.
  */
 export function DiscordCard({ className }: { className?: string }) {
-  const { data: widget, isPending, isFetching, refetch } = useDiscordWidget()
+  const { data: widget, isFetched, isFetching, refetch } = useDiscordWidget()
+  // Only the first load shows skeletons: TanStack v5 makes a refetch of a failed query without data
+  // pending again, which swapped the clicked "Újrapróbálás" for skeletons (review 2026-11-17).
+  const firstLoad = !isFetched
   // The widget's own invite when it has one; the fixed one keeps the button while Discord is down.
   const invite = widget?.instant_invite ?? site.discordInviteUrl
 
@@ -63,14 +66,14 @@ export function DiscordCard({ className }: { className?: string }) {
             <strong className="text-foreground">{countFormat.format(widget.presence_count)}</strong> online
           </span>
         ) : (
-          isPending && <Skeleton className="h-4 w-16" />
+          firstLoad && <Skeleton className="h-4 w-16" />
         )}
       </div>
 
       {/* A failed refresh keeps showing the last good answer. */}
       {widget ? (
         <Members widget={widget} />
-      ) : isPending ? (
+      ) : firstLoad ? (
         <MembersSkeleton />
       ) : (
         <div className="flex flex-col items-start gap-3">

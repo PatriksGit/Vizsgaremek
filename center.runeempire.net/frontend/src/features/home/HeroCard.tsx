@@ -15,7 +15,7 @@ import { type Streak, StreakPanel } from './StreakPanel'
  * (under them on narrower screens). A player on their first day is
  * welcomed, not welcomed back.
  */
-export function HeroCard({ streak }: { streak?: Streak | null }) {
+export function HeroCard({ streak, asOf }: { streak?: Streak | null; asOf?: Date }) {
   const { data: account } = useAccount()
   const greeting = registeredWithin(account, 1) ? 'Üdv a birodalomban,' : 'Üdv újra a birodalomban,'
 
@@ -60,6 +60,7 @@ export function HeroCard({ streak }: { streak?: Streak | null }) {
 
       <StreakPanel
         streak={streak}
+        asOf={asOf}
         className="content-in basis-full rounded-xl border border-line bg-background/65 p-4 backdrop-blur-sm xl:shrink-0 xl:basis-96"
       />
     </section>

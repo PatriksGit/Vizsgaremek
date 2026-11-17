@@ -50,6 +50,7 @@ src/
     auth/              login, two-step registration (details, then the e-mailed code)
     app/               the logged-in frame: sidebar, phone tab bar, menu (nav.ts)
     home/              the overview cards and their data (stats.ts)
+    ranks/             the rank shop (/rangok): cards, the rank text, the purchase popup
     account/           account settings
   components/
     ui/                shadcn components (generated, lightly customised)

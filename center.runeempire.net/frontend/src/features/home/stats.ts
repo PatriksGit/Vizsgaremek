@@ -62,8 +62,8 @@ export const DAY_SHORT = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V']
 export const DAY_NAMES = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
 
 /** Today's place in the stats' week, Monday first (0-6). */
-export function serverTodayIndex() {
-  return (serverToday().getDay() + 6) % 7
+export function serverTodayIndex(now = new Date()) {
+  return (serverToday(now).getDay() + 6) % 7
 }
 
 /** What the overview writes where a number could not be loaded. */
@@ -127,9 +127,12 @@ export const runeCountFormat = new Intl.NumberFormat('hu-HU')
 /** Hours with at most one decimal ("2,5"). */
 export const hoursFormat = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 1 })
 
-/** "2026.11.20.": fits a pill on one line. */
+const serverDay = new Intl.DateTimeFormat('en-CA', { timeZone: SERVER_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' })
+
+/** "2026.11.20.", the Budapest day like the streak and the rank shop: fits a pill on one line. */
 export function shortDate(iso: string) {
   const date = new Date(iso)
-  const twoDigits = (value: number) => String(value).padStart(2, '0')
-  return `${date.getFullYear()}.${twoDigits(date.getMonth() + 1)}.${twoDigits(date.getDate())}.`
+  // Intl throws on an invalid date (a year after 9999, which Carbon writes without its sign): a dash, not a crashed page.
+  if (Number.isNaN(date.getTime())) return NO_DATA
+  return `${serverDay.format(date).replaceAll('-', '.')}.`
 }

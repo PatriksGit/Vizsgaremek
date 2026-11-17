@@ -49,7 +49,7 @@ export function SeasonInfo({ endsAt, now }: { endsAt: string; now: Date }) {
     )
   }
 
-  if (left <= DAY_MS) {
+  if (left < DAY_MS) {
     const { hours, minutes, seconds } = timeLeft(left)
     return (
       <span
@@ -137,7 +137,7 @@ export function BuyBox({ rank, owned, onBuy }: { rank: Rank; owned: boolean; onB
         // Which rank and how long, for a screen reader: ten "Megveszem" buttons must not sound alike.
         // It starts with the visible text, so a voice command "Megveszem" still finds it.
         aria-label={`${verb}: ${rank.name}, ${chosen.days} nap`}
-        className="min-h-12 w-full rounded-xl bg-(--c) px-3 text-[15px] font-extrabold text-(--on-c) transition-[filter,translate] hover:brightness-115 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--c) active:translate-y-px"
+        className="min-h-12 w-full rounded-xl bg-(--c) px-3 text-[15px] font-extrabold text-(--on-c) transition-[filter,translate] hover:brightness-115 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--c) active:translate-y-px motion-reduce:active:translate-y-0"
       >
         {verb}
       </button>

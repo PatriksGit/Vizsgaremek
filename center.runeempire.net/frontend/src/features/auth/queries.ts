@@ -95,7 +95,6 @@ export function useResetPassword() {
   return useMutation({
     mutationFn: async (request: { password: string; passwordConfirmation: string }) => {
       const { username } = await resetPassword(request)
-      await queryClient.cancelQueries()
       let account: Account | null
       try {
         account = await fetchCurrentAccount()

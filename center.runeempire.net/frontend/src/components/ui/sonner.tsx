@@ -6,6 +6,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       // The site is dark only.
       theme="dark"
+      // Sonner's default region name is English ("Notifications").
+      containerAriaLabel="Értesítések"
       className="toaster group"
       icons={{
         success: (

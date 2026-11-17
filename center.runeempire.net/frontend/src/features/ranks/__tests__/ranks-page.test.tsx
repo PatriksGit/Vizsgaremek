@@ -277,6 +277,32 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     fireEvent.click(screen.getByRole('button', { name: 'Újrapróbálás' }))
     expect(await screen.findByRole('heading', { name: 'Dragon' })).toBeTruthy()
   })
+
+  /**
+   * Review 2026-11-17: TanStack v5 makes a refetch of a failed query without data pending again;
+   * gated on isError, the pressed button turned into skeletons. It stays, switched off, until the answer.
+   */
+  it('"Újrapróbálás" stays on screen, switched off, while it tries again', async () => {
+    backend(statsWith(null), 'fails')
+    renderPage()
+    await screen.findByText('A rangokat most nem sikerült betölteni.')
+
+    backend(statsWith(null))
+    const answer = getMock.getMockImplementation()!
+    let release!: () => void
+    const held = new Promise<void>((resolve) => (release = resolve))
+    getMock.mockImplementation(async (url: string) => {
+      if (url === '/ranks') await held
+      return answer(url)
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Újrapróbálás' }))
+
+    await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Újrapróbálás' })).toHaveProperty('disabled', true))
+    expect(screen.getByText('A rangokat most nem sikerült betölteni.')).toBeTruthy()
+
+    release()
+    expect(await screen.findByRole('heading', { name: 'Dragon' })).toBeTruthy()
+  })
 })
 
 describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {

@@ -20,13 +20,15 @@ function duration(minutes: number) {
 }
 
 /** The days of this week up to today; the rest of the week stays empty. */
-function playedSoFar(week: number[]) {
-  return week.slice(0, serverTodayIndex() + 1)
+function playedSoFar(week: number[], todayIndex: number) {
+  return week.slice(0, todayIndex + 1)
 }
 
 type PlaytimeCardProps = {
   /** Minutes played on each day of this week, Monday first; left out while the stats load (a skeleton), null when they could not be loaded (a dash). */
   week?: number[] | null
+  /** The moment the minutes are from (default now). */
+  asOf?: Date
   className?: string
 }
 
@@ -34,8 +36,9 @@ type PlaytimeCardProps = {
  * This week's playtime as a gold line over the days, today's column lit.
  * Hovering a day shows its time. While the stats load, a skeleton.
  */
-export function PlaytimeCard({ week, className }: PlaytimeCardProps) {
-  const total = week ? playedSoFar(week).reduce((sum, minutes) => sum + minutes, 0) : 0
+export function PlaytimeCard({ week, asOf = new Date(), className }: PlaytimeCardProps) {
+  const todayIndex = serverTodayIndex(asOf)
+  const total = week ? playedSoFar(week, todayIndex).reduce((sum, minutes) => sum + minutes, 0) : 0
 
   return (
     <section
@@ -59,7 +62,7 @@ export function PlaytimeCard({ week, className }: PlaytimeCardProps) {
       </div>
 
       {week ? (
-        <WeekChart week={week} total={total} />
+        <WeekChart week={week} total={total} todayIndex={todayIndex} />
       ) : week === null ? (
         <div className="grid h-47 place-items-center rounded-xl border border-dashed border-line text-3xl font-extrabold text-muted-foreground md:h-62">
           {NO_DATA}
@@ -75,9 +78,8 @@ export function PlaytimeCard({ week, className }: PlaytimeCardProps) {
   )
 }
 
-function WeekChart({ week, total }: { week: number[]; total: number }) {
-  const todayIndex = serverTodayIndex()
-  const shown = playedSoFar(week)
+function WeekChart({ week, total, todayIndex }: { week: number[]; total: number; todayIndex: number }) {
+  const shown = playedSoFar(week, todayIndex)
 
   // Three equal steps of whole hours, high enough for the best day.
   const step = Math.max(1, Math.ceil(Math.max(...shown, 0) / 60 / 3)) * 60

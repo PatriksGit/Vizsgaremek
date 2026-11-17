@@ -160,7 +160,8 @@ export function ForgotPasswordForm() {
     setResending(true)
     codeForm.clearErrors()
     try {
-      const next = await requestReset.mutateAsync({ email: sent.email })
+      // The bot trap goes along like on the first send: a tripped trap must not mail on the resend.
+      const next = await requestReset.mutateAsync({ email: sent.email, newsletter: emailForm.getValues('newsletter') })
       setSent(next)
       codeForm.reset({ code: '' })
       askFocus('code')

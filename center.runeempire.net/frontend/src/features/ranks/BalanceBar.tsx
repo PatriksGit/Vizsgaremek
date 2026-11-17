@@ -29,7 +29,10 @@ export function BalanceBar({ balance }: { balance: number | null | undefined }) 
         <div className="flex flex-col">
           <span className="text-xs font-semibold text-faint">Egyenleged</span>
           {balance === undefined ? (
-            <Skeleton className="mt-1 h-5 w-24 rounded" />
+            <>
+              <Skeleton className="mt-1 h-5 w-24 rounded" />
+              <span className="sr-only">betöltés…</span>
+            </>
           ) : balance === null ? (
             <span className="text-lg leading-tight font-extrabold text-muted-foreground">
               {NO_DATA}

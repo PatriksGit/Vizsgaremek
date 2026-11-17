@@ -1,7 +1,7 @@
 import { faEnvelope, faPaperPlane, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useId, useState, type ReactNode } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
+import { Controller, useFormContext, useWatch } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -29,7 +29,9 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode 
   const form = useFormContext<RegisterValues>()
   const { errors, isSubmitting } = form.formState
   // A code went to this address a moment ago (not just any 429: a per-IP throttle says nothing about the mailbox).
-  const [codeMayBeOut, setCodeMayBeOut] = useState(false)
+  // The address it came for: "Írd be" belongs to that address only, not to one typed after it.
+  const [codeMayBeOut, setCodeMayBeOut] = useState<string | null>(null)
+  const typedEmail = useWatch({ control: form.control, name: 'email' })
 
   useEffect(() => {
     if (focusEmail) form.setFocus('email')
@@ -38,10 +40,10 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode 
   const submit = form.handleSubmit(async (values) => {
     try {
       // On success the parent moves on to the code step, which unmounts this form.
-      setCodeMayBeOut(false)
+      setCodeMayBeOut(null)
       await onSubmit(values)
     } catch (error) {
-      setCodeMayBeOut(error instanceof ApiError && error.code === 'auth.code_recently_sent')
+      setCodeMayBeOut(error instanceof ApiError && error.code === 'auth.code_recently_sent' ? values.email.toLowerCase() : null)
       applyApiError(error, form.setError, registerFieldForKey)
     }
   })
@@ -50,10 +52,10 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode 
     <form onSubmit={submit} noValidate>
       <FieldGroup className="gap-4">
         <FormAlert message={errors.root?.server?.message} />
-        {codeMayBeOut && (
+        {codeMayBeOut !== null && codeMayBeOut === typedEmail.trim().toLowerCase() && (
           <p className="text-sm text-muted-foreground">
             Már megkaptad a kódot?{' '}
-            <button type="button" onClick={() => onEnterCode(form.getValues('email'))} className={linkButtonClass}>
+            <button type="button" onClick={() => onEnterCode(codeMayBeOut)} className={linkButtonClass}>
               Írd be
             </button>
           </p>

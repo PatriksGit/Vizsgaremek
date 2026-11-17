@@ -74,8 +74,7 @@ export async function startRegistration(request: RegistrationRequest): Promise<P
     ...(request.newsletter ? { newsletter: true } : {}),
   })
   // Counted on the server's clock (its Date header): the visitor's clock can be hours off.
-  const serverNow = Date.parse(String(response.headers.date))
-  const millisecondsLeft = Date.parse(response.data.data.expires_at) - (Number.isNaN(serverNow) ? Date.now() : serverNow)
+  const millisecondsLeft = localTime(response.data.data.expires_at, response.headers.date) - Date.now()
   return { email: response.data.data.email, expiresInMinutes: Math.max(1, Math.round(millisecondsLeft / 60_000)) }
 }
 

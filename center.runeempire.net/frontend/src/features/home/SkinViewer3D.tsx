@@ -25,7 +25,9 @@ export default function SkinViewer3D({ url, width, height, onError }: SkinViewer
   // The latest callback, without rebuilding the viewer when the parent passes a new one.
   const fail = useEffectEvent(onError)
   // Which skin is on the figure, so a new name hides it again until its skin arrives.
-  const [shownUrl, setShownUrl] = useState<string | null>(null)
+  // Keyed by the viewer too: a new size builds a new, skinless viewer that must fade in again.
+  const viewerKey = `${url} ${width}x${height}`
+  const [shownKey, setShownKey] = useState<string | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -50,7 +52,7 @@ export default function SkinViewer3D({ url, width, height, onError }: SkinViewer
 
     viewer
       .loadSkin(url, { model: 'auto-detect' })
-      .then(() => setShownUrl(url))
+      .then(() => setShownKey(`${url} ${width}x${height}`))
       .catch(() => fail())
 
     // StrictMode mounts twice in development: every viewer frees its WebGL context.
@@ -63,7 +65,7 @@ export default function SkinViewer3D({ url, width, height, onError }: SkinViewer
       className={cn(
         // Fades in and rises a little into place once the skin is on it, instead of popping up.
         'cursor-grab transition-[opacity,translate,scale] duration-700 ease-out active:cursor-grabbing motion-reduce:transition-none',
-        shownUrl === url ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-3 scale-95 opacity-0',
+        shownKey === viewerKey ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-3 scale-95 opacity-0',
       )}
     />
   )
