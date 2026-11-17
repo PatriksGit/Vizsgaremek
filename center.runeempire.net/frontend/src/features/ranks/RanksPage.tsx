@@ -99,7 +99,8 @@ export function RanksPage() {
 
       <RankDetailsDialog
         rank={details}
-        owned={until(details) !== null}
+        ownedUntil={until(details)}
+        balance={balance}
         now={now}
         onClose={() => setDetails(null)}
         onBuy={(days) => details && buy(details, days, true)}

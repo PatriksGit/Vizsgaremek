@@ -12,13 +12,15 @@ import { cn } from '@/lib/utils'
  * The player's runes above the rank cards (owner, 2026-11-17): every button
  * carries a price, so the balance is in view too, with the way to top it up.
  * undefined while the stats load (a skeleton), null when they cannot be read (a dash).
+ * On phones it stays under the top bar while the cards scroll, so the balance
+ * is in view when a price is tapped (review 2026-11-17).
  */
 export function BalanceBar({ balance }: { balance: number | null | undefined }) {
   return (
     <section
       aria-label="Egyenleged"
       style={enterAfter(150)}
-      className={cn(panelLook, 'content-in flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 md:px-5')}
+      className={cn(panelLook, 'content-in flex flex-wrap max-md:sticky max-md:top-15 max-md:z-20 max-md:shadow-[0_10px_20px_rgb(0_0_0/0.5)] items-center justify-between gap-x-4 gap-y-2 px-4 py-3 md:px-5')}
     >
       <div className="flex items-center gap-3">
         <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-lg bg-raised text-soft">

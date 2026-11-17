@@ -49,6 +49,8 @@ describe('the rank purchase confirmation', () => {
     expect(within(dialog).getByText('Dragon · 30 nap · 2000 rúna')).toBeTruthy()
     expect(text(within(dialog).getByText(/Aktív eddig/))).toBe('Aktív eddig: 2026.12.16.')
     expect(within(dialog).getByText('A vásárlás nem visszavonható.')).toBeTruthy()
+    // The balance before and after, so the player sees what is left (Roblox does this).
+    expect(text(within(dialog).getByText(/Egyenleged/))).toBe('Egyenleged: 10 000 → 8000 rúna')
   })
 
   it('the duration and price are the ones whose button was pressed', () => {
@@ -74,7 +76,8 @@ describe('the rank purchase confirmation', () => {
 
     expect(confirm.disabled).toBe(true)
     expect(cancel.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(within(dialog).getByText('A vásárlás hamarosan indul.')).toBeTruthy()
+    // The disabled button says why, to a screen reader too.
+    expect(document.getElementById(confirm.getAttribute('aria-describedby') ?? '')?.textContent).toBe('A vásárlás hamarosan indul.')
   })
 
   it('without enough runes it says how many are missing and offers topping up', () => {
@@ -83,12 +86,16 @@ describe('the rank purchase confirmation', () => {
     expect(text(within(dialog).getByText(/Nincs elég rúnád/))).toBe('Nincs elég rúnád, még 500 hiányzik.')
     expect(within(dialog).getByRole('link', { name: 'Rúna-feltöltés' }).getAttribute('href')).toBe('/runak/vasarlas')
     expect(within(dialog).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
+    // Nothing can be bought, so nothing to undo: no warning, and the balance without an "after".
+    expect(within(dialog).queryByText('A vásárlás nem visszavonható.')).toBeNull()
+    expect(text(within(dialog).getByText(/Egyenleged/))).toBe('Egyenleged: 1500 rúna')
   })
 
   it('a balance that could not be read does not claim the runes are short', () => {
     const { dialog } = renderDialog({ balance: null })
 
     expect(within(dialog).queryByText(/Nincs elég rúnád/)).toBeNull()
+    expect(within(dialog).queryByText(/Egyenleged/)).toBeNull()
     expect(within(dialog).getByRole('button', { name: 'Megvásárlás' })).toBeTruthy()
   })
 

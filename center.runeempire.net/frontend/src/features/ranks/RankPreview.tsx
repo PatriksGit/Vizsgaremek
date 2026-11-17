@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { useAccount } from '@/features/auth/queries'
@@ -16,25 +16,27 @@ export function RankPreview({ rank }: { rank: Rank }) {
   const { data: account } = useAccount()
   // The address that failed, so a corrected one (after a refresh) is tried again.
   const [failedPrefix, setFailedPrefix] = useState<string | null>(null)
+  const captionId = useId()
 
   return (
-    <figure
-      aria-label="Így néz ki rajtad a játékban"
-      // Wraps instead of cutting: a 16-character name after a wide prefix moves to its own line.
-      className="flex min-h-11 flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-xl border border-border bg-background px-3 py-2"
-    >
-      <PlayerHead name={account?.display_name} className="size-6 flex-none" />
-      {rank.prefixUrl && rank.prefixUrl !== failedPrefix && (
-        <img
-          src={rank.prefixUrl}
-          alt={rank.name}
-          onError={() => setFailedPrefix(rank.prefixUrl)}
-          className="h-5.25 w-auto flex-none [image-rendering:pixelated]"
-        />
-      )}
-      <span className="min-w-0 text-sm font-bold break-all text-foreground" style={rankColor(rank.color)}>
-        {account?.display_name}
-      </span>
+    <figure aria-labelledby={captionId} className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background px-3 pt-2 pb-2.5">
+      {/* Says what the line is (review 2026-11-17): a player sees their own name as the game shows it. */}
+      <figcaption id={captionId} className="text-[11px] font-bold tracking-wide text-faint uppercase">Így nézel ki a játékban</figcaption>
+      {/* Wraps instead of cutting: a 16-character name after a wide prefix moves to its own line. */}
+      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+        <PlayerHead name={account?.display_name} className="size-6 flex-none" />
+        {rank.prefixUrl && rank.prefixUrl !== failedPrefix && (
+          <img
+            src={rank.prefixUrl}
+            alt={rank.name}
+            onError={() => setFailedPrefix(rank.prefixUrl)}
+            className="h-5.25 w-auto flex-none [image-rendering:pixelated]"
+          />
+        )}
+        <span className="min-w-0 text-sm font-bold break-all text-foreground" style={rankColor(rank.color)}>
+          {account?.display_name}
+        </span>
+      </div>
     </figure>
   )
 }

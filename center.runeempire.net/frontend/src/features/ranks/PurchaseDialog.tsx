@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { Link } from 'react-router'
 
 import {
@@ -45,6 +46,8 @@ export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, 
   const extending = ownedUntil !== null
   const missing = typeof balance === 'number' ? price - balance : 0
   const over = rank !== null && seasonOver(rank, now)
+  const buyable = !over && missing <= 0
+  const hintId = useId()
 
   return (
     <AlertDialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
@@ -66,7 +69,18 @@ export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, 
                   {extending ? 'Új lejárat' : 'Aktív eddig'}:{' '}
                   <strong className="text-foreground">{budapestDay(addDays(ownedUntil ?? now, days))}</strong>
                 </span>
-                <span className="mt-2 font-semibold text-soft">A vásárlás nem visszavonható.</span>
+                {typeof balance === 'number' && (
+                  // Before and after, so the player sees what is left (Roblox does this); only the balance when it is short.
+                  <span>
+                    Egyenleged:{' '}
+                    <strong className="text-foreground">
+                      {runeCountFormat.format(balance)}
+                      {buyable && ` → ${runeCountFormat.format(balance - price)}`} rúna
+                    </strong>
+                  </span>
+                )}
+                {/* Nothing can be bought when the runes are short or the season is over: nothing to warn about. */}
+                {buyable && <span className="mt-2 font-semibold text-soft">A vásárlás nem visszavonható.</span>}
               </AlertDialogDescription>
             </div>
 
@@ -98,13 +112,18 @@ export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, 
                   <button
                     type="button"
                     disabled
+                    aria-describedby={hintId}
                     className="min-h-12 rounded-full bg-ok text-[15px] font-extrabold text-background disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {extending ? 'Meghosszabbítás' : 'Megvásárlás'}
                   </button>
                 )}
               </div>
-              {!over && missing <= 0 && <span className="text-center text-xs font-semibold text-faint">A vásárlás hamarosan indul.</span>}
+              {buyable && (
+                <span id={hintId} className="text-center text-xs font-semibold text-faint">
+                  A vásárlás hamarosan indul.
+                </span>
+              )}
             </div>
           </>
         )}

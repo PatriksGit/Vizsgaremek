@@ -1,11 +1,11 @@
-import { faCalendarDays, faClock, faCoins, faImage } from '@fortawesome/free-solid-svg-icons'
+import { faCalendarDays, faCheck, faClock, faCoins, faImage } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { runeCountFormat } from '@/features/home/stats'
 import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
-import { seasonEndText, timeLeft } from './dates'
+import { budapestDay, seasonEndText, timeLeft } from './dates'
 
 /** The rank's animated banner, 5:2 with a small inset; a dashed box until it has one. */
 export function RankBanner({ rank, className }: { rank: Rank; className?: string }) {
@@ -42,7 +42,7 @@ export function SeasonInfo({ endsAt, now }: { endsAt: string; now: Date }) {
 
   if (left <= 0) {
     return (
-      <span className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-muted-foreground">
+      <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-muted-foreground">
         <FontAwesomeIcon icon={faClock} aria-hidden="true" className="size-3.5" />
         A vásárlási idő lejárt
       </span>
@@ -55,7 +55,7 @@ export function SeasonInfo({ endsAt, now }: { endsAt: string; now: Date }) {
       <span
         role="timer"
         aria-label={`Még ${hours} óra ${minutes} perc vásárolható`}
-        className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-primary"
+        className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary"
       >
         <FontAwesomeIcon icon={faClock} aria-hidden="true" className="size-3.5" />
         Még {pad(hours)}:{pad(minutes)}:{pad(seconds)}
@@ -64,7 +64,7 @@ export function SeasonInfo({ endsAt, now }: { endsAt: string; now: Date }) {
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-primary">
+    <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary">
       <FontAwesomeIcon icon={faCalendarDays} aria-hidden="true" className="size-3.5" />
       Még vásárolható: {seasonEndText(endsAt)}
     </span>
@@ -96,7 +96,8 @@ export function DurationButtons({
           onClick={() => onBuy(days)}
           className="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border border-primary/40 bg-primary/12 px-2 py-2 text-foreground transition-[color,background-color,border-color,translate] hover:border-primary/70 hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
         >
-          <span className="sr-only">{owned ? 'Meghosszabbítás: ' : 'Megvásárlás: '}</span>
+          {/* The rank in the name too: ten "30 nap" buttons must not sound alike to a screen reader. */}
+          <span className="sr-only">{`${rank.name} ${owned ? 'meghosszabbítása' : 'megvásárlása'}: `}</span>
           <span className="text-[15px] leading-tight font-extrabold">
             {owned ? '+' : ''}
             {days} nap
@@ -108,6 +109,30 @@ export function DurationButtons({
         </button>
       ))}
     </div>
+  )
+}
+
+/** The servers a rank gives something on, as small chips; nothing when none. */
+export function ServerChips({ servers }: { servers: string[] }) {
+  if (servers.length === 0) return null
+  return (
+    <ul aria-label="Szerverek" className="flex flex-wrap justify-center gap-1.5">
+      {servers.map((server) => (
+        <li key={server} className="rounded-md border border-line bg-raised px-2 py-0.5 text-xs font-bold text-soft">
+          {server}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Until when the player has this rank, in green; on the card and in "Mit kapsz?". */
+export function OwnedUntil({ until }: { until: Date }) {
+  return (
+    <span className="flex items-center justify-center gap-1.5 text-sm font-bold text-ok">
+      <FontAwesomeIcon icon={faCheck} aria-hidden="true" className="size-3.5" />
+      Aktív eddig: {budapestDay(until)}
+    </span>
   )
 }
 

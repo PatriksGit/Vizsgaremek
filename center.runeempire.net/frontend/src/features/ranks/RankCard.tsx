@@ -1,4 +1,4 @@
-import { faCheck, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { rankColor } from '@/features/home/stats'
@@ -6,8 +6,8 @@ import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
-import { budapestDay, seasonOver } from './dates'
-import { DurationButtons, NoLongerSold, RankBanner, SeasonInfo } from './RankParts'
+import { seasonOver } from './dates'
+import { DurationButtons, NoLongerSold, OwnedUntil, RankBanner, SeasonInfo, ServerChips } from './RankParts'
 import { RankPreview } from './RankPreview'
 
 type RankCardProps = {
@@ -57,20 +57,13 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy, enterDelay }
             {rank.name}
           </h2>
           {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
-          {rank.servers.length > 0 && (
-            <ul aria-label="Szerverek" className="flex flex-wrap justify-center gap-1.5">
-              {rank.servers.map((server) => (
-                <li key={server} className="rounded-md border border-line bg-raised px-2 py-0.5 text-xs font-bold text-soft">
-                  {server}
-                </li>
-              ))}
-            </ul>
-          )}
+          <ServerChips servers={rank.servers} />
         </div>
 
         <button
           type="button"
           onClick={(event) => onDetails(event.currentTarget)}
+          aria-label={`Mit kapsz? – ${rank.name}`}
           className="-my-1.5 inline-flex min-h-11 items-center gap-1.5 self-center px-2 text-[13px] font-bold text-primary hover:text-primary/80"
         >
           Mit kapsz?
@@ -80,12 +73,7 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy, enterDelay }
         <RankPreview rank={rank} />
 
         <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3">
-          {ownedUntil && (
-            <span className="flex items-center justify-center gap-1.5 text-sm font-bold text-ok">
-              <FontAwesomeIcon icon={faCheck} aria-hidden="true" className="size-3.5" />
-              Aktív eddig: {budapestDay(ownedUntil)}
-            </span>
-          )}
+          {ownedUntil && <OwnedUntil until={ownedUntil} />}
           {over ? <NoLongerSold /> : <DurationButtons rank={rank} owned={ownedUntil !== null} onBuy={onBuy} />}
         </div>
       </div>
