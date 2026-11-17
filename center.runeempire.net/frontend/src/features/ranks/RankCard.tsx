@@ -14,7 +14,8 @@ type RankCardProps = {
   /** Until when the player has this rank; null when they don't. */
   ownedUntil: Date | null
   now: Date
-  onDetails: () => void
+  /** Opens "Mit kapsz?"; gets its button, so focus can come back to it. */
+  onDetails: (trigger: HTMLElement) => void
   /** Opens the purchase on this many days. */
   onBuy: (days: number) => void
 }
@@ -45,12 +46,12 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardPr
 
       <div className="flex flex-1 flex-col gap-3 p-4 sm:px-5">
         <div className="flex flex-col items-center gap-2 text-center">
-          <h3
+          <h2
             className="font-heading text-2xl leading-tight font-bold wrap-anywhere text-foreground"
             style={rankColor(rank.color)}
           >
             {rank.name}
-          </h3>
+          </h2>
           {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
           {rank.servers.length > 0 && (
             <ul aria-label="Szerverek" className="flex flex-wrap justify-center gap-1.5">
@@ -65,7 +66,7 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardPr
 
         <button
           type="button"
-          onClick={onDetails}
+          onClick={(event) => onDetails(event.currentTarget)}
           className="-my-1.5 inline-flex min-h-11 items-center gap-1.5 self-center px-2 text-[13px] font-bold text-primary hover:text-primary/80"
         >
           Mit kapsz?

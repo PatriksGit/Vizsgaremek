@@ -14,25 +14,26 @@ import type { Rank } from './api'
  */
 export function RankPreview({ rank }: { rank: Rank }) {
   const { data: account } = useAccount()
-  const [prefixMissing, setPrefixMissing] = useState(false)
-  const name = account?.display_name ?? 'Te'
+  // The address that failed, so a corrected one (after a refresh) is tried again.
+  const [failedPrefix, setFailedPrefix] = useState<string | null>(null)
 
   return (
     <figure
       aria-label="Így néz ki rajtad a játékban"
-      className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2"
+      // Wraps instead of cutting: a 16-character name after a wide prefix moves to its own line.
+      className="flex min-h-11 flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-xl border border-border bg-background px-3 py-2"
     >
       <PlayerHead name={account?.display_name} className="size-6 flex-none" />
-      {rank.prefixUrl && !prefixMissing && (
+      {rank.prefixUrl && rank.prefixUrl !== failedPrefix && (
         <img
           src={rank.prefixUrl}
           alt={rank.name}
-          onError={() => setPrefixMissing(true)}
+          onError={() => setFailedPrefix(rank.prefixUrl)}
           className="h-5.25 w-auto flex-none [image-rendering:pixelated]"
         />
       )}
-      <span className="min-w-0 truncate text-sm font-bold text-foreground" style={rankColor(rank.color)}>
-        {name}
+      <span className="min-w-0 text-sm font-bold break-all text-foreground" style={rankColor(rank.color)}>
+        {account?.display_name}
       </span>
     </figure>
   )

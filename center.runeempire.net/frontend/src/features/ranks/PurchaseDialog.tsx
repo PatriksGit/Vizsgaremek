@@ -18,6 +18,8 @@ type PurchaseDialogProps = {
   balance: number | null | undefined
   now: Date
   onClose: () => void
+  /** Where focus goes when it closes (true: back to what opened it). */
+  finalFocus?: () => HTMLElement | true
 }
 
 /**
@@ -29,7 +31,7 @@ type PurchaseDialogProps = {
  * longer be bought. Buying is not wired yet (frontend only), so the purchase
  * button is off and says so.
  */
-export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose }: PurchaseDialogProps) {
+export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, finalFocus }: PurchaseDialogProps) {
   const price = rank?.prices.find((option) => option.days === days)?.runes ?? 0
   const extending = ownedUntil !== null
   const missing = typeof balance === 'number' ? price - balance : 0
@@ -37,7 +39,7 @@ export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose }
 
   return (
     <Dialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="gap-5 rounded-2xl border border-line bg-card p-6 ring-0 sm:max-w-105">
+      <DialogContent finalFocus={finalFocus} className="gap-5 rounded-2xl border border-line bg-card p-6 ring-0 sm:max-w-105">
         {rank && (
           <>
             <div className="flex flex-col gap-3 pr-8">

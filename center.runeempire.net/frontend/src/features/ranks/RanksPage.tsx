@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { Panel } from '@/components/app/Panel'
 import { Button } from '@/components/ui/button'
@@ -27,12 +27,19 @@ export function RanksPage() {
   const now = useNow()
   const [details, setDetails] = useState<Rank | null>(null)
   const [buying, setBuying] = useState<{ rank: Rank; days: number } | null>(null)
+  // The "Mit kapsz?" button that opened the details, and where the purchase's
+  // focus goes back to: a purchase started in the details returns to that
+  // button, since the one that opened it is gone by then (review 2026-11-17,
+  // F1). Refs, not state: they must outlive the closing purchase.
+  const detailsTrigger = useRef<HTMLElement | null>(null)
+  const purchaseReturn = useRef<HTMLElement | null>(null)
 
   /** undefined while the stats load, null when the balance cannot be read. */
   const balance = stats ? (stats.unavailable.includes('runes') ? null : stats.runes) : statsFailed ? null : undefined
   const until = (rank: Rank | null) => (rank ? ownedUntil(rank, stats, now) : null)
 
-  const buy = (rank: Rank, days: number) => {
+  const buy = (rank: Rank, days: number, fromDetails = false) => {
+    purchaseReturn.current = fromDetails ? detailsTrigger.current : null
     setDetails(null)
     setBuying({ rank, days })
   }
@@ -42,7 +49,12 @@ export function RanksPage() {
       <title>{`Rangok | ${site.name}`}</title>
       <h1 className="sr-only">Rangok</h1>
 
-      {ranks ? (
+      {ranks?.length === 0 ? (
+        // A fresh database, or every rank removed in the management section.
+        <Panel as="section">
+          <p className="text-muted-foreground">Most nincs megvásárolható rang.</p>
+        </Panel>
+      ) : ranks ? (
         <div className={gridClass}>
           {ranks.map((rank) => (
             <RankCard
@@ -50,7 +62,10 @@ export function RanksPage() {
               rank={rank}
               ownedUntil={until(rank)}
               now={now}
-              onDetails={() => setDetails(rank)}
+              onDetails={(trigger) => {
+                detailsTrigger.current = trigger
+                setDetails(rank)
+              }}
               onBuy={(days) => buy(rank, days)}
             />
           ))}
@@ -76,7 +91,7 @@ export function RanksPage() {
         owned={until(details) !== null}
         now={now}
         onClose={() => setDetails(null)}
-        onBuy={(days) => details && buy(details, days)}
+        onBuy={(days) => details && buy(details, days, true)}
       />
       <PurchaseDialog
         rank={buying?.rank ?? null}
@@ -85,6 +100,7 @@ export function RanksPage() {
         balance={balance}
         now={now}
         onClose={() => setBuying(null)}
+        finalFocus={() => purchaseReturn.current ?? true}
       />
     </div>
   )

@@ -6,8 +6,10 @@ use App\Models\Rank;
 use App\Models\Server;
 use App\Support\PluginDatabase;
 use Database\Seeders\RankSeeder;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -85,6 +87,52 @@ class RanksControllerTest extends TestCase
      * The shop does not need LuckPerms to sell: when it cannot be read (down, or
      * the website's user not granted it yet) the ranks come without colours.
      */
+    /**
+     * Review 2026-11-17, B1: the endpoint is public, and LuckPerms lives on the
+     * game servers' shared database, so its colours are read at most once a
+     * minute, however many requests come.
+     */
+    public function test_a_second_request_within_the_minute_does_not_ask_luckperms_again(): void
+    {
+        Rank::factory()->create(['group' => 'dragon']);
+        $queries = 0;
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            if (str_contains($query->sql, 'luckperms_group_permissions')) {
+                $queries++;
+            }
+        });
+
+        $this->getJson('/api/ranks')->assertOk();
+        $this->getJson('/api/ranks')->assertOk();
+        $this->assertSame(1, $queries);
+
+        $this->travel(61)->seconds();
+        $this->getJson('/api/ranks')->assertOk();
+        $this->assertSame(2, $queries);
+    }
+
+    /**
+     * Review 2026-11-17, B1: a failed read is kept for 15 s too (like the Discord
+     * widget's), so an outage does not send every request to a database that
+     * takes 5 s to time out; the colours come back once that window passed.
+     */
+    public function test_after_luckperms_fails_the_colours_come_back_once_the_failure_window_passed(): void
+    {
+        Rank::factory()->create(['group' => 'dragon']);
+        $database = config('database.plugins.luckperms');
+        config(['database.plugins.luckperms' => 'center_missing_test']);
+        $this->getJson('/api/ranks')->assertOk()->assertJsonPath('data.0.color', null);
+
+        config(['database.plugins.luckperms' => $database]);
+        PluginDatabase::table('luckperms', 'luckperms_group_permissions')->insert([
+            'name' => 'dragon', 'permission' => 'meta.color.#E5675A', 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}',
+        ]);
+        $this->getJson('/api/ranks')->assertJsonPath('data.0.color', null);
+
+        $this->travel(16)->seconds();
+        $this->getJson('/api/ranks')->assertJsonPath('data.0.color', '#E5675A');
+    }
+
     public function test_the_ranks_still_come_when_luckperms_cannot_be_read(): void
     {
         Rank::factory()->create(['group' => 'dragon']);

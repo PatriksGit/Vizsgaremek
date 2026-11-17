@@ -87,6 +87,8 @@ describe('the rank cards', { timeout: 15_000 }, () => {
 
     expect(await screen.findByText('Aktív eddig: 2026.11.20.')).toBeTruthy()
     expect(screen.getAllByRole('article')).toHaveLength(3)
+    // Review 2026-11-17, F5: the card titles follow the page's h1, no level skipped.
+    expect(within(card('Dragon')).getByRole('heading', { level: 2, name: 'Dragon' })).toBeTruthy()
     // One button per duration, its price on it (owner, 2026-11-17).
     expect(within(card('Dragon')).getByRole('button', { name: /^Meghosszabbítás: \+30 nap\s*2000 rúna$/ })).toBeTruthy()
     expect(within(card('Dragon')).getByRole('button', { name: /^Meghosszabbítás: \+90 nap\s*5200 rúna$/ })).toBeTruthy()
@@ -184,6 +186,15 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     await screen.findByRole('heading', { name: 'Dragon' })
     expect(screen.getAllByRole('article')).toHaveLength(3)
     expect(screen.queryByText(/Aktív eddig/)).toBeNull()
+  })
+
+  /** Review 2026-11-17, F3: a fresh database, or every rank removed in the management section. */
+  it('an empty shop says so instead of showing an empty page', async () => {
+    backend(statsWith(null), [])
+    renderPage()
+
+    expect(await screen.findByText('Most nincs megvásárolható rang.')).toBeTruthy()
+    expect(screen.queryAllByRole('article')).toHaveLength(0)
   })
 
   it('when the ranks cannot be loaded it says so and can try again', async () => {

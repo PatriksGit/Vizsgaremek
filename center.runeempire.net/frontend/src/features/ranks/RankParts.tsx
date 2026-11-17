@@ -8,14 +8,13 @@ import type { Rank } from './api'
 import { seasonEndText, timeLeft } from './dates'
 
 /** The rank's animated banner, 5:2 with a small inset; a dashed box until it has one. */
-export function RankBanner({ rank, className, decorative = false }: { rank: Rank; className?: string; decorative?: boolean }) {
+export function RankBanner({ rank, className }: { rank: Rank; className?: string }) {
   return (
     <div className={cn('flex aspect-5/2 items-center justify-center border-b border-border bg-background p-2', className)}>
       {rank.gifUrl ? (
         <img
           src={rank.gifUrl}
-          alt={decorative ? '' : `${rank.name} rang animációja`}
-          aria-hidden={decorative || undefined}
+          alt={`${rank.name} rang animációja`}
           className="size-full object-contain"
         />
       ) : (

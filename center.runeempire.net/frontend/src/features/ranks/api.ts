@@ -15,7 +15,7 @@ export type Rank = {
   gifUrl: string | null
   /** The in-game prefix image (the ItemsAdder glyph), or null. */
   prefixUrl: string | null
-  /** The durations it sells for, shortest first. */
+  /** The durations it sells for, shortest first (RankResource sends them so). */
   prices: RankPrice[]
   /** A seasonal rank sells until this time (ISO 8601); null for the rest. */
   seasonEndsAt: string | null
@@ -45,7 +45,7 @@ async function fetchRanks(): Promise<Rank[]> {
     details: rank.details,
     gifUrl: rank.gif_url,
     prefixUrl: rank.prefix_url,
-    prices: [...rank.prices].sort((a, b) => a.days - b.days),
+    prices: rank.prices,
     seasonEndsAt: rank.season_ends_at,
     color: rank.color,
     servers: rank.servers,
