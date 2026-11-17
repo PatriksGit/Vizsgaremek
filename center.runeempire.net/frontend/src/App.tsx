@@ -16,6 +16,7 @@ import { GuestOnly, RequireAccount } from '@/features/auth/guards'
 import { useAccount } from '@/features/auth/queries'
 import { HomePage } from '@/features/home/HomePage'
 import { RanksPage } from '@/features/ranks/RanksPage'
+import { ApiError } from '@/lib/api'
 import { queryClient } from '@/queryClient'
 
 function RootLayout() {
@@ -30,12 +31,12 @@ function RootLayout() {
   // Nothing until the session check first answers, so no page flashes before its guard decides.
   // Not isPending: a refetch after a failed check is pending again, and hiding the
   // pages then would remount them on every answer.
-  const { data: account, isFetched, isFetching, refetch } = useAccount()
+  const { data: account, isFetched, error } = useAccount()
   if (!isFetched) return null
 
-  // Answered, but only with errors (a guest is null, not undefined): the server
-  // or its database is down. Coming back to the tab or the button asks again.
-  if (account === undefined) return <ErrorPage onRetry={() => refetch()} retrying={isFetching} />
+  // Answered, but only with errors (a guest is null, not undefined): the server or its
+  // database is down. The page shows the status; coming back to the tab or a refresh asks again.
+  if (account === undefined) return <ErrorPage status={error instanceof ApiError ? error.status : undefined} />
 
   return <Outlet />
 }
