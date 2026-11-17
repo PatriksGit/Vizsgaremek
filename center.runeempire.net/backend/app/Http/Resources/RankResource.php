@@ -15,10 +15,9 @@ class RankResource extends JsonResource
      * Transform the resource into an array. prices lists each duration the
      * rank sells for (a list, so a later duration needs no new field);
      * season_ends_at is null for a year-round rank; color is the in-game
-     * #RRGGBB from LuckPerms, or null; servers names the servers it gives
-     * something on, in their order.
+     * #RRGGBB from LuckPerms, or null.
      *
-     * @return array{group: string, name: string, details: string, gif_url: string|null, prefix_url: string|null, prices: list<array{days: int, runes: int}>, season_ends_at: string|null, color: string|null, servers: list<string>}
+     * @return array{group: string, name: string, details: string, gif_url: string|null, prefix_url: string|null, prices: list<array{days: int, runes: int}>, season_ends_at: string|null, color: string|null}
      */
     public function toArray(Request $request): array
     {
@@ -34,7 +33,6 @@ class RankResource extends JsonResource
             ],
             'season_ends_at' => $this->season_ends_at?->toIso8601ZuluString(),
             'color' => $this->color,
-            'servers' => $this->servers->pluck('name')->values()->all(),
         ];
     }
 }

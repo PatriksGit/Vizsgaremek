@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Rank;
-use App\Models\Server;
 use Illuminate\Database\Seeder;
 
 /**
@@ -15,8 +14,7 @@ use Illuminate\Database\Seeder;
  * their GIFs in public/ranks/ until the management section uploads them.
  * Prices and texts are placeholders until the owner decides them (later in the
  * management section). Keyed by group, so running it again updates instead of
- * duplicating; it also clears the first placeholders. The servers each rank
- * gives something on are placeholders too.
+ * duplicating; it also clears the first placeholders.
  */
 class RankSeeder extends Seeder
 {
@@ -24,11 +22,6 @@ class RankSeeder extends Seeder
      * The groups the very first seeder version created as placeholders.
      */
     private const OLD_PLACEHOLDERS = ['karacsony', 'rang1', 'rang2', 'rang3', 'rang4'];
-
-    /**
-     * The network's servers, in chip order.
-     */
-    private const SERVERS = ['Lobby', 'Kingdoms', 'SkyPvp', 'KitPvp'];
 
     private const DETAILS = <<<'MD'
         [Rövid bemutatás – mit ad ez a rang.]
@@ -47,11 +40,6 @@ class RankSeeder extends Seeder
     {
         Rank::query()->whereIn('group', self::OLD_PLACEHOLDERS)->delete();
 
-        $servers = [];
-        foreach (self::SERVERS as $order => $name) {
-            $servers[$name] = Server::query()->updateOrCreate(['name' => $name], ['sort_order' => $order + 1])->id;
-        }
-
         $ranks = [
             ['group' => 'caster', 'name' => 'Caster', 'price_30' => 1000, 'price_90' => 2600],
             ['group' => 'archmage', 'name' => 'Archmage', 'price_30' => 1500, 'price_90' => 3900],
@@ -60,16 +48,8 @@ class RankSeeder extends Seeder
             ['group' => 'dragon', 'name' => 'Dragon', 'price_30' => 3000, 'price_90' => 7800],
         ];
 
-        $serversOf = [
-            'caster' => ['Lobby'],
-            'archmage' => ['Lobby', 'Kingdoms'],
-            'sage' => ['Lobby', 'Kingdoms', 'SkyPvp'],
-            'rune' => self::SERVERS,
-            'dragon' => self::SERVERS,
-        ];
-
         foreach ($ranks as $order => $rank) {
-            $saved = Rank::query()->updateOrCreate(
+            Rank::query()->updateOrCreate(
                 ['group' => $rank['group']],
                 $rank + [
                     'details' => self::DETAILS,
@@ -79,7 +59,6 @@ class RankSeeder extends Seeder
                     'sort_order' => $order + 1,
                 ],
             );
-            $saved->servers()->sync(array_map(fn (string $name): int => $servers[$name], $serversOf[$rank['group']]));
         }
     }
 }

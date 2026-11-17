@@ -19,7 +19,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 })
 
 const rank = (prefixUrl: string): Rank => ({
-  group: 'dragon', name: 'Dragon', details: '', gifUrl: null, prefixUrl, prices: [], seasonEndsAt: null, color: null, servers: [],
+  group: 'dragon', name: 'Dragon', details: '', gifUrl: null, prefixUrl, prices: [], seasonEndsAt: null, color: null
 })
 const client = new QueryClient()
 const wrap = (node: ReactNode) => <QueryClientProvider client={client}>{node}</QueryClientProvider>

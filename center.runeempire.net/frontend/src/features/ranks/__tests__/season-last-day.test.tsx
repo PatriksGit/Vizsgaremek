@@ -38,8 +38,7 @@ const xmas = {
     { days: 90, runes: 3900 },
   ],
   season_ends_at: '2026-12-26T23:00:00Z',
-  color: null,
-  servers: [],
+  color: null
 }
 
 beforeEach(() => {

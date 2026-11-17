@@ -145,20 +145,6 @@ export function BuyBox({ rank, owned, onBuy }: { rank: Rank; owned: boolean; onB
   )
 }
 
-/** The servers a rank gives something on, as small chips; nothing when none. */
-export function ServerChips({ servers }: { servers: string[] }) {
-  if (servers.length === 0) return null
-  return (
-    <ul aria-label="Szerverek" className="flex flex-wrap justify-center gap-1.5">
-      {servers.map((server) => (
-        <li key={server} className="rounded-md border border-line bg-raised px-2 py-0.5 text-xs font-bold text-soft">
-          {server}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 /** Until when the player has this rank, in green; on the card and in "Mit kapsz?". */
 export function OwnedUntil({ until }: { until: Date }) {
   return (

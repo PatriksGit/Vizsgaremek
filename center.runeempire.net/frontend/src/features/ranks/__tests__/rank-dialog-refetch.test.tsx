@@ -35,8 +35,7 @@ const rank = (group: string, name: string, thirty: number) => ({
     { days: 90, runes: thirty * 2 },
   ],
   season_ends_at: null,
-  color: null,
-  servers: [],
+  color: null
 })
 
 let ranks = [rank('dragon', 'Dragon', 2000), rank('mage', 'Mage', 1000)]

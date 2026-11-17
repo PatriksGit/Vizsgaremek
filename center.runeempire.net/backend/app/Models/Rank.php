@@ -4,10 +4,8 @@ namespace App\Models;
 
 use Database\Factories\RankFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -28,7 +26,6 @@ use Illuminate\Support\Carbon;
  * @property string|null $color not a column: the in-game colour, set by RanksController from LuckPerms
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property-read Collection<int, Server> $servers
  */
 #[Fillable(['group', 'name', 'details', 'gif_url', 'prefix_url', 'price_30', 'price_90', 'season_ends_at', 'sort_order'])]
 class Rank extends Model
@@ -49,15 +46,5 @@ class Rank extends Model
             'season_ends_at' => 'datetime',
             'sort_order' => 'integer',
         ];
-    }
-
-    /**
-     * The servers this rank gives something on, in their own order.
-     *
-     * @return BelongsToMany<Server, $this>
-     */
-    public function servers(): BelongsToMany
-    {
-        return $this->belongsToMany(Server::class)->orderBy('servers.sort_order')->orderBy('servers.id');
     }
 }

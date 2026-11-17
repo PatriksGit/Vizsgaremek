@@ -32,7 +32,7 @@ type RankCardProps = {
  * hover, the GIF on a tinted strip; then the name, right under it how it looks
  * on the player in game, "Tudj meg többet a rangról", and the BuyBox at the
  * bottom (lined up across a row). No level numbers and no "Legmagasabb rang"
- * (owner, 2026-11-17). The perks and the servers are in the rank text only.
+ * (owner, 2026-11-17). The perks are in the rank text only.
  */
 export function RankCard({
   rank,

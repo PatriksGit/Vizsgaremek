@@ -4,7 +4,7 @@ import { rankColor, runeCountFormat } from '@/features/home/stats'
 import type { Rank } from './api'
 import { seasonOver } from './dates'
 import { Markdown } from './Markdown'
-import { BuyBox, NoLongerSold, OwnedUntil, RankBanner, SeasonInfo, ServerChips } from './RankParts'
+import { BuyBox, NoLongerSold, OwnedUntil, RankBanner, SeasonInfo } from './RankParts'
 import { accentVars } from './shop'
 
 type RankDetailsDialogProps = {
@@ -31,7 +31,7 @@ type RankDetailsDialogProps = {
  * "Mit kapsz?": the banner and the name on top, the rank's Markdown text as one
  * scrolling document, and the duration buttons always in view at the bottom.
  * There is no product page behind it, so it repeats what the card says (the
- * rank colour, the season, the servers, until when it is the player's) and
+ * rank colour, the season, until when it is the player's) and
  * shows the balance above the buttons (review 2026-11-17).
  */
 export function RankDetailsDialog({
@@ -67,7 +67,6 @@ export function RankDetailsDialog({
                     {rank.name}
                   </DialogTitle>
                   {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
-                  <ServerChips servers={rank.servers} />
                   {ownedUntil && <OwnedUntil until={ownedUntil} />}
                 </div>
                 <Markdown>{rank.details}</Markdown>

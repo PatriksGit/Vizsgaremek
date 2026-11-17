@@ -34,9 +34,9 @@ const prices = (thirty: number) => [
 
 /** As GET /api/ranks answers, in shop order. */
 const RANKS = [
-  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString(), color: null, servers: ['Lobby'] },
-  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prefix_url: '/rank_icons/dragon.png', prices: prices(2000), season_ends_at: null, color: '#E5675A', servers: ['Lobby', 'Kingdoms', 'SkyPvp'] },
-  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1000), season_ends_at: null, color: null, servers: [] },
+  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString(), color: null },
+  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prefix_url: '/rank_icons/dragon.png', prices: prices(2000), season_ends_at: null, color: '#E5675A' },
+  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1000), season_ends_at: null, color: null },
 ]
 
 function statsWith(rank: MyStats['rank'], runes = 5000): MyStats {
@@ -197,7 +197,7 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     expect(more.textContent).toBe('Tudj meg többet a rangról')
   })
 
-  /** No server chips on the card (owner, 2026-11-17): "Mit kapsz?" says which servers. */
+  /** No server chips anywhere (owner, 2026-11-17: removed, the rank text says what it gives where). */
   it('a card does not list the servers', async () => {
     backend(statsWith(null))
     renderPage()
@@ -319,9 +319,9 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
     expect(within(dialog).getByText('Repülés')).toBeTruthy()
     expect(within(dialog).queryByRole('tab')).toBeNull()
 
-    // Complete without the card: the rank colour, its servers, and the balance above the buttons.
+    // Complete without the card: the rank colour and the balance above the buttons; no server chips.
     expect(within(dialog).getByRole('heading', { name: 'Dragon' }).style.color).toBe('rgb(229, 103, 90)')
-    expect(within(within(dialog).getByRole('list', { name: 'Szerverek' })).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Lobby', 'Kingdoms', 'SkyPvp'])
+    expect(within(dialog).queryByRole('list', { name: 'Szerverek' })).toBeNull()
     expect(within(dialog).getByText(/Egyenleged/).textContent?.replace(/\s/g, ' ')).toBe('Egyenleged: 5000 rúna')
 
     expect(text(within(dialog).getByText(/^2000/))).toBe('2000 rúna')

@@ -25,7 +25,7 @@ class RanksController extends Controller
     private const LUCKPERMS_FAILURE_CACHE_SECONDS = 15;
 
     /**
-     * The ranks the shop sells, each with its servers and its in-game colour.
+     * The ranks the shop sells, each with its in-game colour.
      * The order is the ranks' LuckPerms weight, the lightest first (owner,
      * 2026-11-17), so it follows the game; ranks without a weight come after
      * them, and sort_order breaks ties (it is the whole order while LuckPerms
@@ -36,7 +36,7 @@ class RanksController extends Controller
      */
     public function __invoke(FindRank $findRank): AnonymousResourceCollection
     {
-        $ranks = Rank::query()->with('servers')->orderBy('sort_order')->orderBy('id')->get();
+        $ranks = Rank::query()->orderBy('sort_order')->orderBy('id')->get();
         $groups = $ranks->pluck('group')->sort()->values()->all();
         // Keyed by the groups, so a rank added or removed reads LuckPerms again.
         $key = 'rank-luckperms:'.sha1(implode(',', $groups));

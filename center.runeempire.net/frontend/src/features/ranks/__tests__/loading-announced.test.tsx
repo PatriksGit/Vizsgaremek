@@ -32,7 +32,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 const account = { uuid: '00000000-0000-0000-0000-000000000009', username: 'shopper', display_name: 'Shopper', registered_at: '2026-01-01T10:00:00Z' }
 const RANKS = [
-  { group: 'mage', name: 'Mage', details: 'Egy rang.', gif_url: null, prefix_url: null, prices: [{ days: 30, runes: 1000 }], season_ends_at: null, color: null, servers: [] },
+  { group: 'mage', name: 'Mage', details: 'Egy rang.', gif_url: null, prefix_url: null, prices: [{ days: 30, runes: 1000 }], season_ends_at: null, color: null },
 ]
 
 beforeEach(() => {
