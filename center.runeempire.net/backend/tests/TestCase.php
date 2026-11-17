@@ -168,6 +168,12 @@ abstract class TestCase extends BaseTestCase
         // LuckPerms: the player's groups (primary, and by permission, maybe expiring) and each group's weight.
         'luckperms' => [
             <<<'SQL'
+                CREATE TABLE luckperms_groups (
+                  name varchar(36) NOT NULL,
+                  PRIMARY KEY (name)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                SQL,
+            <<<'SQL'
                 CREATE TABLE luckperms_players (
                   uuid varchar(36) NOT NULL,
                   username varchar(16) NOT NULL,
@@ -418,7 +424,7 @@ abstract class TestCase extends BaseTestCase
     {
         $testResponse = parent::createTestResponse($response, $request);
 
-        if ($request->is('api/*') && $response->getStatusCode() >= 400 && str_contains((string) $response->headers->get('Content-Type'), 'json')) {
+        if ($request->is('api', 'api/*') && $response->getStatusCode() >= 400 && str_contains((string) $response->headers->get('Content-Type'), 'json')) {
             $body = json_decode((string) $response->getContent(), true);
             $where = "{$request->method()} {$request->path()} answered {$response->getStatusCode()}: ".$response->getContent();
 

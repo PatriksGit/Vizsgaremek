@@ -95,6 +95,7 @@ class MyStatsControllerTest extends TestCase
 
     private function userGroup(string $group, int $expiry = 0): void
     {
+        $this->plugin('luckperms', 'luckperms_groups')->insertOrIgnore(['name' => $group]);
         $this->plugin('luckperms', 'luckperms_user_permissions')->insert([
             'uuid' => $this->account->uuid, 'permission' => "group.{$group}", 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => $expiry, 'contexts' => '{}',
         ]);

@@ -71,7 +71,7 @@ final class ApiErrorResponse
      */
     public static function finalize(Response $response, Throwable $exception, Request $request): Response
     {
-        if (! $request->is('api/*') || ! $response instanceof JsonResponse || $response->getStatusCode() < 400) {
+        if (! $request->is('api', 'api/*') || ! $response instanceof JsonResponse || $response->getStatusCode() < 400) {
             return $response;
         }
 

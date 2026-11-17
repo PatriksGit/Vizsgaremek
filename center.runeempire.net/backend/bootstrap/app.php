@@ -34,7 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api', 'api/*') || $request->expectsJson(),
         );
 
         // Sessions live in Redis; when it is down, players get a plain message
@@ -42,7 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(fn (RedisException $exception) => ApiErrorResponse::make('server_error', 'Váratlan hiba történt.', 500));
 
         // The framework's own 419 message is a fixed English string.
-        $exceptions->render(fn (HttpException $exception, Request $request) => $exception->getStatusCode() === 419 && $request->is('api/*')
+        $exceptions->render(fn (HttpException $exception, Request $request) => $exception->getStatusCode() === 419 && $request->is('api', 'api/*')
             ? ApiErrorResponse::make('session_expired', 'A munkamenet lejárt. Frissítsd az oldalt, és próbáld újra.', 419)
             : null);
 

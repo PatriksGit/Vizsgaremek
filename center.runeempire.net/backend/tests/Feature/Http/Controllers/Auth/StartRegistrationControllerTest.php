@@ -30,9 +30,9 @@ class StartRegistrationControllerTest extends TestCase
     /**
      * The cooldown key of the test client (127.0.0.1) for patrik@example.com.
      */
-    private const COOLDOWN_KEY = 'registration-mail:patrik@example.com|127.0.0.1';
+    private const COOLDOWN_KEY = 'registration-mail:caf8380b87d21daf72d935bae82871f24a4f2694|127.0.0.1';
 
-    private const ADDRESS_KEY = 'registration-mail-address:patrik@example.com';
+    private const ADDRESS_KEY = 'registration-mail-address:caf8380b87d21daf72d935bae82871f24a4f2694';
 
     /**
      * The session of the browser that registerFromBrowser() sends from.
@@ -560,7 +560,7 @@ class StartRegistrationControllerTest extends TestCase
             ->assertHeader('Retry-After');
 
         Notification::assertSentOnDemandTimes(RegistrationCodeNotification::class, 3);
-        $this->assertSame(0, RateLimiter::attempts('registration-mail:patrik@example.com|198.51.100.4'), 'A refused request must not keep its own cooldown slot.');
+        $this->assertSame(0, RateLimiter::attempts('registration-mail:caf8380b87d21daf72d935bae82871f24a4f2694|198.51.100.4'), 'A refused request must not keep its own cooldown slot.');
     }
 
     /**

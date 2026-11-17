@@ -67,8 +67,8 @@ class StartRegistration
             throw self::nameHeld();
         }
 
-        $cooldownKey = 'registration-mail:'.$email.'|'.$client;
-        $addressKey = 'registration-mail-address:'.$email;
+        $cooldownKey = 'registration-mail:'.sha1($email).'|'.$client;
+        $addressKey = 'registration-mail-address:'.sha1($email);
         $cooldownSeconds = config('rate_limits.registration_mail.cooldown_seconds');
 
         // This client's own code first: only code_recently_sent tells the player

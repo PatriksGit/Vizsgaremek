@@ -33,7 +33,9 @@ class PlayerSkinController extends Controller
 
         return response($png, 200, [
             'Content-Type' => 'image/png',
-            'Cache-Control' => 'public, max-age=300',
+            // private: the browser may keep it 5 minutes, a shared cache never -- the website's own
+            // requests carry the session and XSRF cookies (review 2026-11-17, P4).
+            'Cache-Control' => 'private, max-age=300',
         ]);
     }
 }

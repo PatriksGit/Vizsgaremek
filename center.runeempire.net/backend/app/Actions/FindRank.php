@@ -56,9 +56,18 @@ class FindRank
             ->where(fn (Builder $query) => $query->where('expiry', 0)->orWhere('expiry', '>', $now))
             ->get(['uuid', 'permission', 'expiry']);
 
+        // A deleted group's nodes stay on its players (/lp deletegroup keeps them), but LuckPerms skips them.
+        $existing = $given->isEmpty() ? collect() : PluginDatabase::table('luckperms', 'luckperms_groups')
+            ->whereIn('name', $given->map(fn (object $permission): string => substr((string) $permission->permission, strlen('group.')))->unique()->values())
+            ->pluck('name')
+            ->flip();
+
         foreach ($given as $permission) {
             $uuid = (string) $permission->uuid;
             $group = substr((string) $permission->permission, strlen('group.'));
+            if (! $existing->has($group)) {
+                continue;
+            }
             $ends = (int) $permission->expiry ?: null;
             $groups[$uuid][$group] = match (true) {
                 ! array_key_exists($group, $groups[$uuid]) => $ends,

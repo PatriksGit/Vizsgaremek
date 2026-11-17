@@ -107,8 +107,10 @@ class ConfigDefaultsTest extends TestCase
             'mistyped length' => ['REGISTRATION_CODE_LENGTH', 'six', 'length', 6],
             'too short a length' => ['REGISTRATION_CODE_LENGTH', '2', 'length', 4],
             'huge length' => ['REGISTRATION_CODE_LENGTH', '50', 'length', 12],
-            'zero expiry' => ['REGISTRATION_CODE_EXPIRES_MINUTES', '0', 'expires_minutes', 1],
-            'zero attempts' => ['REGISTRATION_CODE_MAX_ATTEMPTS', '0', 'max_attempts', 1],
+            // Empty, zero or mistyped expiry and attempts are their defaults too (review 2026-11-17, K2):
+            // PHP reads '' as 0, and a 1-minute code or a single try would be useless.
+            'zero expiry' => ['REGISTRATION_CODE_EXPIRES_MINUTES', '0', 'expires_minutes', 15],
+            'zero attempts' => ['REGISTRATION_CODE_MAX_ATTEMPTS', '0', 'max_attempts', 5],
             'attempts over the column' => ['REGISTRATION_CODE_MAX_ATTEMPTS', '1000', 'max_attempts', 255],
         ];
     }

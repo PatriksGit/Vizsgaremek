@@ -84,21 +84,30 @@ class DiscordWidgetController extends Controller
             'channels' => collect($response->json('channels', []))
                 ->filter(fn ($channel) => is_array($channel))
                 ->map(fn (array $channel) => [
-                    'id' => (string) data_get($channel, 'id'),
-                    'name' => (string) data_get($channel, 'name'),
+                    'id' => self::text(data_get($channel, 'id')),
+                    'name' => self::text(data_get($channel, 'name')),
                 ])
                 ->values()
                 ->all(),
             'members' => collect($response->json('members', []))
                 ->filter(fn ($member) => is_array($member))
                 ->map(fn (array $member) => [
-                    'username' => (string) data_get($member, 'username'),
+                    'username' => self::text(data_get($member, 'username')),
                     'avatar_url' => is_string($avatar = data_get($member, 'avatar_url')) ? $avatar : null,
-                    'status' => (string) data_get($member, 'status', 'online'),
-                    'channel_id' => ($channelId = data_get($member, 'channel_id')) !== null ? (string) $channelId : null,
+                    'status' => self::text(data_get($member, 'status', 'online'), 'online'),
+                    'channel_id' => is_scalar($channelId = data_get($member, 'channel_id')) ? (string) $channelId : null,
                 ])
                 ->values()
                 ->all(),
         ];
+    }
+
+    /**
+     * A field Discord should send as text: a number is kept as text, anything
+     * else (an object, a list) is the fallback instead of a PHP warning.
+     */
+    private static function text(mixed $value, string $fallback = ''): string
+    {
+        return is_scalar($value) ? (string) $value : $fallback;
     }
 }

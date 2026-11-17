@@ -56,6 +56,7 @@ class MyFriendsControllerTest extends TestCase
                 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}',
             ]);
         }
+        PluginDatabase::table('luckperms', 'luckperms_groups')->insertOrIgnore(['name' => $group]);
         PluginDatabase::table('luckperms', 'luckperms_user_permissions')->insert([
             'uuid' => $account->uuid, 'permission' => "group.{$group}", 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}',
         ]);

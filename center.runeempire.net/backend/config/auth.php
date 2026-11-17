@@ -43,8 +43,10 @@ return [
     'registration_code' => [
         // An empty, zero or mistyped value is the default 6, not the shortest 4.
         'length' => max(4, min(12, (int) env('REGISTRATION_CODE_LENGTH', 6) ?: 6)),
-        'expires_minutes' => max(1, (int) env('REGISTRATION_CODE_EXPIRES_MINUTES', 15)),
-        'max_attempts' => max(1, min(255, (int) env('REGISTRATION_CODE_MAX_ATTEMPTS', 5))),
+        // Empty or mistyped -> the default, like the length (review 2026-11-17, K2): the clamp's 1 would
+        // let a code die before the mail is read, or one typo cancel it.
+        'expires_minutes' => max(1, (int) env('REGISTRATION_CODE_EXPIRES_MINUTES', 15) ?: 15),
+        'max_attempts' => max(1, min(255, (int) env('REGISTRATION_CODE_MAX_ATTEMPTS', 5) ?: 5)),
     ],
 
 ];

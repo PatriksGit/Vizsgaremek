@@ -100,7 +100,7 @@ class VerifyRegistration
                 // deadlock retry of this transaction counts a guess twice, which
                 // only errs on the strict side.
                 $outsiderGuesses = RateLimiter::hit(
-                    'registration-verify-outsider:'.$email,
+                    'registration-verify-outsider:'.sha1($email),
                     (int) ceil(now()->diffInSeconds($live->max('expires_at'))),
                 );
 

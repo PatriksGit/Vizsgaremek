@@ -134,7 +134,7 @@ class VerifyRegistrationControllerTest extends TestCase
             ->assertJsonValidationErrors(['email' => 'E-mail cím formátuma érvénytelen.']);
 
         $this->assertDatabaseHas('pending_registrations', ['id' => $pending->id, 'attempts' => 0]);
-        $this->assertSame(0, RateLimiter::attempts('registration-verify-outsider:pátrik@example.com'));
+        $this->assertSame(0, RateLimiter::attempts('registration-verify-outsider:4dd5b8e61af89a9188746cdc6130a34365ed6008'));
     }
 
     public function test_returns_422_and_counts_an_attempt_for_a_wrong_code(): void

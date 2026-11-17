@@ -85,7 +85,7 @@ class PlayerSkinControllerTest extends TestCase
         $response->assertOk();
         $this->assertSame('image/png', $response->headers->get('Content-Type'));
         $this->assertSame(self::png(marker: 'player'), $response->getContent());
-        $this->assertStringContainsString('public', (string) $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('private', (string) $response->headers->get('Cache-Control'));
         $this->assertStringContainsString('max-age=300', (string) $response->headers->get('Cache-Control'));
         Http::assertSent(fn (ClientRequest $request) => $request->url() === 'https://textures.minecraft.net/texture/'.self::PLAYER_HASH);
     }
