@@ -1,12 +1,11 @@
-import { useState } from 'react'
-
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { rankColor, runeCountFormat } from '@/features/home/stats'
 
 import type { Rank } from './api'
 import { seasonOver } from './dates'
 import { Markdown } from './Markdown'
-import { DurationButtons, NoLongerSold, OwnedUntil, PriceTag, RankBanner, SeasonInfo, ServerChips } from './RankParts'
+import { BuyBox, NoLongerSold, OwnedUntil, RankBanner, SeasonInfo, ServerChips } from './RankParts'
+import { accentVars } from './shop'
 
 type RankDetailsDialogProps = {
   /** The rank shown; null keeps the dialog shut. */
@@ -29,25 +28,27 @@ type RankDetailsDialogProps = {
  * shows the balance above the buttons (review 2026-11-17).
  */
 export function RankDetailsDialog({ rank, ownedUntil, balance, now, onClose, onBuy }: RankDetailsDialogProps) {
-  // The duration whose button is under the pointer or focus: the price shows that one.
-  const [previewDays, setPreviewDays] = useState<number | null>(null)
-
   return (
     <Dialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[calc(100svh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border border-line bg-card p-0 ring-0 sm:max-w-160">
+      <DialogContent
+        style={accentVars(rank?.color ?? null)}
+        className="flex max-h-[calc(100svh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border border-line bg-card p-0 ring-0 sm:max-w-160"
+      >
         {rank && (
           <>
             <div className="min-h-0 flex-1 overflow-y-auto">
               <RankBanner rank={rank} />
               <div className="flex flex-col gap-4 p-6 pb-2">
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <DialogTitle className="px-8 font-heading text-[28px] leading-tight font-bold" style={rankColor(rank.color)}>
+                  <DialogTitle
+                    className="px-8 font-heading text-[28px] leading-tight font-bold"
+                    style={rankColor(rank.color)}
+                  >
                     {rank.name}
                   </DialogTitle>
                   {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
                   <ServerChips servers={rank.servers} />
                   {ownedUntil && <OwnedUntil until={ownedUntil} />}
-                  <PriceTag rank={rank} days={previewDays} />
                 </div>
                 <Markdown>{rank.details}</Markdown>
               </div>
@@ -58,7 +59,11 @@ export function RankDetailsDialog({ rank, ownedUntil, balance, now, onClose, onB
                   Egyenleged: <strong className="text-foreground">{runeCountFormat.format(balance)} rúna</strong>
                 </span>
               )}
-              {seasonOver(rank, now) ? <NoLongerSold /> : <DurationButtons rank={rank} owned={ownedUntil !== null} onBuy={onBuy} onPreview={setPreviewDays} />}
+              {seasonOver(rank, now) ? (
+                <NoLongerSold />
+              ) : (
+                <BuyBox key={rank.group} rank={rank} owned={ownedUntil !== null} onBuy={onBuy} />
+              )}
             </div>
           </>
         )}

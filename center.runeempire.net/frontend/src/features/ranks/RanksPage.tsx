@@ -4,6 +4,7 @@ import { Panel } from '@/components/app/Panel'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { site } from '@/config/site'
+import { cn } from '@/lib/utils'
 import { useMyStats } from '@/features/home/stats'
 
 import { type Rank, useRanks } from './api'
@@ -21,7 +22,18 @@ import { useNow } from './useNow'
  */
 const cardEnterDelay = (index: number) => Math.min(index, 6) * 70
 
-const gridClass = 'grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] gap-3.5 md:gap-5'
+/**
+ * The cards wrap by the room they have (owner, 2026-11-17): one column on a
+ * phone, two, then three (five ranks: 3 + 2, the last row centred), and all
+ * five in a row on a wide screen (about 1600 px). A card never gets narrower
+ * than 240 px -- why: below that the in-game look, "Tudj meg többet a
+ * rangról" and "Aktív eddig" broke into several lines (review 2026-11-17:
+ * 210 px cards at 1440 px). A container query, so the sidebar's width counts.
+ */
+const listClass = '@container'
+const rowClass = 'flex flex-wrap justify-center gap-5'
+const cellClass =
+  'w-full @min-[32rem]:w-[calc((100%-1.25rem)/2)] @min-[48rem]:w-[calc((100%-2.5rem)/3)] @min-[80rem]:w-[calc((100%-5rem)/5)]'
 
 /**
  * The rank shop (owner's design, Claude Design "Asztali – Rangok"): every rank
@@ -65,21 +77,26 @@ export function RanksPage() {
           <p className="text-muted-foreground">Most nincs megvásárolható rang.</p>
         </Panel>
       ) : ranks ? (
-        <div className={gridClass}>
-          {ranks.map((rank, index) => (
-            <RankCard
-              key={rank.group}
-              enterDelay={cardEnterDelay(index)}
-              rank={rank}
-              ownedUntil={until(rank)}
-              now={now}
-              onDetails={(trigger) => {
-                detailsTrigger.current = trigger
-                setDetails(rank)
-              }}
-              onBuy={(days) => buy(rank, days)}
-            />
-          ))}
+        <div className={listClass}>
+          <ul className={rowClass}>
+            {ranks.map((rank, index) => (
+              <li key={rank.group} className={cn(cellClass, 'flex')}>
+                <RankCard
+                  enterDelay={cardEnterDelay(index)}
+                  rank={rank}
+                  level={index + 1}
+                  highest={ranks.length > 1 && index === ranks.length - 1}
+                  ownedUntil={until(rank)}
+                  now={now}
+                  onDetails={(trigger) => {
+                    detailsTrigger.current = trigger
+                    setDetails(rank)
+                  }}
+                  onBuy={(days) => buy(rank, days)}
+                />
+              </li>
+            ))}
+          </ul>
         </div>
       ) : ranksFailed ? (
         <Panel as="section" className="flex flex-col items-start gap-4">
@@ -89,11 +106,13 @@ export function RanksPage() {
           </Button>
         </Panel>
       ) : (
-        <div className={gridClass} aria-busy="true">
+        <div className={listClass} aria-busy="true">
           <span className="sr-only">betöltés…</span>
-          {[0, 1, 2].map((index) => (
-            <Skeleton key={index} className="h-105 rounded-2xl" />
-          ))}
+          <div className={rowClass}>
+            {[0, 1, 2].map((index) => (
+              <Skeleton key={index} className={cn(cellClass, 'h-105 rounded-2xl')} />
+            ))}
+          </div>
         </div>
       )}
 
