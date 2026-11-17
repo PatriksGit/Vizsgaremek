@@ -27,7 +27,7 @@ function renderDialog(props: Partial<Parameters<typeof PurchaseDialog>[0]> = {})
   const onClose = vi.fn()
   render(
     <MemoryRouter>
-      <PurchaseDialog rank={dragon} ownedUntil={null} balance={10_000} now={NOW} onClose={onClose} {...props} />
+      <PurchaseDialog rank={dragon} initialDays={30} ownedUntil={null} balance={10_000} now={NOW} onClose={onClose} {...props} />
     </MemoryRouter>,
   )
   return { dialog: screen.getByRole('dialog', { name: 'Dragon' }), onClose }
@@ -91,6 +91,27 @@ describe('the rank purchase dialog', () => {
 
     expect(summary(dialog, 'Egyenleged')).toContain('—')
     expect(within(dialog).queryByText('Nincs elég rúnád ehhez a vásárláshoz.')).toBeNull()
+  })
+
+  it('opens on the duration whose button was pressed', () => {
+    const { dialog } = renderDialog({ initialDays: 90 })
+
+    expect(within(dialog).getByRole('radio', { name: /90 nap/ }).getAttribute('aria-checked')).toBe('true')
+    expect(summary(dialog, 'Fizetendő')).toBe('5200 rúna')
+  })
+
+  it('a seasonal rank shows until when it can be bought', () => {
+    const { dialog } = renderDialog({ rank: { ...dragon, seasonEndsAt: '2026-12-26T23:00:00Z' } })
+
+    expect(within(dialog).getByText('Még vásárolható: 2026.12.26-ig')).toBeTruthy()
+  })
+
+  it('once the season is over it can no longer be bought, even with the dialog open', () => {
+    const { dialog } = renderDialog({ rank: { ...dragon, seasonEndsAt: '2026-11-16T11:00:00Z' } })
+
+    expect(within(dialog).getByText('Már nem vásárolható')).toBeTruthy()
+    expect(within(dialog).queryByRole('button', { name: 'A vásárlás hamarosan indul' })).toBeNull()
+    expect(within(dialog).queryByRole('link', { name: 'Rúna-feltöltés' })).toBeNull()
   })
 
   it('Mégse closes it', () => {

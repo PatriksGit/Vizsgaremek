@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { addDays, budapestDay, ownedUntil, seasonOver, timeLeft } from '@/features/ranks/dates'
+import { addDays, budapestDay, ownedUntil, seasonEndText, seasonOver, timeLeft } from '@/features/ranks/dates'
 import type { Rank } from '@/features/ranks/api'
 import type { MyStats } from '@/features/home/stats'
 
@@ -36,6 +36,13 @@ describe('rank shop dates', () => {
     expect(ownedUntil(dragon, stats({ group: 'dragon', name: 'Dragon', expires_at: '2026-11-01T00:00:00Z', color: null }), NOW)).toBeNull()
     expect(ownedUntil(dragon, stats(null), NOW)).toBeNull()
     expect(ownedUntil(dragon, undefined, NOW)).toBeNull()
+  })
+
+  it('names the last day a seasonal rank sells, or the exact time when it does not end at midnight', () => {
+    // 2026-12-27 00:00 Budapest: the 26th is the last full day.
+    expect(seasonEndText('2026-12-26T23:00:00Z')).toBe('2026.12.26-ig')
+    // 18:00 Budapest.
+    expect(seasonEndText('2026-12-27T17:00:00Z')).toBe('2026.12.27. 18:00-ig')
   })
 
   it('only a seasonal rank past its end is over', () => {

@@ -87,27 +87,49 @@ describe('the rank cards', { timeout: 15_000 }, () => {
 
     expect(await screen.findByText('Aktív eddig: 2026.11.20.')).toBeTruthy()
     expect(screen.getAllByRole('article')).toHaveLength(3)
-    expect(within(card('Dragon')).getByRole('button', { name: 'Meghosszabbítás' })).toBeTruthy()
-    expect(within(card('Mage')).getByRole('button', { name: 'Megvásárlás' })).toBeTruthy()
-    expect(within(card('Mage')).getByText('rúnától').parentElement?.textContent).toContain('1000')
-    expect(within(card('Mage')).getByText('30 vagy 90 nap')).toBeTruthy()
+    // One button per duration, its price on it (owner, 2026-11-17).
+    expect(within(card('Dragon')).getByRole('button', { name: /^Meghosszabbítás: \+30 nap\s*2000 rúna$/ })).toBeTruthy()
+    expect(within(card('Dragon')).getByRole('button', { name: /^Meghosszabbítás: \+90 nap\s*5200 rúna$/ })).toBeTruthy()
+    expect(within(card('Mage')).getByRole('button', { name: /^Megvásárlás: 30 nap\s*1000 rúna$/ })).toBeTruthy()
+    expect(within(card('Mage')).getByRole('button', { name: /^Megvásárlás: 90 nap\s*2600 rúna$/ })).toBeTruthy()
     expect(within(card('Dragon')).getByRole('img', { name: 'Dragon rang animációja' })).toBeTruthy()
   })
 
-  it('a seasonal rank counts down, then can no longer be bought', async () => {
+  /**
+   * A fixed date, not a ticking timer, for a 13-17 audience (owner, 2026-11-17;
+   * the Dutch ACM fined Epic for Fortnite's shop timers): the countdown ticks only
+   * in the last 24 hours.
+   */
+  it('a seasonal rank shows its last day, ticks only in its last 24 hours, then can no longer be bought', async () => {
     backend(statsWith(null))
     renderPage()
     const xmas = await screen.findByRole('heading', { name: 'Karácsony' }).then(() => card('Karácsony'))
 
     expect(within(xmas).getByText('Szezonális')).toBeTruthy()
-    expect(within(xmas).getByRole('timer').textContent).toContain('Még 40 nap 11:00:00')
+    expect(within(xmas).getByText('Még vásárolható: 2026.12.26-ig')).toBeTruthy()
+    expect(within(xmas).queryByRole('timer')).toBeNull()
+
+    act(() => vi.setSystemTime(new Date(SEASON_END.getTime() - 2 * 3600_000)))
+    await act(() => vi.advanceTimersByTimeAsync(1000))
+    expect(within(xmas).getByRole('timer').textContent).toContain('Még 01:59:59')
 
     act(() => vi.setSystemTime(SEASON_END))
     await act(() => vi.advanceTimersByTimeAsync(1000))
 
     expect(within(xmas).getByText('A vásárlási idő lejárt')).toBeTruthy()
     expect(within(xmas).getByText('Már nem vásárolható')).toBeTruthy()
-    expect(within(xmas).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
+    expect(within(xmas).queryByRole('button', { name: /Megvásárlás/ })).toBeNull()
+  })
+
+  it('a duration button opens the purchase on that duration', async () => {
+    backend(statsWith(null))
+    renderPage()
+    await screen.findByRole('heading', { name: 'Mage' })
+
+    fireEvent.click(within(card('Mage')).getByRole('button', { name: /Megvásárlás: 90 nap/ }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Mage' })
+    expect(within(dialog).getByRole('radio', { name: /90 nap/ }).getAttribute('aria-checked')).toBe('true')
   })
 
   it('without stats the ranks still show and none looks owned', async () => {
@@ -145,8 +167,9 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
     expect(within(dialog).getByText('Repülés')).toBeTruthy()
     expect(within(dialog).queryByRole('tab')).toBeNull()
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Megvásárlás' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /Megvásárlás: 90 nap/ }))
     expect(await screen.findByText('Mennyi időre szeretnéd?')).toBeTruthy()
+    expect(screen.getByRole('radio', { name: /90 nap/ }).getAttribute('aria-checked')).toBe('true')
   })
 
   it('the season ending while it is open turns its button off', async () => {
@@ -160,6 +183,6 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
     await act(() => vi.advanceTimersByTimeAsync(1000))
 
     expect(within(dialog).getByText('Már nem vásárolható')).toBeTruthy()
-    expect(within(dialog).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
+    expect(within(dialog).queryByRole('button', { name: /Megvásárlás/ })).toBeNull()
   })
 })

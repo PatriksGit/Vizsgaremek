@@ -43,6 +43,20 @@ export function ownedUntil(rank: Rank, stats: MyStats | undefined, now: Date): D
   return until > now ? until : null
 }
 
+const budapestClock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Budapest', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+
+/**
+ * Until when a seasonal rank sells, as a fixed date: "2026.12.26-ig" when it
+ * ends at Budapest midnight (the day before is the last full day), otherwise
+ * "2026.12.27. 18:00-ig".
+ */
+export function seasonEndText(endsAt: string) {
+  const end = new Date(endsAt)
+  const clock = budapestClock.format(end)
+  if (clock === '00:00') return `${budapestDay(new Date(end.getTime() - 1000)).slice(0, -1)}-ig`
+  return `${budapestDay(end)} ${clock}-ig`
+}
+
 /** Whether a seasonal rank's buying time is over. */
 export function seasonOver(rank: Rank, now: Date) {
   return rank.seasonEndsAt !== null && now >= new Date(rank.seasonEndsAt)

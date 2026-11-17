@@ -9,12 +9,14 @@ import { NO_DATA, runeCountFormat } from '@/features/home/stats'
 import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
-import { addDays, budapestDay } from './dates'
-import { RankBanner } from './RankParts'
+import { addDays, budapestDay, seasonOver } from './dates'
+import { NoLongerSold, RankBanner, SeasonInfo } from './RankParts'
 
 type PurchaseDialogProps = {
   /** The rank being bought; null keeps the dialog shut. */
   rank: Rank | null
+  /** The duration whose button opened it; another can still be picked here. */
+  initialDays: number
   /** Until when the player has it already (extending), or null (buying). */
   ownedUntil: Date | null
   /** The player's runes: undefined while loading, null when they cannot be read. */
@@ -28,21 +30,34 @@ const runes = (amount: number) => `${runeCountFormat.format(amount)} rúna`
 /**
  * Buying or extending a rank: one of its durations, the price, the balance and the
  * new expiry. Buying is not wired yet (frontend only), so the final button is
- * off; not enough runes offers topping up instead.
+ * off; not enough runes offers topping up instead, and a seasonal rank whose
+ * time ran out while the dialog was open can no longer be bought.
  */
-export function PurchaseDialog({ rank, ownedUntil, balance, now, onClose }: PurchaseDialogProps) {
+export function PurchaseDialog({ rank, initialDays, ownedUntil, balance, now, onClose }: PurchaseDialogProps) {
   return (
     <Dialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[calc(100svh-2rem)] gap-0 overflow-y-auto rounded-2xl border border-line bg-card p-0 ring-0 sm:max-w-115">
-        {/* Keyed by rank: a new purchase starts at the shortest duration. */}
-        {rank && <PurchaseForm key={rank.group} rank={rank} ownedUntil={ownedUntil} balance={balance} now={now} />}
+        {/* Keyed by rank and duration: each opening starts on the duration it was opened for. */}
+        {rank && (
+          <PurchaseForm
+            key={`${rank.group}:${initialDays}`}
+            rank={rank}
+            initialDays={initialDays}
+            ownedUntil={ownedUntil}
+            balance={balance}
+            now={now}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
 }
 
-function PurchaseForm({ rank, ownedUntil, balance, now }: Omit<PurchaseDialogProps, 'rank' | 'onClose'> & { rank: Rank }) {
-  const [duration, setDuration] = useState(rank.prices[0]?.days ?? 0)
+function PurchaseForm({ rank, initialDays, ownedUntil, balance, now }: Omit<PurchaseDialogProps, 'rank' | 'onClose'> & { rank: Rank }) {
+  const [duration, setDuration] = useState(
+    rank.prices.some((option) => option.days === initialDays) ? initialDays : (rank.prices[0]?.days ?? 0),
+  )
+  const over = seasonOver(rank, now)
   const extending = ownedUntil !== null
   const price = (rank.prices.find((option) => option.days === duration) ?? rank.prices[0])?.runes ?? 0
   const short = typeof balance === 'number' && balance < price
@@ -58,6 +73,7 @@ function PurchaseForm({ rank, ownedUntil, balance, now }: Omit<PurchaseDialogPro
         <span className="text-xs font-bold tracking-widest text-faint uppercase">{extending ? 'Meghosszabbítás' : 'Vásárlás'}</span>
         <DialogTitle className="font-heading text-[26px] leading-tight font-bold">{rank.name}</DialogTitle>
         <span className="text-sm text-muted-foreground">Mennyi időre szeretnéd?</span>
+        {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
       </div>
 
       <div role="radiogroup" aria-label="Időtartam" className="grid grid-cols-2 gap-3">
@@ -123,7 +139,9 @@ function PurchaseForm({ rank, ownedUntil, balance, now }: Omit<PurchaseDialogPro
         </div>
       </dl>
 
-      {short ? (
+      {over ? (
+        <NoLongerSold />
+      ) : short ? (
         <div className="flex flex-col gap-2.5">
           <span className="text-[13px] font-semibold text-danger">Nincs elég rúnád ehhez a vásárláshoz.</span>
           <Link

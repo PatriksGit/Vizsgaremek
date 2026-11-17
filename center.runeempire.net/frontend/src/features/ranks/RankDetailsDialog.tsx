@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import type { Rank } from './api'
 import { seasonOver } from './dates'
 import { Markdown } from './Markdown'
-import { BuyButton, NoLongerSold, RankBanner } from './RankParts'
+import { DurationButtons, NoLongerSold, RankBanner } from './RankParts'
 
 type RankDetailsDialogProps = {
   /** The rank shown; null keeps the dialog shut. */
@@ -11,12 +11,13 @@ type RankDetailsDialogProps = {
   owned: boolean
   now: Date
   onClose: () => void
-  onBuy: () => void
+  /** Opens the purchase on this many days. */
+  onBuy: (days: number) => void
 }
 
 /**
  * "Mit kapsz?": the banner and the name on top, the rank's Markdown text as one
- * scrolling document, and the buy button always in view at the bottom.
+ * scrolling document, and the duration buttons always in view at the bottom.
  */
 export function RankDetailsDialog({ rank, owned, now, onClose, onBuy }: RankDetailsDialogProps) {
   return (
@@ -32,7 +33,7 @@ export function RankDetailsDialog({ rank, owned, now, onClose, onBuy }: RankDeta
               </div>
             </div>
             <div className="border-t border-border p-4 sm:px-6">
-              {seasonOver(rank, now) ? <NoLongerSold className="h-13" /> : <BuyButton owned={owned} onClick={onBuy} className="h-13 text-base" />}
+              {seasonOver(rank, now) ? <NoLongerSold /> : <DurationButtons rank={rank} owned={owned} onBuy={onBuy} />}
             </div>
           </>
         )}

@@ -26,15 +26,15 @@ export function RanksPage() {
   const { data: stats, isError: statsFailed } = useMyStats()
   const now = useNow()
   const [details, setDetails] = useState<Rank | null>(null)
-  const [buying, setBuying] = useState<Rank | null>(null)
+  const [buying, setBuying] = useState<{ rank: Rank; days: number } | null>(null)
 
   /** undefined while the stats load, null when the balance cannot be read. */
   const balance = stats ? (stats.unavailable.includes('runes') ? null : stats.runes) : statsFailed ? null : undefined
   const until = (rank: Rank | null) => (rank ? ownedUntil(rank, stats, now) : null)
 
-  const buy = (rank: Rank) => {
+  const buy = (rank: Rank, days: number) => {
     setDetails(null)
-    setBuying(rank)
+    setBuying({ rank, days })
   }
 
   return (
@@ -51,7 +51,7 @@ export function RanksPage() {
               ownedUntil={until(rank)}
               now={now}
               onDetails={() => setDetails(rank)}
-              onBuy={() => buy(rank)}
+              onBuy={(days) => buy(rank, days)}
             />
           ))}
         </div>
@@ -76,9 +76,16 @@ export function RanksPage() {
         owned={until(details) !== null}
         now={now}
         onClose={() => setDetails(null)}
-        onBuy={() => details && buy(details)}
+        onBuy={(days) => details && buy(details, days)}
       />
-      <PurchaseDialog rank={buying} ownedUntil={until(buying)} balance={balance} now={now} onClose={() => setBuying(null)} />
+      <PurchaseDialog
+        rank={buying?.rank ?? null}
+        initialDays={buying?.days ?? 0}
+        ownedUntil={until(buying?.rank ?? null)}
+        balance={balance}
+        now={now}
+        onClose={() => setBuying(null)}
+      />
     </div>
   )
 }
