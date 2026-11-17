@@ -22,6 +22,7 @@ class RankFactory extends Factory
             'name' => fake()->word(),
             'details' => "## Globális\n- Repülés\n- Napi rúna",
             'gif_url' => null,
+            'prefix_url' => null,
             'price_30' => 1000,
             'price_90' => 2600,
             'season_ends_at' => null,

@@ -8,9 +8,9 @@ import type { Rank } from './api'
 
 /**
  * How the rank looks on the player in game: their head, the rank's prefix
- * (the ItemsAdder image the owner exported to public/rank_icons/<group>.png,
- * 7 px tall pixel art, shown three times bigger and crisp), then their name in
- * the rank's colour. A rank without a prefix image shows just the name.
+ * image (prefixUrl from the database: the ItemsAdder glyph, 7 px tall pixel
+ * art, shown three times bigger and crisp), then their name in the rank's
+ * colour. Without a prefix image, or with a broken one, just the name.
  */
 export function RankPreview({ rank }: { rank: Rank }) {
   const { data: account } = useAccount()
@@ -23,9 +23,9 @@ export function RankPreview({ rank }: { rank: Rank }) {
       className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2"
     >
       <PlayerHead name={account?.display_name} className="size-6 flex-none" />
-      {!prefixMissing && (
+      {rank.prefixUrl && !prefixMissing && (
         <img
-          src={`/rank_icons/${rank.group}.png`}
+          src={rank.prefixUrl}
           alt={rank.name}
           onError={() => setPrefixMissing(true)}
           className="h-5.25 w-auto flex-none [image-rendering:pixelated]"

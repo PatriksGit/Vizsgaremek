@@ -34,14 +34,3 @@ export function parseMarkdown(source: string): MarkdownBlock[] {
   endParagraph()
   return blocks
 }
-
-/**
- * The first list items of a rank's text, as plain text: the card's main perks,
- * so the owner writes them once, in "Mit kapsz?".
- */
-export function highlights(source: string, count: number): string[] {
-  return parseMarkdown(source)
-    .flatMap((block) => (block.kind === 'list' ? block.items : []))
-    .slice(0, count)
-    .map((item) => item.replace(/\*\*([^*]+)\*\*/g, '$1'))
-}

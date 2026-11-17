@@ -34,9 +34,9 @@ const prices = (thirty: number) => [
 
 /** As GET /api/ranks answers, in shop order. */
 const RANKS = [
-  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString(), color: null },
-  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prices: prices(2000), season_ends_at: null, color: '#E5675A' },
-  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prices: prices(1000), season_ends_at: null, color: null },
+  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString(), color: null },
+  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prefix_url: '/rank_icons/dragon.png', prices: prices(2000), season_ends_at: null, color: '#E5675A' },
+  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1000), season_ends_at: null, color: null },
 ]
 
 function statsWith(rank: MyStats['rank'], runes = 5000): MyStats {
@@ -123,45 +123,47 @@ describe('the rank cards', { timeout: 15_000 }, () => {
 
   /**
    * The cards were too empty (owner, 2026-11-17): the name in the rank's in-game
-   * colour, its first three perks, and how it looks on the player in game (the
-   * rank's prefix image from public/rank_icons/<group>.png, then their name).
+   * colour and how it looks on the player in game (the rank's prefix image from
+   * the database, then their name). The perks stay in "Mit kapsz?" only.
    */
-  it('a card shows the rank colour, its first three perks and how it looks on the player', async () => {
+  it('a card shows the rank colour and how it looks on the player, not the perks', async () => {
     backend(statsWith(null))
     renderPage()
     const heading = await screen.findByRole('heading', { name: 'Dragon' })
     const dragon = card('Dragon')
 
     expect(heading.style.color).toBe('rgb(229, 103, 90)')
-    const perks = within(dragon).getByRole('list', { name: 'Fő előnyök' })
-    expect(within(perks).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Repülés', 'Napi rúna', 'Extractor'])
+    expect(within(dragon).queryByText('Repülés')).toBeNull()
 
     const preview = within(dragon).getByRole('figure', { name: 'Így néz ki rajtad a játékban' })
     expect(within(preview).getByRole('img', { name: 'Dragon' }).getAttribute('src')).toBe('/rank_icons/dragon.png')
     expect(within(preview).getByText('Shopper').style.color).toBe('rgb(229, 103, 90)')
   })
 
-  it('a rank without a prefix image still shows the player name', async () => {
+  it('a rank without a prefix image, or with a broken one, still shows the player name', async () => {
     backend(statsWith(null))
     renderPage()
     await screen.findByRole('heading', { name: 'Mage' })
-    const preview = within(card('Mage')).getByRole('figure', { name: 'Így néz ki rajtad a játékban' })
+    const magePreview = within(card('Mage')).getByRole('figure', { name: 'Így néz ki rajtad a játékban' })
+    expect(within(magePreview).queryByRole('img', { name: 'Mage' })).toBeNull()
+    expect(within(magePreview).getByText('Shopper')).toBeTruthy()
 
-    fireEvent.error(within(preview).getByRole('img', { name: 'Mage' }))
-
-    expect(within(preview).queryByRole('img', { name: 'Mage' })).toBeNull()
-    expect(within(preview).getByText('Shopper')).toBeTruthy()
+    const dragonPreview = within(card('Dragon')).getByRole('figure', { name: 'Így néz ki rajtad a játékban' })
+    fireEvent.error(within(dragonPreview).getByRole('img', { name: 'Dragon' }))
+    expect(within(dragonPreview).queryByRole('img', { name: 'Dragon' })).toBeNull()
   })
 
-  it('a duration button opens the purchase on that duration', async () => {
+  /** A purchase is one plain confirmation (owner, 2026-11-17): "are you sure, this cannot be undone". */
+  it('a duration button asks for confirmation of exactly that purchase', async () => {
     backend(statsWith(null))
     renderPage()
     await screen.findByRole('heading', { name: 'Mage' })
 
     fireEvent.click(within(card('Mage')).getByRole('button', { name: /Megvásárlás: 90 nap/ }))
 
-    const dialog = await screen.findByRole('dialog', { name: 'Mage' })
-    expect(within(dialog).getByRole('radio', { name: /90 nap/ }).getAttribute('aria-checked')).toBe('true')
+    const dialog = await screen.findByRole('dialog', { name: 'Biztosan megveszed?' })
+    expect(within(dialog).getByText('Mage · 90 nap · 2600 rúna')).toBeTruthy()
+    expect(within(dialog).getByText('A vásárlás nem visszavonható.')).toBeTruthy()
   })
 
   it('without stats the ranks still show and none looks owned', async () => {
@@ -200,8 +202,8 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
     expect(within(dialog).queryByRole('tab')).toBeNull()
 
     fireEvent.click(within(dialog).getByRole('button', { name: /Megvásárlás: 90 nap/ }))
-    expect(await screen.findByText('Mennyi időre szeretnéd?')).toBeTruthy()
-    expect(screen.getByRole('radio', { name: /90 nap/ }).getAttribute('aria-checked')).toBe('true')
+    const confirm = await screen.findByRole('dialog', { name: 'Biztosan megveszed?' })
+    expect(within(confirm).getByText('Dragon · 90 nap · 5200 rúna')).toBeTruthy()
   })
 
   it('the season ending while it is open turns its button off', async () => {

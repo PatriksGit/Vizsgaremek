@@ -1,22 +1,17 @@
-import { faCoins } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
 import { Link } from 'react-router'
 
-import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
-import { NO_DATA, runeCountFormat } from '@/features/home/stats'
-import { cn } from '@/lib/utils'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { runeCountFormat } from '@/features/home/stats'
 
 import type { Rank } from './api'
 import { addDays, budapestDay, seasonOver } from './dates'
-import { NoLongerSold, RankBanner, SeasonInfo } from './RankParts'
+import { NoLongerSold } from './RankParts'
 
 type PurchaseDialogProps = {
   /** The rank being bought; null keeps the dialog shut. */
   rank: Rank | null
-  /** The duration whose button opened it; another can still be picked here. */
-  initialDays: number
+  /** The duration whose button was pressed. */
+  days: number
   /** Until when the player has it already (extending), or null (buying). */
   ownedUntil: Date | null
   /** The player's runes: undefined while loading, null when they cannot be read. */
@@ -25,144 +20,74 @@ type PurchaseDialogProps = {
   onClose: () => void
 }
 
-const runes = (amount: number) => `${runeCountFormat.format(amount)} rúna`
-
 /**
- * Buying or extending a rank: one of its durations, the price, the balance and the
- * new expiry. Buying is not wired yet (frontend only), so the final button is
- * off; not enough runes offers topping up instead, and a seasonal rank whose
- * time ran out while the dialog was open can no longer be bought.
+ * One plain confirmation before a purchase (owner, 2026-11-17): the rank, the
+ * duration and the price, until when it will last, and that it cannot be
+ * undone. Not enough runes says how many are missing and offers topping up;
+ * a seasonal rank whose time ran out while it was open can no longer be
+ * bought. Buying is not wired yet (frontend only), so the confirm button is
+ * off and says so.
  */
-export function PurchaseDialog({ rank, initialDays, ownedUntil, balance, now, onClose }: PurchaseDialogProps) {
+export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose }: PurchaseDialogProps) {
+  const price = rank?.prices.find((option) => option.days === days)?.runes ?? 0
+  const extending = ownedUntil !== null
+  const missing = typeof balance === 'number' ? price - balance : 0
+
   return (
     <Dialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[calc(100svh-2rem)] gap-0 overflow-y-auto rounded-2xl border border-line bg-card p-0 ring-0 sm:max-w-115">
-        {/* Keyed by rank and duration: each opening starts on the duration it was opened for. */}
+      <DialogContent className="gap-5 rounded-2xl border border-line bg-card p-6 ring-0 sm:max-w-105">
         {rank && (
-          <PurchaseForm
-            key={`${rank.group}:${initialDays}`}
-            rank={rank}
-            initialDays={initialDays}
-            ownedUntil={ownedUntil}
-            balance={balance}
-            now={now}
-          />
+          <>
+            <div className="flex flex-col gap-3 pr-8">
+              <DialogTitle className="font-heading text-2xl leading-tight font-bold">
+                {extending ? 'Biztosan meghosszabbítod?' : 'Biztosan megveszed?'}
+              </DialogTitle>
+              <DialogDescription render={<div />} className="flex flex-col gap-1 text-sm text-muted-foreground">
+                <span className="text-base font-bold text-foreground">
+                  {`${rank.name} · ${days} nap · ${runeCountFormat.format(price)} rúna`}
+                </span>
+                <span>
+                  {extending ? 'Új lejárat' : 'Aktív eddig'}:{' '}
+                  <strong className="text-foreground">{budapestDay(addDays(ownedUntil ?? now, days))}</strong>
+                </span>
+                <span className="mt-2 font-semibold text-soft">A vásárlás nem visszavonható.</span>
+              </DialogDescription>
+            </div>
+
+            {seasonOver(rank, now) ? (
+              <NoLongerSold />
+            ) : missing > 0 ? (
+              <div className="flex flex-col gap-2.5">
+                <span className="text-sm font-semibold text-danger">
+                  Nincs elég rúnád, még {runeCountFormat.format(missing)} hiányzik.
+                </span>
+                <Link
+                  to="/runak/vasarlas"
+                  className="flex min-h-12 items-center justify-center rounded-full bg-primary text-[15px] font-extrabold text-primary-foreground transition-colors hover:bg-primary/85"
+                >
+                  Rúna-feltöltés
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {/* Buying is not wired yet (frontend only): the button shows where it will be. */}
+                <button
+                  type="button"
+                  disabled
+                  className="min-h-12 rounded-full bg-primary text-[15px] font-extrabold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {extending ? 'Igen, meghosszabbítom' : 'Igen, megveszem'}
+                </button>
+                <span className="text-center text-xs font-semibold text-faint">A vásárlás hamarosan indul.</span>
+              </div>
+            )}
+
+            <DialogClose className="min-h-11 self-center px-4 text-[13px] font-bold text-muted-foreground hover:text-foreground">
+              Mégse
+            </DialogClose>
+          </>
         )}
       </DialogContent>
     </Dialog>
-  )
-}
-
-function PurchaseForm({ rank, initialDays, ownedUntil, balance, now }: Omit<PurchaseDialogProps, 'rank' | 'onClose'> & { rank: Rank }) {
-  const [duration, setDuration] = useState(
-    rank.prices.some((option) => option.days === initialDays) ? initialDays : (rank.prices[0]?.days ?? 0),
-  )
-  const over = seasonOver(rank, now)
-  const extending = ownedUntil !== null
-  const price = (rank.prices.find((option) => option.days === duration) ?? rank.prices[0])?.runes ?? 0
-  const short = typeof balance === 'number' && balance < price
-  // The cheapest per day is marked when there is a choice.
-  const perDay = (option: { days: number; runes: number }) => option.runes / option.days
-  const best = rank.prices.length > 1 ? rank.prices.reduce((a, b) => (perDay(b) < perDay(a) ? b : a)).days : null
-
-  return (
-    <div className="flex flex-col gap-5 p-6">
-      <RankBanner rank={rank} decorative className="-mx-6 -mt-6 aspect-auto h-24 px-16" />
-
-      <div className="flex flex-col gap-1 pr-10">
-        <span className="text-xs font-bold tracking-widest text-faint uppercase">{extending ? 'Meghosszabbítás' : 'Vásárlás'}</span>
-        <DialogTitle className="font-heading text-[26px] leading-tight font-bold">{rank.name}</DialogTitle>
-        <span className="text-sm text-muted-foreground">Mennyi időre szeretnéd?</span>
-        {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
-      </div>
-
-      <div role="radiogroup" aria-label="Időtartam" className="grid grid-cols-2 gap-3">
-        {rank.prices.map(({ days, runes: optionRunes }) => {
-          const active = days === duration
-          return (
-            <button
-              key={days}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setDuration(days)}
-              className={cn(
-                // The selected edge is a ring on top of the 1 px border, so the text does not shift.
-                'relative flex flex-col items-start gap-1.5 rounded-2xl border p-4 text-left text-foreground transition-colors',
-                active ? 'border-primary bg-primary/8 ring-1 ring-primary' : 'border-line bg-sunken hover:border-faint',
-              )}
-            >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'absolute top-3.5 right-3.5 size-4.5 rounded-full',
-                  active ? 'border-5 border-primary bg-primary-foreground' : 'border-2 border-faint',
-                )}
-              />
-              <span className="text-xl font-extrabold">{days} nap</span>
-              <span className="flex items-center gap-1.5 text-sm font-bold text-soft">
-                <FontAwesomeIcon icon={faCoins} aria-hidden="true" className="size-3.5 text-primary" />
-                {runes(optionRunes)}
-              </span>
-              <span className="text-xs font-semibold text-faint">≈ {runeCountFormat.format(Math.round(optionRunes / days))} rúna / nap</span>
-              {days === best && (
-                <span className="inline-flex h-5 items-center rounded-full bg-ok/14 px-2 text-xs font-extrabold text-ok">Kedvezőbb</span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      <dl className="flex flex-col gap-2 rounded-xl border border-border bg-background px-4 py-3.5 text-[13px]">
-        <div className="flex justify-between gap-3 text-muted-foreground">
-          <dt>Egyenleged</dt>
-          <dd className="font-bold text-foreground">
-            {balance === undefined ? (
-              <Skeleton className="h-4 w-20 rounded" />
-            ) : balance === null ? (
-              <>
-                <span className="text-muted-foreground">{NO_DATA}</span>
-                <span className="sr-only"> (most nem érhető el)</span>
-              </>
-            ) : (
-              runes(balance)
-            )}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-3 text-muted-foreground">
-          <dt>Fizetendő</dt>
-          <dd className="font-bold text-foreground">{runes(price)}</dd>
-        </div>
-        <div className="flex justify-between gap-3 border-t border-border pt-2 text-muted-foreground">
-          <dt>{extending ? 'Új lejárat' : 'Aktív eddig'}</dt>
-          <dd className="font-bold text-foreground">{budapestDay(addDays(ownedUntil ?? now, duration))}</dd>
-        </div>
-      </dl>
-
-      {over ? (
-        <NoLongerSold />
-      ) : short ? (
-        <div className="flex flex-col gap-2.5">
-          <span className="text-[13px] font-semibold text-danger">Nincs elég rúnád ehhez a vásárláshoz.</span>
-          <Link
-            to="/runak/vasarlas"
-            className="flex h-13 items-center justify-center rounded-full border border-line bg-raised text-[15px] font-extrabold text-foreground transition-colors hover:bg-line"
-          >
-            Rúna-feltöltés
-          </Link>
-        </div>
-      ) : (
-        // Buying is not wired yet (frontend only): the button shows where it will be.
-        <button
-          type="button"
-          disabled
-          className="h-13 rounded-full bg-primary text-base font-extrabold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          A vásárlás hamarosan indul
-        </button>
-      )}
-
-      <DialogClose className="min-h-10 self-center px-4 text-[13px] font-bold text-muted-foreground hover:text-foreground">Mégse</DialogClose>
-    </div>
   )
 }

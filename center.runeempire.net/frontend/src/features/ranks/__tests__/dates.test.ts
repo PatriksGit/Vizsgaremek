@@ -4,7 +4,7 @@ import { addDays, budapestDay, ownedUntil, seasonEndText, seasonOver, timeLeft }
 import type { Rank } from '@/features/ranks/api'
 import type { MyStats } from '@/features/home/stats'
 
-const dragon: Rank = { group: 'dragon', name: 'Dragon', details: '', gifUrl: null, prices: [{ days: 30, runes: 1000 }], seasonEndsAt: null, color: null }
+const dragon: Rank = { group: 'dragon', name: 'Dragon', details: '', gifUrl: null, prefixUrl: null, prices: [{ days: 30, runes: 1000 }], seasonEndsAt: null, color: null }
 const NOW = new Date('2026-11-16T12:00:00Z')
 
 function stats(rank: MyStats['rank']): MyStats {

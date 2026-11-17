@@ -25,6 +25,7 @@ class RanksControllerTest extends TestCase
             'name' => 'Dragon',
             'details' => "## Globális\n- Repülés",
             'gif_url' => '/ranks/dragon.gif',
+            'prefix_url' => '/rank_icons/dragon.png',
             'price_30' => 2000,
             'price_90' => 5200,
             'season_ends_at' => '2026-12-26 23:00:00',
@@ -39,6 +40,7 @@ class RanksControllerTest extends TestCase
                     'name' => 'Dragon',
                     'details' => "## Globális\n- Repülés",
                     'gif_url' => '/ranks/dragon.gif',
+                    'prefix_url' => '/rank_icons/dragon.png',
                     'prices' => [['days' => 30, 'runes' => 2000], ['days' => 90, 'runes' => 5200]],
                     'season_ends_at' => '2026-12-26T23:00:00Z',
                     'color' => null,
@@ -48,6 +50,7 @@ class RanksControllerTest extends TestCase
                     'name' => 'Mage',
                     'details' => Rank::query()->where('group', 'mage')->value('details'),
                     'gif_url' => null,
+                    'prefix_url' => null,
                     'prices' => [['days' => 30, 'runes' => 1000], ['days' => 90, 'runes' => 2600]],
                     'season_ends_at' => null,
                     'color' => null,
@@ -105,9 +108,9 @@ class RanksControllerTest extends TestCase
 
     /**
      * The shop's ranks (owner, 2026-11-17): the network's five buyable groups,
-     * in their LuckPerms weight order, each prefix image in
-     * public/rank_icons/<group>.png. Running it again must not duplicate them,
-     * and it clears the earlier placeholders.
+     * the smallest first, each with its prefix image (public/rank_icons/, later
+     * uploaded in the management section). Running it again must not duplicate
+     * them, and it clears the earlier placeholders.
      */
     public function test_the_seeder_fills_the_shop_with_the_five_ranks_once(): void
     {
@@ -118,11 +121,13 @@ class RanksControllerTest extends TestCase
         $this->seed(RankSeeder::class);
 
         $this->assertSame(
-            ['caster' => 'Caster', 'archmage' => 'Archmage', 'sage' => 'Sage', 'rune' => 'Rune', 'dragon' => 'Dragon'],
+            ['dragon' => 'Dragon', 'rune' => 'Rune', 'sage' => 'Sage', 'archmage' => 'Archmage', 'caster' => 'Caster'],
             Rank::query()->orderBy('sort_order')->pluck('name', 'group')->all(),
         );
         $dragon = Rank::query()->where('group', 'dragon')->sole();
         $this->assertSame('/ranks/dragon.gif', $dragon->gif_url);
+        $this->assertSame('/rank_icons/dragon.png', $dragon->prefix_url);
+        $this->assertSame(0, Rank::query()->whereNull('prefix_url')->count());
         $this->assertStringContainsString('## Globális', $dragon->details);
         $this->assertSame(0, Rank::query()->whereNotNull('season_ends_at')->count());
         $this->assertTrue(Rank::query()->orderBy('sort_order')->pluck('price_30')->sliding(2)->every(fn ($pair): bool => $pair->first() < $pair->last()));

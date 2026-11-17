@@ -1,20 +1,21 @@
 /**
- * The purchase dialog of the rank shop: 30 or 90 days, what it costs and until
- * when, and whether the runes are enough. Buying is not wired yet, so the final
- * button stays off whatever the balance.
+ * Buying a rank is one plain confirmation (owner, 2026-11-17): what is bought,
+ * for how long and for how much, until when it lasts, and that it cannot be
+ * undone. Buying is not wired yet, so the confirm button stays off.
  */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { PurchaseDialog } from '@/features/ranks/PurchaseDialog'
 import type { Rank } from '@/features/ranks/api'
+import { PurchaseDialog } from '@/features/ranks/PurchaseDialog'
 
 const dragon: Rank = {
   group: 'dragon',
   name: 'Dragon',
   details: 'Leírás',
   gifUrl: null,
+  prefixUrl: null,
   prices: [
     { days: 30, runes: 2000 },
     { days: 90, runes: 5200 },
@@ -28,91 +29,70 @@ function renderDialog(props: Partial<Parameters<typeof PurchaseDialog>[0]> = {})
   const onClose = vi.fn()
   render(
     <MemoryRouter>
-      <PurchaseDialog rank={dragon} initialDays={30} ownedUntil={null} balance={10_000} now={NOW} onClose={onClose} {...props} />
+      <PurchaseDialog rank={dragon} days={30} ownedUntil={null} balance={10_000} now={NOW} onClose={onClose} {...props} />
     </MemoryRouter>,
   )
-  return { dialog: screen.getByRole('dialog', { name: 'Dragon' }), onClose }
+  return { dialog: screen.getByRole('dialog'), onClose }
 }
 
-/** The value next to a summary label (Hungarian numbers group with a no-break space). */
-const summary = (dialog: HTMLElement, label: string) =>
-  within(dialog).getByText(label).nextElementSibling?.textContent?.replace(/\s/g, ' ')
+/** Hungarian numbers group with a no-break space. */
+const text = (element: HTMLElement) => element.textContent?.replace(/\s/g, ' ')
 
 afterEach(cleanup)
 
-describe('the rank purchase dialog', () => {
-  it('buying: 30 days by default, active from today', () => {
+describe('the rank purchase confirmation', () => {
+  it('names what is bought, until when, and that it cannot be undone', () => {
     const { dialog } = renderDialog()
 
-    expect(within(dialog).getByText('Vásárlás')).toBeTruthy()
-    expect(within(dialog).getByText('Mennyi időre szeretnéd?')).toBeTruthy()
-    expect(within(dialog).getByRole('radio', { name: /30 nap/ }).getAttribute('aria-checked')).toBe('true')
-    expect(summary(dialog, 'Fizetendő')).toBe('2000 rúna')
-    expect(summary(dialog, 'Aktív eddig')).toBe('2026.12.16.')
-    expect(summary(dialog, 'Egyenleged')).toBe('10 000 rúna')
+    expect(within(dialog).getByRole('heading', { name: 'Biztosan megveszed?' })).toBeTruthy()
+    expect(within(dialog).getByText('Dragon · 30 nap · 2000 rúna')).toBeTruthy()
+    expect(text(within(dialog).getByText(/Aktív eddig/))).toBe('Aktív eddig: 2026.12.16.')
+    expect(within(dialog).getByText('A vásárlás nem visszavonható.')).toBeTruthy()
   })
 
-  it('90 days changes the price and the date, and is marked the better deal', () => {
-    const { dialog } = renderDialog()
-    const ninety = within(dialog).getByRole('radio', { name: /90 nap/ })
+  it('the duration and price are the ones whose button was pressed', () => {
+    const { dialog } = renderDialog({ days: 90 })
 
-    expect(within(ninety).getByText('Kedvezőbb')).toBeTruthy()
-    expect(within(ninety).getByText('≈ 58 rúna / nap')).toBeTruthy()
-    fireEvent.click(ninety)
-
-    expect(ninety.getAttribute('aria-checked')).toBe('true')
-    expect(summary(dialog, 'Fizetendő')).toBe('5200 rúna')
-    expect(summary(dialog, 'Aktív eddig')).toBe('2027.02.14.')
+    expect(within(dialog).getByText('Dragon · 90 nap · 5200 rúna')).toBeTruthy()
+    expect(text(within(dialog).getByText(/Aktív eddig/))).toBe('Aktív eddig: 2027.02.14.')
   })
 
   it('extending counts from the current expiry', () => {
     const { dialog } = renderDialog({ ownedUntil: new Date('2026-11-20T12:00:00Z') })
 
-    expect(within(dialog).getByText('Meghosszabbítás')).toBeTruthy()
-    expect(summary(dialog, 'Új lejárat')).toBe('2026.12.20.')
+    expect(within(dialog).getByRole('heading', { name: 'Biztosan meghosszabbítod?' })).toBeTruthy()
+    expect(text(within(dialog).getByText(/Új lejárat/))).toBe('Új lejárat: 2026.12.20.')
+    expect(within(dialog).getByRole('button', { name: 'Igen, meghosszabbítom' })).toBeTruthy()
   })
 
-  it('with enough runes the final button is there but off: buying starts later', () => {
+  it('the confirm button is there but off: buying starts later', () => {
     const { dialog } = renderDialog()
-    const button = within(dialog).getByRole('button', { name: 'A vásárlás hamarosan indul' }) as HTMLButtonElement
+    const confirm = within(dialog).getByRole('button', { name: 'Igen, megveszem' }) as HTMLButtonElement
 
-    expect(button.disabled).toBe(true)
+    expect(confirm.disabled).toBe(true)
+    expect(within(dialog).getByText('A vásárlás hamarosan indul.')).toBeTruthy()
   })
 
-  it('without enough runes it says so and offers topping up', () => {
-    const { dialog } = renderDialog({ balance: 100 })
+  it('without enough runes it says how many are missing and offers topping up', () => {
+    const { dialog } = renderDialog({ balance: 1500 })
 
-    expect(within(dialog).getByText('Nincs elég rúnád ehhez a vásárláshoz.')).toBeTruthy()
+    expect(text(within(dialog).getByText(/Nincs elég rúnád/))).toBe('Nincs elég rúnád, még 500 hiányzik.')
     expect(within(dialog).getByRole('link', { name: 'Rúna-feltöltés' }).getAttribute('href')).toBe('/runak/vasarlas')
-    expect(within(dialog).queryByRole('button', { name: 'A vásárlás hamarosan indul' })).toBeNull()
+    expect(within(dialog).queryByRole('button', { name: 'Igen, megveszem' })).toBeNull()
   })
 
-  it('a balance that could not be read is a dash, and nothing claims the runes are short', () => {
+  it('a balance that could not be read does not claim the runes are short', () => {
     const { dialog } = renderDialog({ balance: null })
 
-    expect(summary(dialog, 'Egyenleged')).toContain('—')
-    expect(within(dialog).queryByText('Nincs elég rúnád ehhez a vásárláshoz.')).toBeNull()
-  })
-
-  it('opens on the duration whose button was pressed', () => {
-    const { dialog } = renderDialog({ initialDays: 90 })
-
-    expect(within(dialog).getByRole('radio', { name: /90 nap/ }).getAttribute('aria-checked')).toBe('true')
-    expect(summary(dialog, 'Fizetendő')).toBe('5200 rúna')
-  })
-
-  it('a seasonal rank shows until when it can be bought', () => {
-    const { dialog } = renderDialog({ rank: { ...dragon, seasonEndsAt: '2026-12-26T23:00:00Z' } })
-
-    expect(within(dialog).getByText('Még vásárolható: 2026.12.26-ig')).toBeTruthy()
+    expect(within(dialog).queryByText(/Nincs elég rúnád/)).toBeNull()
+    expect(within(dialog).getByRole('button', { name: 'Igen, megveszem' })).toBeTruthy()
   })
 
   it('once the season is over it can no longer be bought, even with the dialog open', () => {
     const { dialog } = renderDialog({ rank: { ...dragon, seasonEndsAt: '2026-11-16T11:00:00Z' } })
 
     expect(within(dialog).getByText('Már nem vásárolható')).toBeTruthy()
-    expect(within(dialog).queryByRole('button', { name: 'A vásárlás hamarosan indul' })).toBeNull()
-    expect(within(dialog).queryByRole('link', { name: 'Rúna-feltöltés' })).toBeNull()
+    expect(within(dialog).queryByRole('button', { name: 'Igen, megveszem' })).toBeNull()
   })
 
   it('Mégse closes it', () => {

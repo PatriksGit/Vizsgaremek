@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
 import { budapestDay, seasonOver } from './dates'
-import { highlights } from './markdownBlocks'
 import { DurationButtons, NoLongerSold, RankBanner, SeasonInfo } from './RankParts'
 import { RankPreview } from './RankPreview'
 
@@ -21,13 +20,12 @@ type RankCardProps = {
 }
 
 /**
- * One rank in the shop: its banner, its name in the in-game colour, its first
- * three perks, how it looks on the player, and one buy (or extend) button per
- * duration; the whole text is in "Mit kapsz?".
+ * One rank in the shop: its banner, its name in the in-game colour, how it
+ * looks on the player, and one buy (or extend) button per duration; the perks
+ * are in "Mit kapsz?" only (owner, 2026-11-17).
  */
 export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardProps) {
   const over = seasonOver(rank, now)
-  const perks = highlights(rank.details, 3)
 
   return (
     <article
@@ -55,17 +53,6 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardPr
           </h3>
           {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
         </div>
-
-        {perks.length > 0 && (
-          <ul aria-label="Fő előnyök" className="flex flex-col gap-1.5 self-center text-sm text-soft">
-            {perks.map((perk) => (
-              <li key={perk} className="flex items-start gap-2">
-                <FontAwesomeIcon icon={faCheck} aria-hidden="true" className="mt-1 size-3 flex-none text-primary" />
-                {perk}
-              </li>
-            ))}
-          </ul>
-        )}
 
         <button
           type="button"

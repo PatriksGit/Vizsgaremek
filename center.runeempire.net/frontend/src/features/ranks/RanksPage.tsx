@@ -80,7 +80,7 @@ export function RanksPage() {
       />
       <PurchaseDialog
         rank={buying?.rank ?? null}
-        initialDays={buying?.days ?? 0}
+        days={buying?.days ?? 0}
         ownedUntil={until(buying?.rank ?? null)}
         balance={balance}
         now={now}

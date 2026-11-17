@@ -10,13 +10,15 @@ use Illuminate\Support\Carbon;
 
 /**
  * A rank the shop sells, in the website's own database (Center). group is the
- * LuckPerms group it gives; details is the "Mit kapsz?" text as Markdown.
+ * LuckPerms group it gives; details is the "Mit kapsz?" text as Markdown;
+ * gif_url and prefix_url are the banner and the in-game prefix image.
  *
  * @property int $id
  * @property string $group
  * @property string $name
  * @property string $details
  * @property string|null $gif_url
+ * @property string|null $prefix_url
  * @property int $price_30
  * @property int $price_90
  * @property Carbon|null $season_ends_at
@@ -25,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['group', 'name', 'details', 'gif_url', 'price_30', 'price_90', 'season_ends_at', 'sort_order'])]
+#[Fillable(['group', 'name', 'details', 'gif_url', 'prefix_url', 'price_30', 'price_90', 'season_ends_at', 'sort_order'])]
 class Rank extends Model
 {
     /** @use HasFactory<RankFactory> */

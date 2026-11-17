@@ -17,7 +17,7 @@ class RankResource extends JsonResource
      * season_ends_at is null for a year-round rank; color is the in-game
      * #RRGGBB from LuckPerms, or null.
      *
-     * @return array{group: string, name: string, details: string, gif_url: string|null, prices: list<array{days: int, runes: int}>, season_ends_at: string|null, color: string|null}
+     * @return array{group: string, name: string, details: string, gif_url: string|null, prefix_url: string|null, prices: list<array{days: int, runes: int}>, season_ends_at: string|null, color: string|null}
      */
     public function toArray(Request $request): array
     {
@@ -26,6 +26,7 @@ class RankResource extends JsonResource
             'name' => $this->name,
             'details' => $this->details,
             'gif_url' => $this->gif_url,
+            'prefix_url' => $this->prefix_url,
             'prices' => [
                 ['days' => 30, 'runes' => $this->price_30],
                 ['days' => 90, 'runes' => $this->price_90],

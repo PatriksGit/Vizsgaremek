@@ -13,6 +13,8 @@ export type Rank = {
   /** "Mit kapsz?" as Markdown. */
   details: string
   gifUrl: string | null
+  /** The in-game prefix image (the ItemsAdder glyph), or null. */
+  prefixUrl: string | null
   /** The durations it sells for, shortest first. */
   prices: RankPrice[]
   /** A seasonal rank sells until this time (ISO 8601); null for the rest. */
@@ -26,6 +28,7 @@ type RankResponse = {
   name: string
   details: string
   gif_url: string | null
+  prefix_url: string | null
   prices: RankPrice[]
   season_ends_at: string | null
   color: string | null
@@ -38,6 +41,7 @@ async function fetchRanks(): Promise<Rank[]> {
     name: rank.name,
     details: rank.details,
     gifUrl: rank.gif_url,
+    prefixUrl: rank.prefix_url,
     prices: [...rank.prices].sort((a, b) => a.days - b.days),
     seasonEndsAt: rank.season_ends_at,
     color: rank.color,
