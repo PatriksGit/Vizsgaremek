@@ -24,16 +24,17 @@ const cardEnterDelay = (index: number) => Math.min(index, 6) * 70
 
 /**
  * The cards wrap by the room they have (owner, 2026-11-17): one column on a
- * phone, two, then three (five ranks: 3 + 2, the last row centred), and all
- * five in a row on a wide screen (about 1600 px). A card never gets narrower
- * than 240 px -- why: below that the in-game look, "Tudj meg többet a
- * rangról" and "Aktív eddig" broke into several lines (review 2026-11-17:
- * 210 px cards at 1440 px). A container query, so the sidebar's width counts.
+ * phone, then two, three and four in a row (a 1920 px screen: 4 + 1, the last
+ * row centred), and never wider than 21rem (the owner: wider cards looked too
+ * wide). A card is kept at ~300 px or more -- why: the in-game look stays on
+ * one line (head, the widest prefix and a 16-character name) and shrinks to
+ * fit, and narrower it would get unreadably small (review 2026-11-17). A
+ * container query, so the sidebar's width counts.
  */
 const listClass = '@container'
 const rowClass = 'flex flex-wrap justify-center gap-5'
 const cellClass =
-  'w-full @min-[32rem]:w-[calc((100%-1.25rem)/2)] @min-[48rem]:w-[calc((100%-2.5rem)/3)] @min-[80rem]:w-[calc((100%-5rem)/5)]'
+  'w-full @min-[40rem]:w-[calc((100%-1.25rem)/2)] @min-[40rem]:max-w-[21rem] @min-[58rem]:w-[calc((100%-2.5rem)/3)] @min-[78rem]:w-[calc((100%-3.75rem)/4)]'
 
 /**
  * The rank shop (owner's design, Claude Design "Asztali – Rangok"): every rank
@@ -57,6 +58,8 @@ export function RanksPage() {
   /** undefined while the stats load, null when the balance cannot be read. */
   const balance = stats ? (stats.unavailable.includes('runes') ? null : stats.runes) : statsFailed ? null : undefined
   const until = (rank: Rank | null) => (rank ? ownedUntil(rank, stats, now) : null)
+  // Any card with a season or owned line: the others keep its place, so the cards stay alike.
+  const statusRow = ranks?.some((rank) => rank.seasonEndsAt !== null || until(rank) !== null) ?? false
 
   const buy = (rank: Rank, days: number, fromDetails = false) => {
     purchaseReturn.current = fromDetails ? detailsTrigger.current : null
@@ -84,8 +87,7 @@ export function RanksPage() {
                 <RankCard
                   enterDelay={cardEnterDelay(index)}
                   rank={rank}
-                  level={index + 1}
-                  highest={ranks.length > 1 && index === ranks.length - 1}
+                  statusRow={statusRow}
                   ownedUntil={until(rank)}
                   now={now}
                   onDetails={(trigger) => {

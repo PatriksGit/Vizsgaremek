@@ -3,6 +3,15 @@ import type { CSSProperties } from 'react'
 import type { RankPrice } from './api'
 
 /**
+ * How much a one-line row must shrink to fit its box: 1 when it fits (it never
+ * grows), and 1 while either width is unknown (not laid out yet).
+ */
+export function fitScale(natural: number, available: number): number {
+  if (natural <= 0 || available <= 0) return 1
+  return Math.min(1, available / natural)
+}
+
+/**
  * A duration's real per-day saving against the shortest duration, in whole
  * percent; 0 when there is none. Computed from the prices, never typed in
  * (owner, 2026-11-17: "adjustable later"), so changing the 90-day price in
@@ -15,35 +24,6 @@ export function discountPercent(prices: RankPrice[], days: number): number {
 
   const saving = 1 - chosen.runes / chosen.days / (shortest.runes / shortest.days)
   return Math.max(0, Math.round(saving * 100))
-}
-
-const NUMERALS: [number, string][] = [
-  [1000, 'M'],
-  [900, 'CM'],
-  [500, 'D'],
-  [400, 'CD'],
-  [100, 'C'],
-  [90, 'XC'],
-  [50, 'L'],
-  [40, 'XL'],
-  [10, 'X'],
-  [9, 'IX'],
-  [5, 'V'],
-  [4, 'IV'],
-  [1, 'I'],
-]
-
-/** A rank's level on its card as a Roman numeral (I, II, … in shop order). */
-export function roman(level: number): string {
-  let rest = level
-  let out = ''
-  for (const [value, numeral] of NUMERALS) {
-    while (rest >= value) {
-      out += numeral
-      rest -= value
-    }
-  }
-  return out
 }
 
 const HEX = /^#[0-9a-f]{6}$/i

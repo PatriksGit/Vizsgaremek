@@ -7,10 +7,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Rank } from '@/features/ranks/api'
 import { RankPreview } from '@/features/ranks/RankPreview'
+import { stubBrowserApis } from '@/test/fakeBackend'
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/lib/api')>()
@@ -23,6 +24,7 @@ const rank = (prefixUrl: string): Rank => ({
 const client = new QueryClient()
 const wrap = (node: ReactNode) => <QueryClientProvider client={client}>{node}</QueryClientProvider>
 
+beforeEach(stubBrowserApis)
 afterEach(cleanup)
 
 describe('the rank preview', () => {

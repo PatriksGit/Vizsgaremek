@@ -9,14 +9,12 @@ import type { Rank } from './api'
 import { seasonOver } from './dates'
 import { BuyBox, NoLongerSold, OwnedUntil, RankBanner, SeasonInfo } from './RankParts'
 import { RankPreview } from './RankPreview'
-import { accentVars, roman } from './shop'
+import { accentVars } from './shop'
 
 type RankCardProps = {
   rank: Rank
-  /** Its place in the shop order, from 1: the level on the card. */
-  level: number
-  /** The last (heaviest) rank of the shop: "Legmagasabb rang". */
-  highest: boolean
+  /** Some card of the page has a status line (season or owned): keep its place on this one too. */
+  statusRow: boolean
   /** Until when the player has this rank; null when they don't. */
   ownedUntil: Date | null
   now: Date
@@ -28,17 +26,23 @@ type RankCardProps = {
   enterDelay: number
 }
 
-const pill = 'inline-flex h-5.5 items-center rounded-full px-2.5 text-xs font-extrabold'
-
 /**
  * One rank in the shop (owner, 2026-11-17), in its own colour (accentVars:
  * --c): a 3 px stripe on top, a faint border that lights up and lifts on
- * hover, the GIF on a tinted strip with the level (I, II, …) and "Legmagasabb
- * rang" on the heaviest; then the name, right under it how it looks on the
- * player in game, "Tudj meg többet a rangról", and the BuyBox at the bottom
- * (lined up across a row). The perks and the servers are in the rank text only.
+ * hover, the GIF on a tinted strip; then the name, right under it how it looks
+ * on the player in game, "Tudj meg többet a rangról", and the BuyBox at the
+ * bottom (lined up across a row). No level numbers and no "Legmagasabb rang"
+ * (owner, 2026-11-17). The perks and the servers are in the rank text only.
  */
-export function RankCard({ rank, level, highest, ownedUntil, now, onDetails, onBuy, enterDelay }: RankCardProps) {
+export function RankCard({
+  rank,
+  statusRow,
+  ownedUntil,
+  now,
+  onDetails,
+  onBuy,
+  enterDelay,
+}: RankCardProps) {
   const over = seasonOver(rank, now)
 
   return (
@@ -50,21 +54,14 @@ export function RankCard({ rank, level, highest, ownedUntil, now, onDetails, onB
       style={{ ...enterAfter(enterDelay), ...accentVars(rank.color) }}
     >
       <span aria-hidden="true" className="h-0.75 flex-none bg-(--c)" />
-      {/* The tinted header: the pills in their own row, so they never cover the GIF on a narrow card. */}
-      <div className="flex flex-col border-b border-border bg-[color:color-mix(in_oklab,var(--c)_12%,var(--background))] px-2.5 pt-2.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-wrap gap-1.5">
-            <span className={cn(pill, 'border border-(--c) bg-card/80 text-foreground')}>
-              <span aria-hidden="true">{roman(level)}</span>
-              <span className="sr-only">{level}. szint</span>
-            </span>
-            {rank.seasonEndsAt && (
-              <span className={cn(pill, 'border border-primary/35 bg-primary/15 text-primary')}>Szezonális</span>
-            )}
-          </div>
-          {highest && <span className={cn(pill, 'bg-(--c) text-(--on-c)')}>Legmagasabb rang</span>}
-        </div>
-        <RankBanner rank={rank} className="min-h-0 border-b-0 bg-transparent px-0 pt-1 pb-2" />
+      {/* The GIF on a strip tinted with the rank colour. */}
+      <div className="relative border-b border-border bg-[color:color-mix(in_oklab,var(--c)_12%,var(--background))] p-2">
+        {rank.seasonEndsAt && (
+          <span className="absolute top-2 left-2 z-1 inline-flex h-5.5 items-center rounded-full border border-primary/35 bg-primary/15 px-2.5 text-xs font-extrabold text-primary">
+            Szezonális
+          </span>
+        )}
+        <RankBanner rank={rank} className="min-h-0 border-b-0 bg-transparent p-0" />
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4 sm:px-5">
@@ -75,7 +72,15 @@ export function RankCard({ rank, level, highest, ownedUntil, now, onDetails, onB
           >
             {rank.name}
           </h2>
-          {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
+          {(statusRow || rank.seasonEndsAt || ownedUntil) && (
+            // The status line: the season and until when it is the player's. Every card keeps it
+            // when any card has one, so a row's cards stay alike (review 2026-11-17: the others
+            // got an empty hole above their buttons next to the owned rank).
+            <div className="flex min-h-5 flex-col items-center gap-1">
+              {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
+              {ownedUntil && <OwnedUntil until={ownedUntil} />}
+            </div>
+          )}
         </div>
 
         <RankPreview rank={rank} />
@@ -96,7 +101,6 @@ export function RankCard({ rank, level, highest, ownedUntil, now, onDetails, onB
         </button>
 
         <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3">
-          {ownedUntil && <OwnedUntil until={ownedUntil} />}
           {over ? <NoLongerSold /> : <BuyBox rank={rank} owned={ownedUntil !== null} onBuy={onBuy} />}
         </div>
       </div>

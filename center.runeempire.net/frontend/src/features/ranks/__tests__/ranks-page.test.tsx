@@ -170,20 +170,18 @@ describe('the rank cards', { timeout: 15_000 }, () => {
   })
 
   /**
-   * Each card in its rank colour (owner, 2026-11-17), the site gold without one;
-   * the level from the shop order, and the last (heaviest) one is the highest.
+   * Each card in its rank colour (owner, 2026-11-17), the site gold without one.
+   * No level numbers and no "Legmagasabb rang" (owner, 2026-11-17: not needed).
    */
-  it('a card wears its rank colour, its level, and the highest one says so', async () => {
+  it('a card wears its rank colour, without a level or a "highest" badge', async () => {
     backend(statsWith(null))
     renderPage()
     await screen.findByRole('heading', { name: 'Mage' })
 
     expect(card('Dragon').style.getPropertyValue('--c')).toBe('#E5675A')
     expect(card('Mage').style.getPropertyValue('--c')).toBe('var(--primary)')
-    expect(within(card('Karácsony')).getByText('1. szint')).toBeTruthy()
-    expect(within(card('Mage')).getByText('3. szint')).toBeTruthy()
-    expect(within(card('Mage')).getByText('Legmagasabb rang')).toBeTruthy()
-    expect(within(card('Dragon')).queryByText('Legmagasabb rang')).toBeNull()
+    expect(screen.queryByText(/szint/)).toBeNull()
+    expect(screen.queryByText('Legmagasabb rang')).toBeNull()
   })
 
   /** The in-game look right under the name, then the link to the rank text (owner, 2026-11-17). */
