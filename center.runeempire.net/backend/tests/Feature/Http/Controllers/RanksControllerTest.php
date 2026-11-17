@@ -231,6 +231,11 @@ class RanksControllerTest extends TestCase
         $dragon = Rank::query()->where('group', 'dragon')->sole();
         $this->assertSame('/ranks/dragon.gif', $dragon->gif_url);
         $this->assertSame('/rank_icons/dragon.png', $dragon->prefix_url);
+        // Every rank has its own GIF (owner, 2026-11-17: no rank goes on sale without one).
+        $this->assertSame(
+            ['caster' => '/ranks/caster.gif', 'archmage' => '/ranks/archmage.gif', 'sage' => '/ranks/sage.gif', 'rune' => '/ranks/rune.gif', 'dragon' => '/ranks/dragon.gif'],
+            Rank::query()->orderBy('sort_order')->pluck('gif_url', 'group')->all(),
+        );
         $this->assertSame(0, Rank::query()->whereNull('prefix_url')->count());
         $this->assertSame(['Lobby', 'Kingdoms', 'SkyPvp', 'KitPvp'], Server::query()->orderBy('sort_order')->pluck('name')->all());
         $this->assertSame(['Lobby', 'Kingdoms', 'SkyPvp', 'KitPvp'], $dragon->servers->pluck('name')->all());

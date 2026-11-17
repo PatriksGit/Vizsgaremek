@@ -72,40 +72,59 @@ export function SeasonInfo({ endsAt, now }: { endsAt: string; now: Date }) {
 }
 
 /**
- * One button per duration, its price on it (owner, 2026-11-17: "30 nap" and
- * "90 nap" instead of one buy button). Equal weight on purpose: the dearer one
- * is not pushed. A player who has the rank sees "+30 nap" (extending).
+ * The price above the duration buttons, always "N rúna" (owner, 2026-11-17):
+ * the shortest duration's, or the one whose button is under the pointer or
+ * focus. The buttons carry no price; the popup names the exact one too.
+ */
+export function PriceTag({ rank, days }: { rank: Rank; days: number | null }) {
+  const shown = rank.prices.find((option) => option.days === days) ?? [...rank.prices].sort((a, b) => a.days - b.days)[0]
+  if (!shown) return null
+  return (
+    <p className="flex items-center justify-center gap-1.5 text-lg font-extrabold text-foreground tabular-nums">
+      <FontAwesomeIcon icon={faCoins} aria-hidden="true" className="size-4 text-primary" />
+      {runeCountFormat.format(shown.runes)} rúna
+    </p>
+  )
+}
+
+/**
+ * One filled button per duration, without a price (owner, 2026-11-17: "30 nap"
+ * and "90 nap"; the PriceTag above follows the one under the pointer or
+ * focus, and the popup names it too). A darker gold that lights up on hover
+ * (owner, 2026-11-17); equal weight on purpose: the dearer one is not pushed.
+ * A player who has the rank sees "+30 nap" (extending).
  */
 export function DurationButtons({
   rank,
   owned,
   onBuy,
+  onPreview,
   className,
 }: {
   rank: Rank
   owned: boolean
   onBuy: (days: number) => void
+  /** The duration under the pointer or focus, null when none; for the PriceTag. */
+  onPreview?: (days: number | null) => void
   className?: string
 }) {
   return (
     <div className={cn('grid gap-2', rank.prices.length > 1 ? 'grid-cols-2' : 'grid-cols-1', className)}>
-      {rank.prices.map(({ days, runes }) => (
+      {rank.prices.map(({ days }) => (
         <button
           key={days}
           type="button"
           onClick={() => onBuy(days)}
-          className="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border border-primary/40 bg-primary/12 px-2 py-2 text-foreground transition-[color,background-color,border-color,translate] hover:border-primary/70 hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
+          onPointerEnter={() => onPreview?.(days)}
+          onPointerLeave={() => onPreview?.(null)}
+          onFocus={() => onPreview?.(days)}
+          onBlur={() => onPreview?.(null)}
+          className="flex min-h-12 items-center justify-center rounded-xl bg-[color-mix(in_oklab,var(--primary)_76%,black)] px-2 text-[15px] font-extrabold text-primary-foreground transition-[background-color,translate] hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
         >
           {/* The rank in the name too: ten "30 nap" buttons must not sound alike to a screen reader. */}
           <span className="sr-only">{`${rank.name} ${owned ? 'meghosszabbítása' : 'megvásárlása'}: `}</span>
-          <span className="text-[15px] leading-tight font-extrabold">
-            {owned ? '+' : ''}
-            {days} nap
-          </span>
-          <span className="flex items-center gap-1 text-xs font-bold text-soft">
-            <FontAwesomeIcon icon={faCoins} aria-hidden="true" className="size-3 text-primary" />
-            {runeCountFormat.format(runes)} rúna
-          </span>
+          {owned ? '+' : ''}
+          {days} nap
         </button>
       ))}
     </div>
@@ -142,7 +161,7 @@ export function NoLongerSold({ className }: { className?: string }) {
     <span
       aria-disabled="true"
       className={cn(
-        'flex min-h-14 w-full items-center justify-center rounded-xl border border-line bg-sunken text-[15px] font-bold text-faint',
+        'flex min-h-12 w-full items-center justify-center rounded-xl border border-line bg-sunken text-[15px] font-bold text-faint',
         className,
       )}
     >

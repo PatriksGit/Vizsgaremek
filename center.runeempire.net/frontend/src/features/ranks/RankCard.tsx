@@ -1,5 +1,6 @@
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useState } from 'react'
 
 import { rankColor } from '@/features/home/stats'
 import { enterAfter } from '@/lib/motion'
@@ -7,7 +8,7 @@ import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
 import { seasonOver } from './dates'
-import { DurationButtons, NoLongerSold, OwnedUntil, RankBanner, SeasonInfo, ServerChips } from './RankParts'
+import { DurationButtons, NoLongerSold, OwnedUntil, PriceTag, RankBanner, SeasonInfo } from './RankParts'
 import { RankPreview } from './RankPreview'
 
 type RankCardProps = {
@@ -15,7 +16,7 @@ type RankCardProps = {
   /** Until when the player has this rank; null when they don't. */
   ownedUntil: Date | null
   now: Date
-  /** Opens "Mit kapsz?"; gets its button, so focus can come back to it. */
+  /** Opens the rank text ("Tudj meg többet a rangról"); gets its button, so focus can come back to it. */
   onDetails: (trigger: HTMLElement) => void
   /** Opens the purchase on this many days. */
   onBuy: (days: number) => void
@@ -24,12 +25,15 @@ type RankCardProps = {
 }
 
 /**
- * One rank in the shop: its banner, its name in the in-game colour, the
- * servers it works on, how it looks on the player, and one buy (or extend)
- * button per duration; the perks are in "Mit kapsz?" only (owner, 2026-11-17).
+ * One rank in the shop (owner, 2026-11-17): its banner, its name in the in-game
+ * colour, right under it how it looks on the player in game, "Tudj meg többet
+ * a rangról", then the price and one filled buy (or extend) button per
+ * duration; the perks and the servers are in the rank text only.
  */
 export function RankCard({ rank, ownedUntil, now, onDetails, onBuy, enterDelay }: RankCardProps) {
   const over = seasonOver(rank, now)
+  // The duration whose button is under the pointer or focus: the price shows that one.
+  const [previewDays, setPreviewDays] = useState<number | null>(null)
 
   return (
     <article
@@ -57,24 +61,27 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy, enterDelay }
             {rank.name}
           </h2>
           {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
-          <ServerChips servers={rank.servers} />
         </div>
+
+        <RankPreview rank={rank} />
 
         <button
           type="button"
           onClick={(event) => onDetails(event.currentTarget)}
-          aria-label={`Mit kapsz? – ${rank.name}`}
+          aria-label={`Tudj meg többet a rangról: ${rank.name}`}
           className="-my-1.5 inline-flex min-h-11 items-center gap-1.5 self-center px-2 text-[13px] font-bold text-primary hover:text-primary/80"
         >
-          Mit kapsz?
+          Tudj meg többet a rangról
           <FontAwesomeIcon icon={faChevronRight} aria-hidden="true" className="size-3" />
         </button>
 
-        <RankPreview rank={rank} />
-
-        <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3">
-          {ownedUntil && <OwnedUntil until={ownedUntil} />}
-          {over ? <NoLongerSold /> : <DurationButtons rank={rank} owned={ownedUntil !== null} onBuy={onBuy} />}
+        {/* The price sits with the buttons at the bottom, so it lines up across a row of cards. */}
+        <div className="mt-auto flex flex-col gap-3">
+          <PriceTag rank={rank} days={previewDays} />
+          <div className="flex flex-col gap-3 border-t border-border pt-3">
+            {ownedUntil && <OwnedUntil until={ownedUntil} />}
+            {over ? <NoLongerSold /> : <DurationButtons rank={rank} owned={ownedUntil !== null} onBuy={onBuy} onPreview={setPreviewDays} />}
+          </div>
         </div>
       </div>
     </article>

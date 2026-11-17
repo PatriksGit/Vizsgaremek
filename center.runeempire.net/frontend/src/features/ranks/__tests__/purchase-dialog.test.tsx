@@ -1,7 +1,9 @@
 /**
- * Buying a rank is one plain confirmation (owner, 2026-11-17): what is bought,
- * for how long and for how much, until when it lasts, and that it cannot be
- * undone. Buying is not wired yet, so the confirm button stays off.
+ * Pressing a duration button opens a proper popup (owner, 2026-11-17): it
+ * checks the runes first. Too few -> an X in a circle and "Nincs elég rúnád a
+ * rang megvásárlásához."; enough -> a ? in a circle, "Biztosan szeretnéd
+ * megvásárolni a rangot?", the price and the expiry, then Igen / Mégse.
+ * Buying is not wired yet, so Igen stays off.
  */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
@@ -41,85 +43,86 @@ const text = (element: HTMLElement) => element.textContent?.replace(/\s/g, ' ')
 
 afterEach(cleanup)
 
-describe('the rank purchase confirmation', () => {
-  it('names what is bought, until when, and that it cannot be undone', () => {
+describe('with enough runes: are you sure?', () => {
+  it('asks, then names the rank, the price and the expiry, and that it cannot be undone', () => {
     const { dialog } = renderDialog()
 
-    expect(within(dialog).getByRole('heading', { name: 'Biztosan megveszed?' })).toBeTruthy()
-    expect(within(dialog).getByText('Dragon · 30 nap · 2000 rúna')).toBeTruthy()
-    expect(text(within(dialog).getByText(/Aktív eddig/))).toBe('Aktív eddig: 2026.12.16.')
+    expect(within(dialog).getByRole('heading', { name: 'Biztosan szeretnéd megvásárolni a rangot?' })).toBeTruthy()
+    expect(dialog.querySelector('[data-icon="question"]')).toBeTruthy()
+    expect(within(dialog).getByText('Dragon · 30 nap')).toBeTruthy()
+    expect(text(within(dialog).getByText(/^2000/))).toBe('2000 rúna')
+    expect(text(within(dialog).getByText(/Lejárat/))).toBe('Lejárat: 2026.12.16.')
     expect(within(dialog).getByText('A vásárlás nem visszavonható.')).toBeTruthy()
-    // The balance before and after, so the player sees what is left (Roblox does this).
-    expect(text(within(dialog).getByText(/Egyenleged/))).toBe('Egyenleged: 10 000 → 8000 rúna')
   })
 
   it('the duration and price are the ones whose button was pressed', () => {
     const { dialog } = renderDialog({ days: 90 })
 
-    expect(within(dialog).getByText('Dragon · 90 nap · 5200 rúna')).toBeTruthy()
-    expect(text(within(dialog).getByText(/Aktív eddig/))).toBe('Aktív eddig: 2027.02.14.')
+    expect(within(dialog).getByText('Dragon · 90 nap')).toBeTruthy()
+    expect(text(within(dialog).getByText(/^5200/))).toBe('5200 rúna')
+    expect(text(within(dialog).getByText(/Lejárat/))).toBe('Lejárat: 2027.02.14.')
   })
 
-  it('extending counts from the current expiry', () => {
+  it('extending asks about extending and counts from the current expiry', () => {
     const { dialog } = renderDialog({ ownedUntil: new Date('2026-11-20T12:00:00Z') })
 
-    expect(within(dialog).getByRole('heading', { name: 'Biztosan meghosszabbítod?' })).toBeTruthy()
+    expect(within(dialog).getByRole('heading', { name: 'Biztosan szeretnéd meghosszabbítani a rangot?' })).toBeTruthy()
     expect(text(within(dialog).getByText(/Új lejárat/))).toBe('Új lejárat: 2026.12.20.')
-    expect(within(dialog).getByRole('button', { name: 'Meghosszabbítás' })).toBeTruthy()
   })
 
-  /** The action's own name on the main button, Mégse first (owner, 2026-11-17: Mégse red, the purchase green). */
-  it('Mégse comes first, then the purchase button, which is there but off: buying starts later', () => {
-    const { dialog } = renderDialog()
-    const confirm = within(dialog).getByRole('button', { name: 'Megvásárlás' }) as HTMLButtonElement
+  /** "Igen v Mégse" (owner, 2026-11-17): Igen first. */
+  it('Igen comes first and is off for now, saying why; Mégse closes it', () => {
+    const { dialog, onClose } = renderDialog()
+    const yes = within(dialog).getByRole('button', { name: 'Igen' }) as HTMLButtonElement
     const cancel = within(dialog).getByRole('button', { name: 'Mégse' })
 
-    expect(confirm.disabled).toBe(true)
-    expect(cancel.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    // The disabled button says why, to a screen reader too.
-    expect(document.getElementById(confirm.getAttribute('aria-describedby') ?? '')?.textContent).toBe('A vásárlás hamarosan indul.')
-  })
+    expect(yes.disabled).toBe(true)
+    expect(yes.compareDocumentPosition(cancel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(document.getElementById(yes.getAttribute('aria-describedby') ?? '')?.textContent).toBe('A vásárlás hamarosan indul.')
 
-  it('without enough runes it says how many are missing and offers topping up', () => {
-    const { dialog } = renderDialog({ balance: 1500 })
-
-    expect(text(within(dialog).getByText(/Nincs elég rúnád/))).toBe('Nincs elég rúnád, még 500 hiányzik.')
-    expect(within(dialog).getByRole('link', { name: 'Rúna-feltöltés' }).getAttribute('href')).toBe('/runak/vasarlas')
-    expect(within(dialog).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
-    // Nothing can be bought, so nothing to undo: no warning, and the balance without an "after".
-    expect(within(dialog).queryByText('A vásárlás nem visszavonható.')).toBeNull()
-    expect(text(within(dialog).getByText(/Egyenleged/))).toBe('Egyenleged: 1500 rúna')
+    fireEvent.click(cancel)
+    expect(onClose).toHaveBeenCalled()
   })
 
   it('a balance that could not be read does not claim the runes are short', () => {
     const { dialog } = renderDialog({ balance: null })
 
-    expect(within(dialog).queryByText(/Nincs elég rúnád/)).toBeNull()
-    expect(within(dialog).queryByText(/Egyenleged/)).toBeNull()
-    expect(within(dialog).getByRole('button', { name: 'Megvásárlás' })).toBeTruthy()
+    expect(within(dialog).getByRole('heading', { name: 'Biztosan szeretnéd megvásárolni a rangot?' })).toBeTruthy()
+  })
+})
+
+describe('with too few runes', () => {
+  it('says so under an X, and how many are missing', () => {
+    const { dialog } = renderDialog({ balance: 1500 })
+
+    expect(within(dialog).getByRole('heading', { name: 'Nincs elég rúnád a rang megvásárlásához.' })).toBeTruthy()
+    expect(dialog.querySelector('[data-icon="xmark"]')).toBeTruthy()
+    expect(text(within(dialog).getByText(/hiányzik/))).toBe('Még 500 rúna hiányzik.')
+    expect(within(dialog).queryByRole('button', { name: 'Igen' })).toBeNull()
+    expect(within(dialog).queryByText('A vásárlás nem visszavonható.')).toBeNull()
   })
 
-  it('once the season is over it can no longer be bought, even with the dialog open', () => {
+  it('offers topping up, or closing', () => {
+    const { dialog, onClose } = renderDialog({ balance: 1500 })
+
+    expect(within(dialog).getByRole('link', { name: 'Rúna-feltöltés' }).getAttribute('href')).toBe('/runak/vasarlas')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Bezárás' }))
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('extending says extending', () => {
+    const { dialog } = renderDialog({ balance: 1500, ownedUntil: new Date('2026-11-20T12:00:00Z') })
+
+    expect(within(dialog).getByRole('heading', { name: 'Nincs elég rúnád a rang meghosszabbításához.' })).toBeTruthy()
+  })
+})
+
+describe('a season that ended while it was open', () => {
+  it('can no longer be bought', () => {
     const { dialog } = renderDialog({ rank: { ...dragon, seasonEndsAt: '2026-11-16T11:00:00Z' } })
 
-    expect(within(dialog).getByText('Már nem vásárolható')).toBeTruthy()
-    expect(within(dialog).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
-  })
-
-  /**
-   * A shadcn AlertDialog (owner, 2026-11-17): a decision, not a page to read,
-   * so it has no X; only Mégse (or Esc) leaves it, a stray tap beside it does not.
-   */
-  it('is an alert dialog without an X', () => {
-    const { dialog } = renderDialog()
-
-    expect(within(dialog).queryByRole('button', { name: 'Bezárás' })).toBeNull()
-  })
-
-  it('Mégse closes it', () => {
-    const { dialog, onClose } = renderDialog()
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Mégse' }))
-
-    expect(onClose).toHaveBeenCalled()
+    expect(within(dialog).getByRole('heading', { name: 'Ez a rang már nem vásárolható.' })).toBeTruthy()
+    expect(within(dialog).queryByRole('button', { name: 'Igen' })).toBeNull()
+    expect(within(dialog).getByRole('button', { name: 'Bezárás' })).toBeTruthy()
   })
 })

@@ -1,5 +1,5 @@
 /**
- * "Így néz ki rajtad": the rank's prefix image before the player's name.
+ * "Játékbeli kinézet": the rank's prefix image before the player's name.
  * Review 2026-11-17, F4: a prefix that failed once is tried again when the
  * ranks refresh with a corrected address (a fixed upload in the management
  * section), instead of staying hidden until the page reloads.

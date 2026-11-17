@@ -20,8 +20,8 @@ export function RankPreview({ rank }: { rank: Rank }) {
 
   return (
     <figure aria-labelledby={captionId} className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background px-3 pt-2 pb-2.5">
-      {/* Says what the line is (review 2026-11-17): a player sees their own name as the game shows it. */}
-      <figcaption id={captionId} className="text-[11px] font-bold tracking-wide text-faint uppercase">Így nézel ki a játékban</figcaption>
+      {/* Says what the line is (owner, 2026-11-17): the player's own name as the game shows it. */}
+      <figcaption id={captionId} className="text-[11px] font-bold tracking-wide text-faint uppercase">Játékbeli kinézet</figcaption>
       {/* Wraps instead of cutting: a 16-character name after a wide prefix moves to its own line. */}
       <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
         <PlayerHead name={account?.display_name} className="size-6 flex-none" />

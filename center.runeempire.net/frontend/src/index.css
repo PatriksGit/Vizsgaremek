@@ -186,6 +186,18 @@
     }
 }
 
+/* The purchase popup's icon circle pops in as the popup opens (owner, 2026-11-17: "a proper popup"). */
+@keyframes popup-icon {
+    from {
+        opacity: 0;
+        transform: scale(0.4);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.12);
+    }
+}
+
 /* A small turn around a three-quarter view, for the stand-in player figure. */
 @keyframes sway {
     from {
@@ -326,10 +338,15 @@
     animation-delay: calc((var(--delay, 0) + 150) * 1ms);
 }
 
+.popup-icon {
+    animation: popup-icon 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s both;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .backdrop-reveal,
     .card-rise,
     .content-in,
+    .popup-icon,
     .rank-reveal,
     .today-pulse,
     .ping::after {

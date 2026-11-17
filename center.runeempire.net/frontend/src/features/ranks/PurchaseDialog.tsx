@@ -1,4 +1,6 @@
-import { useId } from 'react'
+import { faQuestion, faXmark, type IconDefinition } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { type ReactNode, useId } from 'react'
 import { Link } from 'react-router'
 
 import {
@@ -9,10 +11,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { runeCountFormat } from '@/features/home/stats'
+import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
 import { addDays, budapestDay, seasonOver } from './dates'
-import { NoLongerSold } from './RankParts'
 
 type PurchaseDialogProps = {
   /** The rank being bought; null keeps the dialog shut. */
@@ -29,105 +31,136 @@ type PurchaseDialogProps = {
   finalFocus?: () => HTMLElement | true
 }
 
+const buttonLook = 'flex min-h-12 items-center justify-center rounded-full px-4 text-[15px] font-extrabold transition-colors'
+
 /**
- * One plain confirmation before a purchase (owner, 2026-11-17): the rank, the
- * duration and the price, until when it will last, and that it cannot be
- * undone. Mégse first, in red, then the action's own name in green (owner,
- * 2026-11-17). Not enough runes says how many are missing and offers topping
- * up instead; a seasonal rank whose time ran out while it was open can no
- * longer be bought. Buying is not wired yet (frontend only), so the purchase
- * button is off and says so.
+ * The popup a duration button opens (owner, 2026-11-17): it checks the runes
+ * first. Too few -> an X in a circle, "Nincs elég rúnád a rang
+ * megvásárlásához.", how many are missing, Rúna-feltöltés or Bezárás. Enough
+ * (or a balance that cannot be read: it never claims a shortage it cannot
+ * see) -> a ? in a circle, "Biztosan szeretnéd megvásárolni a rangot?", the
+ * price and the expiry, then Igen / Mégse. A seasonal rank whose time ran out
+ * while it was open can no longer be bought. Buying is not wired yet
+ * (frontend only), so Igen is off and says so.
  *
- * A shadcn AlertDialog (owner, 2026-11-17): a decision, so it has no X and a
- * stray tap beside it does not close it; only Mégse or Esc do.
+ * A shadcn AlertDialog: no X in the corner and a tap beside it does not close
+ * it; only its buttons or Esc do.
  */
 export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, finalFocus }: PurchaseDialogProps) {
   const price = rank?.prices.find((option) => option.days === days)?.runes ?? 0
   const extending = ownedUntil !== null
   const missing = typeof balance === 'number' ? price - balance : 0
-  const over = rank !== null && seasonOver(rank, now)
-  const buyable = !over && missing <= 0
   const hintId = useId()
 
   return (
     <AlertDialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent
         finalFocus={finalFocus}
-        className="max-h-[calc(100svh-2rem)] gap-5 overflow-y-auto rounded-2xl border border-line bg-card p-6 ring-0 data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-105"
+        className="max-h-[calc(100svh-2rem)] justify-items-center gap-5 overflow-y-auto rounded-2xl border border-line bg-card px-6 pt-8 pb-6 text-center ring-0 data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-100"
       >
-        {rank && (
-          <>
-            <div className="flex flex-col gap-3">
-              <AlertDialogTitle className="font-heading text-2xl leading-tight font-bold">
-                {extending ? 'Biztosan meghosszabbítod?' : 'Biztosan megveszed?'}
-              </AlertDialogTitle>
-              <AlertDialogDescription render={<div />} className="flex flex-col gap-1 text-sm text-pretty text-muted-foreground">
-                <span className="text-base font-bold text-foreground">
-                  {`${rank.name} · ${days} nap · ${runeCountFormat.format(price)} rúna`}
-                </span>
-                <span>
-                  {extending ? 'Új lejárat' : 'Aktív eddig'}:{' '}
-                  <strong className="text-foreground">{budapestDay(addDays(ownedUntil ?? now, days))}</strong>
-                </span>
-                {typeof balance === 'number' && (
-                  // Before and after, so the player sees what is left (Roblox does this); only the balance when it is short.
-                  <span>
-                    Egyenleged:{' '}
-                    <strong className="text-foreground">
-                      {runeCountFormat.format(balance)}
-                      {buyable && ` → ${runeCountFormat.format(balance - price)}`} rúna
-                    </strong>
-                  </span>
-                )}
-                {/* Nothing can be bought when the runes are short or the season is over: nothing to warn about. */}
-                {buyable && <span className="mt-2 font-semibold text-soft">A vásárlás nem visszavonható.</span>}
-              </AlertDialogDescription>
-            </div>
-
-            {!over && missing > 0 && (
-              <span className="text-sm font-semibold text-danger">
-                Nincs elég rúnád, még {runeCountFormat.format(missing)} hiányzik.
-              </span>
-            )}
-
-            <div className="flex flex-col gap-1.5">
-              <div className="grid grid-cols-2 gap-3">
-                <AlertDialogCancel
-                  variant="ghost"
-                  className="h-auto min-h-12 rounded-full border border-danger/70 text-[15px] font-extrabold text-danger hover:bg-danger/10 hover:text-danger"
-                >
-                  Mégse
+        {rank &&
+          (seasonOver(rank, now) ? (
+            <Popup icon={faXmark} tone="danger" title="Ez a rang már nem vásárolható." body={`${rank.name} · a szezon véget ért.`}>
+              <AlertDialogCancel variant="ghost" className={cn(buttonLook, 'h-auto w-full bg-raised text-foreground hover:bg-raised/80')}>
+                Bezárás
+              </AlertDialogCancel>
+            </Popup>
+          ) : missing > 0 ? (
+            <Popup
+              icon={faXmark}
+              tone="danger"
+              title={`Nincs elég rúnád a rang ${extending ? 'meghosszabbításához' : 'megvásárlásához'}.`}
+              body={
+                <>
+                  <span>{`${rank.name} · ${days} nap · ${runeCountFormat.format(price)} rúna`}</span>
+                  <span className="font-semibold text-danger">Még {runeCountFormat.format(missing)} rúna hiányzik.</span>
+                </>
+              }
+            >
+              <div className="grid w-full grid-cols-2 gap-3">
+                <Link to="/runak/vasarlas" className={cn(buttonLook, 'bg-primary text-primary-foreground hover:bg-primary/85')}>
+                  Rúna-feltöltés
+                </Link>
+                <AlertDialogCancel variant="ghost" className={cn(buttonLook, 'h-auto bg-raised text-foreground hover:bg-raised/80')}>
+                  Bezárás
                 </AlertDialogCancel>
-                {over ? (
-                  <NoLongerSold className="min-h-12 rounded-full text-sm" />
-                ) : missing > 0 ? (
-                  <Link
-                    to="/runak/vasarlas"
-                    className="flex min-h-12 items-center justify-center rounded-full bg-primary text-[15px] font-extrabold text-primary-foreground transition-colors hover:bg-primary/85"
-                  >
-                    Rúna-feltöltés
-                  </Link>
-                ) : (
-                  // Buying is not wired yet (frontend only): the button shows where it will be.
+              </div>
+            </Popup>
+          ) : (
+            <Popup
+              icon={faQuestion}
+              tone="primary"
+              title={`Biztosan szeretnéd ${extending ? 'meghosszabbítani' : 'megvásárolni'} a rangot?`}
+              body={
+                <>
+                  <span>{`${rank.name} · ${days} nap`}</span>
+                  <span className="text-2xl font-extrabold text-foreground">{runeCountFormat.format(price)} rúna</span>
+                  <span>
+                    {extending ? 'Új lejárat' : 'Lejárat'}:{' '}
+                    <strong className="text-foreground">{budapestDay(addDays(ownedUntil ?? now, days))}</strong>
+                  </span>
+                  <span className="mt-1 text-xs font-semibold text-soft">A vásárlás nem visszavonható.</span>
+                </>
+              }
+            >
+              <div className="flex w-full flex-col gap-1.5">
+                {/* "Igen v Mégse" (owner, 2026-11-17): Igen first, green; Mégse red. */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Buying is not wired yet (frontend only): the button shows where it will be. */}
                   <button
                     type="button"
                     disabled
                     aria-describedby={hintId}
-                    className="min-h-12 rounded-full bg-ok text-[15px] font-extrabold text-background disabled:cursor-not-allowed disabled:opacity-50"
+                    className={cn(buttonLook, 'bg-ok text-background disabled:cursor-not-allowed disabled:opacity-50')}
                   >
-                    {extending ? 'Meghosszabbítás' : 'Megvásárlás'}
+                    Igen
                   </button>
-                )}
-              </div>
-              {buyable && (
-                <span id={hintId} className="text-center text-xs font-semibold text-faint">
+                  <AlertDialogCancel variant="ghost" className={cn(buttonLook, 'h-auto bg-danger text-background hover:bg-danger/85 hover:text-background')}>
+                    Mégse
+                  </AlertDialogCancel>
+                </div>
+                <span id={hintId} className="text-xs font-semibold text-faint">
                   A vásárlás hamarosan indul.
                 </span>
-              )}
-            </div>
-          </>
-        )}
+              </div>
+            </Popup>
+          ))}
       </AlertDialogContent>
     </AlertDialog>
+  )
+}
+
+const tones = {
+  primary: 'border-primary/45 text-primary',
+  danger: 'border-danger/45 text-danger',
+}
+
+/** The popup's body: the icon in a circle, the question, its details, then its buttons. */
+function Popup({
+  icon,
+  tone,
+  title,
+  body,
+  children,
+}: {
+  icon: IconDefinition
+  tone: keyof typeof tones
+  title: string
+  body: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <>
+      <span aria-hidden="true" className={cn('popup-icon flex size-18 items-center justify-center rounded-full border-4', tones[tone])}>
+        <FontAwesomeIcon icon={icon} className="size-8" />
+      </span>
+      <div className="flex flex-col items-center gap-2">
+        <AlertDialogTitle className="font-heading text-[22px] leading-tight font-bold text-balance">{title}</AlertDialogTitle>
+        <AlertDialogDescription render={<div />} className="flex flex-col items-center gap-1 text-sm text-pretty text-muted-foreground">
+          {body}
+        </AlertDialogDescription>
+      </div>
+      {children}
+    </>
   )
 }

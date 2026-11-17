@@ -68,6 +68,9 @@ function renderPage() {
   )
 }
 
+/** Hungarian numbers group with a no-break space. */
+const text = (element: HTMLElement) => element.textContent?.replace(/\s/g, ' ')
+
 const card = (name: string) => screen.getAllByRole('article').find((article) => within(article).queryByRole('heading', { name }))!
 
 beforeEach(() => {
@@ -89,11 +92,13 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     expect(screen.getAllByRole('article')).toHaveLength(3)
     // Review 2026-11-17, F5: the card titles follow the page's h1, no level skipped.
     expect(within(card('Dragon')).getByRole('heading', { level: 2, name: 'Dragon' })).toBeTruthy()
-    // One button per duration, its price on it (owner, 2026-11-17).
-    expect(within(card('Dragon')).getByRole('button', { name: /^Dragon meghosszabbítása: \+30 nap\s*2000 rúna$/ })).toBeTruthy()
-    expect(within(card('Dragon')).getByRole('button', { name: /^Dragon meghosszabbítása: \+90 nap\s*5200 rúna$/ })).toBeTruthy()
-    expect(within(card('Mage')).getByRole('button', { name: /^Mage megvásárlása: 30 nap\s*1000 rúna$/ })).toBeTruthy()
-    expect(within(card('Mage')).getByRole('button', { name: /^Mage megvásárlása: 90 nap\s*2600 rúna$/ })).toBeTruthy()
+    // One filled button per duration without a price; the card says the 30-day price (owner, 2026-11-17).
+    expect(within(card('Dragon')).getByRole('button', { name: 'Dragon meghosszabbítása: +30 nap' })).toBeTruthy()
+    expect(within(card('Dragon')).getByRole('button', { name: 'Dragon meghosszabbítása: +90 nap' })).toBeTruthy()
+    expect(within(card('Mage')).getByRole('button', { name: 'Mage megvásárlása: 30 nap' })).toBeTruthy()
+    expect(within(card('Mage')).getByRole('button', { name: 'Mage megvásárlása: 90 nap' })).toBeTruthy()
+    expect(text(within(card('Dragon')).getByText(/\d rúna$/))).toBe('2000 rúna')
+    expect(text(within(card('Mage')).getByText(/\d rúna$/))).toBe('1000 rúna')
     expect(within(card('Dragon')).getByRole('img', { name: 'Dragon rang animációja' })).toBeTruthy()
   })
 
@@ -137,46 +142,90 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     expect(heading.style.color).toBe('rgb(229, 103, 90)')
     expect(within(dragon).queryByText('Repülés')).toBeNull()
 
-    const preview = within(dragon).getByRole('figure', { name: 'Így nézel ki a játékban' })
+    const preview = within(dragon).getByRole('figure', { name: 'Játékbeli kinézet' })
     expect(within(preview).getByRole('img', { name: 'Dragon' }).getAttribute('src')).toBe('/rank_icons/dragon.png')
     expect(within(preview).getByText('Shopper').style.color).toBe('rgb(229, 103, 90)')
   })
 
-  /** Which servers the rank gives something on (owner, 2026-11-17); the others are left out. */
-  it('a card names the servers the rank works on, and none when it has none', async () => {
+  /**
+   * The price is always "N rúna" (owner, 2026-11-17): the 30-day one, and the
+   * 90-day one while the pointer (or focus) is on the 90-day button.
+   */
+  it('the price follows the duration button under the pointer or focus', async () => {
+    backend(statsWith(null))
+    renderPage()
+    await screen.findByRole('heading', { name: 'Mage' })
+    const mage = card('Mage')
+    const price = () => text(within(mage).getByText(/\d rúna$/))
+    const ninety = within(mage).getByRole('button', { name: 'Mage megvásárlása: 90 nap' })
+
+    fireEvent.pointerEnter(ninety)
+    expect(price()).toBe('2600 rúna')
+    fireEvent.pointerLeave(ninety)
+    expect(price()).toBe('1000 rúna')
+
+    fireEvent.focus(ninety)
+    expect(price()).toBe('2600 rúna')
+    fireEvent.blur(ninety)
+    expect(price()).toBe('1000 rúna')
+  })
+
+  /** The in-game look right under the name, then the link to the rank text (owner, 2026-11-17). */
+  it('the in-game look comes right after the name, then "Tudj meg többet a rangról"', async () => {
+    backend(statsWith(null))
+    renderPage()
+    await screen.findByRole('heading', { name: 'Dragon' })
+    const dragon = card('Dragon')
+    const preview = within(dragon).getByRole('figure', { name: 'Játékbeli kinézet' })
+    const more = within(dragon).getByRole('button', { name: 'Tudj meg többet a rangról: Dragon' })
+
+    expect(preview.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(more.textContent).toBe('Tudj meg többet a rangról')
+  })
+
+  /** No server chips on the card (owner, 2026-11-17): "Mit kapsz?" says which servers. */
+  it('a card does not list the servers', async () => {
     backend(statsWith(null))
     renderPage()
     await screen.findByRole('heading', { name: 'Dragon' })
 
-    const servers = within(card('Dragon')).getByRole('list', { name: 'Szerverek' })
-    expect(within(servers).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Lobby', 'Kingdoms', 'SkyPvp'])
-    expect(within(card('Mage')).queryByRole('list', { name: 'Szerverek' })).toBeNull()
+    expect(within(card('Dragon')).queryByRole('list', { name: 'Szerverek' })).toBeNull()
   })
 
   it('a rank without a prefix image, or with a broken one, still shows the player name', async () => {
     backend(statsWith(null))
     renderPage()
     await screen.findByRole('heading', { name: 'Mage' })
-    const magePreview = within(card('Mage')).getByRole('figure', { name: 'Így nézel ki a játékban' })
+    const magePreview = within(card('Mage')).getByRole('figure', { name: 'Játékbeli kinézet' })
     expect(within(magePreview).queryByRole('img', { name: 'Mage' })).toBeNull()
     expect(within(magePreview).getByText('Shopper')).toBeTruthy()
 
-    const dragonPreview = within(card('Dragon')).getByRole('figure', { name: 'Így nézel ki a játékban' })
+    const dragonPreview = within(card('Dragon')).getByRole('figure', { name: 'Játékbeli kinézet' })
     fireEvent.error(within(dragonPreview).getByRole('img', { name: 'Dragon' }))
     expect(within(dragonPreview).queryByRole('img', { name: 'Dragon' })).toBeNull()
   })
 
-  /** A purchase is one plain confirmation (owner, 2026-11-17): "are you sure, this cannot be undone". */
+  /** A press checks the runes, then asks (owner, 2026-11-17). */
   it('a duration button asks for confirmation of exactly that purchase', async () => {
     backend(statsWith(null))
     renderPage()
     await screen.findByRole('heading', { name: 'Mage' })
 
-    fireEvent.click(within(card('Mage')).getByRole('button', { name: /Mage megvásárlása: 90 nap/ }))
+    fireEvent.click(within(card('Mage')).getByRole('button', { name: 'Mage megvásárlása: 90 nap' }))
 
-    const dialog = await screen.findByRole('alertdialog', { name: 'Biztosan megveszed?' })
-    expect(within(dialog).getByText('Mage · 90 nap · 2600 rúna')).toBeTruthy()
-    expect(within(dialog).getByText('A vásárlás nem visszavonható.')).toBeTruthy()
+    const dialog = await screen.findByRole('alertdialog', { name: 'Biztosan szeretnéd megvásárolni a rangot?' })
+    expect(within(dialog).getByText('Mage · 90 nap')).toBeTruthy()
+    expect(text(within(dialog).getByText(/^2600/))).toBe('2600 rúna')
+  })
+
+  it('too few runes for it says so instead of asking', async () => {
+    backend(statsWith(null, 5000))
+    renderPage()
+    await screen.findByRole('heading', { name: 'Dragon' })
+
+    fireEvent.click(within(card('Dragon')).getByRole('button', { name: 'Dragon megvásárlása: 90 nap' }))
+
+    expect(await screen.findByRole('alertdialog', { name: 'Nincs elég rúnád a rang megvásárlásához.' })).toBeTruthy()
   })
 
   it('without stats the ranks still show and none looks owned', async () => {
@@ -232,7 +281,7 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
     backend(statsWith(null))
     renderPage()
     await screen.findByRole('heading', { name: 'Dragon' })
-    fireEvent.click(within(card('Dragon')).getByRole('button', { name: /Mit kapsz/ }))
+    fireEvent.click(within(card('Dragon')).getByRole('button', { name: /Tudj meg többet/ }))
 
     const dialog = await screen.findByRole('dialog', { name: 'Dragon' })
     expect(within(dialog).getByText('Egy erős rang.')).toBeTruthy()
@@ -246,16 +295,18 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
     expect(within(within(dialog).getByRole('list', { name: 'Szerverek' })).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Lobby', 'Kingdoms', 'SkyPvp'])
     expect(within(dialog).getByText(/Egyenleged/).textContent?.replace(/\s/g, ' ')).toBe('Egyenleged: 5000 rúna')
 
-    fireEvent.click(within(dialog).getByRole('button', { name: /Dragon megvásárlása: 90 nap/ }))
-    const confirm = await screen.findByRole('alertdialog', { name: 'Biztosan megveszed?' })
-    expect(within(confirm).getByText('Dragon · 90 nap · 5200 rúna')).toBeTruthy()
+    expect(text(within(dialog).getByText(/^2000/))).toBe('2000 rúna')
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Dragon megvásárlása: 30 nap' }))
+    const confirm = await screen.findByRole('alertdialog', { name: 'Biztosan szeretnéd megvásárolni a rangot?' })
+    expect(within(confirm).getByText('Dragon · 30 nap')).toBeTruthy()
   })
 
   it('the season ending while it is open turns its button off', async () => {
     backend(statsWith(null))
     renderPage()
     await screen.findByRole('heading', { name: 'Karácsony' })
-    fireEvent.click(within(card('Karácsony')).getByRole('button', { name: /Mit kapsz/ }))
+    fireEvent.click(within(card('Karácsony')).getByRole('button', { name: /Tudj meg többet/ }))
     const dialog = await screen.findByRole('dialog', { name: 'Karácsony' })
 
     act(() => vi.setSystemTime(SEASON_END))
@@ -269,7 +320,7 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
     backend(statsWith({ group: 'dragon', name: 'Dragon', expires_at: '2026-11-20T12:00:00Z', color: null }))
     renderPage()
     await screen.findByText('Aktív eddig: 2026.11.20.')
-    fireEvent.click(within(card('Dragon')).getByRole('button', { name: 'Mit kapsz? – Dragon' }))
+    fireEvent.click(within(card('Dragon')).getByRole('button', { name: 'Tudj meg többet a rangról: Dragon' }))
 
     const dialog = await screen.findByRole('dialog', { name: 'Dragon' })
     expect(within(dialog).getByText('Aktív eddig: 2026.11.20.')).toBeTruthy()
