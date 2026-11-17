@@ -7,10 +7,10 @@ import { cn } from '@/lib/utils'
 import type { Rank } from './api'
 import { seasonEndText, timeLeft } from './dates'
 
-/** The rank's animated banner, 2:1 with a small inset; a dashed box until it has one. */
+/** The rank's animated banner, 5:2 with a small inset; a dashed box until it has one. */
 export function RankBanner({ rank, className, decorative = false }: { rank: Rank; className?: string; decorative?: boolean }) {
   return (
-    <div className={cn('flex aspect-2/1 items-center justify-center border-b border-border bg-background p-2', className)}>
+    <div className={cn('flex aspect-5/2 items-center justify-center border-b border-border bg-background p-2', className)}>
       {rank.gifUrl ? (
         <img
           src={rank.gifUrl}

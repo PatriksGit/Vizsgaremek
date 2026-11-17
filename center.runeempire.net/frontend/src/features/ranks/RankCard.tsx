@@ -20,9 +20,9 @@ type RankCardProps = {
 }
 
 /**
- * One rank in the shop: its banner, its name in the in-game colour, how it
- * looks on the player, and one buy (or extend) button per duration; the perks
- * are in "Mit kapsz?" only (owner, 2026-11-17).
+ * One rank in the shop: its banner, its name in the in-game colour, the
+ * servers it works on, how it looks on the player, and one buy (or extend)
+ * button per duration; the perks are in "Mit kapsz?" only (owner, 2026-11-17).
  */
 export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardProps) {
   const over = seasonOver(rank, now)
@@ -43,7 +43,7 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardPr
         <RankBanner rank={rank} />
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 p-5 sm:px-6 sm:pb-6">
+      <div className="flex flex-1 flex-col gap-3 p-4 sm:px-5">
         <div className="flex flex-col items-center gap-2 text-center">
           <h3
             className="font-heading text-2xl leading-tight font-bold wrap-anywhere text-foreground"
@@ -52,12 +52,21 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardPr
             {rank.name}
           </h3>
           {rank.seasonEndsAt && <SeasonInfo endsAt={rank.seasonEndsAt} now={now} />}
+          {rank.servers.length > 0 && (
+            <ul aria-label="Szerverek" className="flex flex-wrap justify-center gap-1.5">
+              {rank.servers.map((server) => (
+                <li key={server} className="rounded-md border border-line bg-raised px-2 py-0.5 text-xs font-bold text-soft">
+                  {server}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <button
           type="button"
           onClick={onDetails}
-          className="inline-flex min-h-11 items-center gap-1.5 self-center px-2 text-[13px] font-bold text-primary hover:text-primary/80"
+          className="-my-1.5 inline-flex min-h-11 items-center gap-1.5 self-center px-2 text-[13px] font-bold text-primary hover:text-primary/80"
         >
           Mit kapsz?
           <FontAwesomeIcon icon={faChevronRight} aria-hidden="true" className="size-3" />
@@ -65,7 +74,7 @@ export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardPr
 
         <RankPreview rank={rank} />
 
-        <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3.5">
+        <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3">
           {ownedUntil && (
             <span className="flex items-center justify-center gap-1.5 text-sm font-bold text-ok">
               <FontAwesomeIcon icon={faCheck} aria-hidden="true" className="size-3.5" />

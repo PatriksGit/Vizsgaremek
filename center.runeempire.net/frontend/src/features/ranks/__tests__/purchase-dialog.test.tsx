@@ -22,6 +22,7 @@ const dragon: Rank = {
   ],
   seasonEndsAt: null,
   color: null,
+  servers: [],
 }
 const NOW = new Date('2026-11-16T12:00:00Z')
 
@@ -62,14 +63,17 @@ describe('the rank purchase confirmation', () => {
 
     expect(within(dialog).getByRole('heading', { name: 'Biztosan meghosszabbítod?' })).toBeTruthy()
     expect(text(within(dialog).getByText(/Új lejárat/))).toBe('Új lejárat: 2026.12.20.')
-    expect(within(dialog).getByRole('button', { name: 'Igen, meghosszabbítom' })).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: 'Meghosszabbítás' })).toBeTruthy()
   })
 
-  it('the confirm button is there but off: buying starts later', () => {
+  /** The action's own name on the main button, Mégse first (owner, 2026-11-17: Mégse red, the purchase green). */
+  it('Mégse comes first, then the purchase button, which is there but off: buying starts later', () => {
     const { dialog } = renderDialog()
-    const confirm = within(dialog).getByRole('button', { name: 'Igen, megveszem' }) as HTMLButtonElement
+    const confirm = within(dialog).getByRole('button', { name: 'Megvásárlás' }) as HTMLButtonElement
+    const cancel = within(dialog).getByRole('button', { name: 'Mégse' })
 
     expect(confirm.disabled).toBe(true)
+    expect(cancel.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(within(dialog).getByText('A vásárlás hamarosan indul.')).toBeTruthy()
   })
 
@@ -78,21 +82,21 @@ describe('the rank purchase confirmation', () => {
 
     expect(text(within(dialog).getByText(/Nincs elég rúnád/))).toBe('Nincs elég rúnád, még 500 hiányzik.')
     expect(within(dialog).getByRole('link', { name: 'Rúna-feltöltés' }).getAttribute('href')).toBe('/runak/vasarlas')
-    expect(within(dialog).queryByRole('button', { name: 'Igen, megveszem' })).toBeNull()
+    expect(within(dialog).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
   })
 
   it('a balance that could not be read does not claim the runes are short', () => {
     const { dialog } = renderDialog({ balance: null })
 
     expect(within(dialog).queryByText(/Nincs elég rúnád/)).toBeNull()
-    expect(within(dialog).getByRole('button', { name: 'Igen, megveszem' })).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: 'Megvásárlás' })).toBeTruthy()
   })
 
   it('once the season is over it can no longer be bought, even with the dialog open', () => {
     const { dialog } = renderDialog({ rank: { ...dragon, seasonEndsAt: '2026-11-16T11:00:00Z' } })
 
     expect(within(dialog).getByText('Már nem vásárolható')).toBeTruthy()
-    expect(within(dialog).queryByRole('button', { name: 'Igen, megveszem' })).toBeNull()
+    expect(within(dialog).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
   })
 
   it('Mégse closes it', () => {

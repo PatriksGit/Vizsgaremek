@@ -34,9 +34,9 @@ const prices = (thirty: number) => [
 
 /** As GET /api/ranks answers, in shop order. */
 const RANKS = [
-  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString(), color: null },
-  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prefix_url: '/rank_icons/dragon.png', prices: prices(2000), season_ends_at: null, color: '#E5675A' },
-  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1000), season_ends_at: null, color: null },
+  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString(), color: null, servers: ['Lobby'] },
+  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prefix_url: '/rank_icons/dragon.png', prices: prices(2000), season_ends_at: null, color: '#E5675A', servers: ['Lobby', 'Kingdoms', 'SkyPvp'] },
+  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prefix_url: null, prices: prices(1000), season_ends_at: null, color: null, servers: [] },
 ]
 
 function statsWith(rank: MyStats['rank'], runes = 5000): MyStats {
@@ -138,6 +138,17 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     const preview = within(dragon).getByRole('figure', { name: 'Így néz ki rajtad a játékban' })
     expect(within(preview).getByRole('img', { name: 'Dragon' }).getAttribute('src')).toBe('/rank_icons/dragon.png')
     expect(within(preview).getByText('Shopper').style.color).toBe('rgb(229, 103, 90)')
+  })
+
+  /** Which servers the rank gives something on (owner, 2026-11-17); the others are left out. */
+  it('a card names the servers the rank works on, and none when it has none', async () => {
+    backend(statsWith(null))
+    renderPage()
+    await screen.findByRole('heading', { name: 'Dragon' })
+
+    const servers = within(card('Dragon')).getByRole('list', { name: 'Szerverek' })
+    expect(within(servers).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Lobby', 'Kingdoms', 'SkyPvp'])
+    expect(within(card('Mage')).queryByRole('list', { name: 'Szerverek' })).toBeNull()
   })
 
   it('a rank without a prefix image, or with a broken one, still shows the player name', async () => {

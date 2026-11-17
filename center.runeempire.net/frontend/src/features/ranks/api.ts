@@ -21,6 +21,8 @@ export type Rank = {
   seasonEndsAt: string | null
   /** The in-game colour (#RRGGBB, set with `/lp group <group> meta set color`), or null. */
   color: string | null
+  /** The servers it gives something on, in their order; the others are left out. */
+  servers: string[]
 }
 
 type RankResponse = {
@@ -32,6 +34,7 @@ type RankResponse = {
   prices: RankPrice[]
   season_ends_at: string | null
   color: string | null
+  servers: string[]
 }
 
 async function fetchRanks(): Promise<Rank[]> {
@@ -45,6 +48,7 @@ async function fetchRanks(): Promise<Rank[]> {
     prices: [...rank.prices].sort((a, b) => a.days - b.days),
     seasonEndsAt: rank.season_ends_at,
     color: rank.color,
+    servers: rank.servers,
   }))
 }
 

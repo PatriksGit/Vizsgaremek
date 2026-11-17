@@ -3,6 +3,7 @@
 namespace Tests\Feature\Http\Controllers;
 
 use App\Models\Rank;
+use App\Models\Server;
 use App\Support\PluginDatabase;
 use Database\Seeders\RankSeeder;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -44,6 +45,7 @@ class RanksControllerTest extends TestCase
                     'prices' => [['days' => 30, 'runes' => 2000], ['days' => 90, 'runes' => 5200]],
                     'season_ends_at' => '2026-12-26T23:00:00Z',
                     'color' => null,
+                    'servers' => [],
                 ],
                 [
                     'group' => 'mage',
@@ -54,6 +56,7 @@ class RanksControllerTest extends TestCase
                     'prices' => [['days' => 30, 'runes' => 1000], ['days' => 90, 'runes' => 2600]],
                     'season_ends_at' => null,
                     'color' => null,
+                    'servers' => [],
                 ],
             ]]);
     }
@@ -93,6 +96,24 @@ class RanksControllerTest extends TestCase
             ->assertJsonPath('data.0.color', null);
     }
 
+    /**
+     * Which servers a rank gives something on (owner, 2026-11-17: chips like
+     * [Lobby] [Kingdoms] on the card; a server it gives nothing on is left out).
+     * Servers are added once and ticked per rank, in the servers' own order.
+     */
+    public function test_each_rank_lists_its_servers_in_server_order(): void
+    {
+        $lobby = Server::query()->create(['name' => 'Lobby', 'sort_order' => 1]);
+        $kingdoms = Server::query()->create(['name' => 'Kingdoms', 'sort_order' => 2]);
+        Server::query()->create(['name' => 'KitPvp', 'sort_order' => 3]);
+        $rank = Rank::factory()->create(['group' => 'dragon']);
+        $rank->servers()->attach([$kingdoms->id, $lobby->id]);
+
+        $this->getJson('/api/ranks')
+            ->assertOk()
+            ->assertJsonPath('data.0.servers', ['Lobby', 'Kingdoms']);
+    }
+
     public function test_an_empty_shop_is_an_empty_list(): void
     {
         $this->getJson('/api/ranks')->assertOk()->assertExactJson(['data' => []]);
@@ -128,6 +149,9 @@ class RanksControllerTest extends TestCase
         $this->assertSame('/ranks/dragon.gif', $dragon->gif_url);
         $this->assertSame('/rank_icons/dragon.png', $dragon->prefix_url);
         $this->assertSame(0, Rank::query()->whereNull('prefix_url')->count());
+        $this->assertSame(['Lobby', 'Kingdoms', 'SkyPvp', 'KitPvp'], Server::query()->orderBy('sort_order')->pluck('name')->all());
+        $this->assertSame(['Lobby'], $dragon->servers->pluck('name')->all());
+        $this->assertSame(['Lobby', 'Kingdoms', 'SkyPvp', 'KitPvp'], Rank::query()->where('group', 'caster')->sole()->servers->pluck('name')->all());
         $this->assertStringContainsString('## Globális', $dragon->details);
         $this->assertSame(0, Rank::query()->whereNotNull('season_ends_at')->count());
         $this->assertTrue(Rank::query()->orderBy('sort_order')->pluck('price_30')->sliding(2)->every(fn ($pair): bool => $pair->first() < $pair->last()));
