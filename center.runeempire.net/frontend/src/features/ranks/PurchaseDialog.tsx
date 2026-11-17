@@ -1,6 +1,12 @@
 import { Link } from 'react-router'
 
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { runeCountFormat } from '@/features/home/stats'
 
 import type { Rank } from './api'
@@ -30,6 +36,9 @@ type PurchaseDialogProps = {
  * up instead; a seasonal rank whose time ran out while it was open can no
  * longer be bought. Buying is not wired yet (frontend only), so the purchase
  * button is off and says so.
+ *
+ * A shadcn AlertDialog (owner, 2026-11-17): a decision, so it has no X and a
+ * stray tap beside it does not close it; only Mégse or Esc do.
  */
 export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, finalFocus }: PurchaseDialogProps) {
   const price = rank?.prices.find((option) => option.days === days)?.runes ?? 0
@@ -38,15 +47,18 @@ export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, 
   const over = rank !== null && seasonOver(rank, now)
 
   return (
-    <Dialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent finalFocus={finalFocus} className="gap-5 rounded-2xl border border-line bg-card p-6 ring-0 sm:max-w-105">
+    <AlertDialog open={rank !== null} onOpenChange={(open) => !open && onClose()}>
+      <AlertDialogContent
+        finalFocus={finalFocus}
+        className="max-h-[calc(100svh-2rem)] gap-5 overflow-y-auto rounded-2xl border border-line bg-card p-6 ring-0 data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-105"
+      >
         {rank && (
           <>
-            <div className="flex flex-col gap-3 pr-8">
-              <DialogTitle className="font-heading text-2xl leading-tight font-bold">
+            <div className="flex flex-col gap-3">
+              <AlertDialogTitle className="font-heading text-2xl leading-tight font-bold">
                 {extending ? 'Biztosan meghosszabbítod?' : 'Biztosan megveszed?'}
-              </DialogTitle>
-              <DialogDescription render={<div />} className="flex flex-col gap-1 text-sm text-muted-foreground">
+              </AlertDialogTitle>
+              <AlertDialogDescription render={<div />} className="flex flex-col gap-1 text-sm text-pretty text-muted-foreground">
                 <span className="text-base font-bold text-foreground">
                   {`${rank.name} · ${days} nap · ${runeCountFormat.format(price)} rúna`}
                 </span>
@@ -55,7 +67,7 @@ export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, 
                   <strong className="text-foreground">{budapestDay(addDays(ownedUntil ?? now, days))}</strong>
                 </span>
                 <span className="mt-2 font-semibold text-soft">A vásárlás nem visszavonható.</span>
-              </DialogDescription>
+              </AlertDialogDescription>
             </div>
 
             {!over && missing > 0 && (
@@ -66,9 +78,12 @@ export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, 
 
             <div className="flex flex-col gap-1.5">
               <div className="grid grid-cols-2 gap-3">
-                <DialogClose className="min-h-12 rounded-full border border-danger/70 text-[15px] font-extrabold text-danger transition-colors hover:bg-danger/10">
+                <AlertDialogCancel
+                  variant="ghost"
+                  className="h-auto min-h-12 rounded-full border border-danger/70 text-[15px] font-extrabold text-danger hover:bg-danger/10 hover:text-danger"
+                >
                   Mégse
-                </DialogClose>
+                </AlertDialogCancel>
                 {over ? (
                   <NoLongerSold className="min-h-12 rounded-full text-sm" />
                 ) : missing > 0 ? (
@@ -93,7 +108,7 @@ export function PurchaseDialog({ rank, days, ownedUntil, balance, now, onClose, 
             </div>
           </>
         )}
-      </DialogContent>
-    </Dialog>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

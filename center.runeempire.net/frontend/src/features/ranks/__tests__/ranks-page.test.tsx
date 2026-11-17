@@ -174,7 +174,7 @@ describe('the rank cards', { timeout: 15_000 }, () => {
 
     fireEvent.click(within(card('Mage')).getByRole('button', { name: /Megvásárlás: 90 nap/ }))
 
-    const dialog = await screen.findByRole('dialog', { name: 'Biztosan megveszed?' })
+    const dialog = await screen.findByRole('alertdialog', { name: 'Biztosan megveszed?' })
     expect(within(dialog).getByText('Mage · 90 nap · 2600 rúna')).toBeTruthy()
     expect(within(dialog).getByText('A vásárlás nem visszavonható.')).toBeTruthy()
   })
@@ -224,7 +224,7 @@ describe('the "Mit kapsz?" dialog', { timeout: 15_000 }, () => {
     expect(within(dialog).queryByRole('tab')).toBeNull()
 
     fireEvent.click(within(dialog).getByRole('button', { name: /Megvásárlás: 90 nap/ }))
-    const confirm = await screen.findByRole('dialog', { name: 'Biztosan megveszed?' })
+    const confirm = await screen.findByRole('alertdialog', { name: 'Biztosan megveszed?' })
     expect(within(confirm).getByText('Dragon · 90 nap · 5200 rúna')).toBeTruthy()
   })
 

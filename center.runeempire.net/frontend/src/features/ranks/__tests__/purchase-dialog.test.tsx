@@ -33,7 +33,7 @@ function renderDialog(props: Partial<Parameters<typeof PurchaseDialog>[0]> = {})
       <PurchaseDialog rank={dragon} days={30} ownedUntil={null} balance={10_000} now={NOW} onClose={onClose} {...props} />
     </MemoryRouter>,
   )
-  return { dialog: screen.getByRole('dialog'), onClose }
+  return { dialog: screen.getByRole('alertdialog'), onClose }
 }
 
 /** Hungarian numbers group with a no-break space. */
@@ -97,6 +97,16 @@ describe('the rank purchase confirmation', () => {
 
     expect(within(dialog).getByText('Már nem vásárolható')).toBeTruthy()
     expect(within(dialog).queryByRole('button', { name: 'Megvásárlás' })).toBeNull()
+  })
+
+  /**
+   * A shadcn AlertDialog (owner, 2026-11-17): a decision, not a page to read,
+   * so it has no X; only Mégse (or Esc) leaves it, a stray tap beside it does not.
+   */
+  it('is an alert dialog without an X', () => {
+    const { dialog } = renderDialog()
+
+    expect(within(dialog).queryByRole('button', { name: 'Bezárás' })).toBeNull()
   })
 
   it('Mégse closes it', () => {
