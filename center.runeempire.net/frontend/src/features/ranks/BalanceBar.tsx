@@ -5,6 +5,7 @@ import { Link } from 'react-router'
 import { panelLook } from '@/components/app/Panel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NO_DATA, runeCountFormat } from '@/features/home/stats'
+import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 /**
@@ -14,7 +15,11 @@ import { cn } from '@/lib/utils'
  */
 export function BalanceBar({ balance }: { balance: number | null | undefined }) {
   return (
-    <section aria-label="Egyenleged" className={cn(panelLook, 'flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 md:px-5')}>
+    <section
+      aria-label="Egyenleged"
+      style={enterAfter(150)}
+      className={cn(panelLook, 'content-in flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 md:px-5')}
+    >
       <div className="flex items-center gap-3">
         <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-lg bg-raised text-soft">
           <FontAwesomeIcon icon={faCoins} className="size-4" />

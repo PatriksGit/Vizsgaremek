@@ -15,7 +15,7 @@ export function RankBanner({ rank, className }: { rank: Rank; className?: string
         <img
           src={rank.gifUrl}
           alt={`${rank.name} rang animációja`}
-          className="size-full object-contain"
+          className="rank-reveal size-full object-contain"
         />
       ) : (
         <span className="flex size-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line text-faint">
@@ -94,7 +94,7 @@ export function DurationButtons({
           key={days}
           type="button"
           onClick={() => onBuy(days)}
-          className="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border border-primary/40 bg-primary/12 px-2 py-2 text-foreground transition-colors hover:border-primary/70 hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border border-primary/40 bg-primary/12 px-2 py-2 text-foreground transition-[color,background-color,border-color,translate] hover:border-primary/70 hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px"
         >
           <span className="sr-only">{owned ? 'Meghosszabbítás: ' : 'Megvásárlás: '}</span>
           <span className="text-[15px] leading-tight font-extrabold">

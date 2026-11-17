@@ -14,6 +14,13 @@ import { RankCard } from './RankCard'
 import { RankDetailsDialog } from './RankDetailsDialog'
 import { useNow } from './useNow'
 
+/**
+ * The cards arrive one after another, starting the moment they replace the
+ * loading skeletons (a delay before the first would leave the area blank);
+ * the stagger stops after six, so nobody waits.
+ */
+const cardEnterDelay = (index: number) => Math.min(index, 6) * 70
+
 const gridClass = 'grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] gap-3.5 md:gap-5'
 
 /**
@@ -59,9 +66,10 @@ export function RanksPage() {
         </Panel>
       ) : ranks ? (
         <div className={gridClass}>
-          {ranks.map((rank) => (
+          {ranks.map((rank, index) => (
             <RankCard
               key={rank.group}
+              enterDelay={cardEnterDelay(index)}
               rank={rank}
               ownedUntil={until(rank)}
               now={now}

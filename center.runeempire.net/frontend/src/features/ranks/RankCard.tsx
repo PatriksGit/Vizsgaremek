@@ -2,6 +2,7 @@ import { faCheck, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { rankColor } from '@/features/home/stats'
+import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
@@ -18,6 +19,8 @@ type RankCardProps = {
   onDetails: (trigger: HTMLElement) => void
   /** Opens the purchase on this many days. */
   onBuy: (days: number) => void
+  /** When it arrives in the page-load order (ms). */
+  enterDelay: number
 }
 
 /**
@@ -25,15 +28,16 @@ type RankCardProps = {
  * servers it works on, how it looks on the player, and one buy (or extend)
  * button per duration; the perks are in "Mit kapsz?" only (owner, 2026-11-17).
  */
-export function RankCard({ rank, ownedUntil, now, onDetails, onBuy }: RankCardProps) {
+export function RankCard({ rank, ownedUntil, now, onDetails, onBuy, enterDelay }: RankCardProps) {
   const over = seasonOver(rank, now)
 
   return (
     <article
       className={cn(
-        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_1px_2px_rgb(0_0_0/0.35)] transition-colors hover:border-line',
+        'content-in flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_1px_2px_rgb(0_0_0/0.35)] transition-colors hover:border-line',
         rank.seasonEndsAt && 'rank-shine',
       )}
+      style={enterAfter(enterDelay)}
     >
       <div className="relative">
         {rank.seasonEndsAt && (
