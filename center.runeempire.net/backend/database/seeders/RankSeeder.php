@@ -8,8 +8,10 @@ use Illuminate\Database\Seeder;
 
 /**
  * The rank shop (owner, 2026-11-17): the network's five buyable LuckPerms
- * groups, the smallest first (dragon, rune, sage, archmage, caster; the owner's
- * order, not the LuckPerms weights). Their prefix images are in the frontend's
+ * groups. The shop orders them by their LuckPerms weights, the lightest first
+ * (caster 10, archmage 11, sage 12, rune 13, dragon 15; owner, 2026-11-17);
+ * sort_order follows the same order as the fallback for when LuckPerms cannot
+ * be read. Their prefix images are in the frontend's
  * public/rank_icons/ until the management section uploads them.
  * Prices and texts are placeholders until the owner decides them (later in the
  * management section). Keyed by group, so running it again updates instead of
@@ -51,19 +53,19 @@ class RankSeeder extends Seeder
         }
 
         $ranks = [
-            ['group' => 'dragon', 'name' => 'Dragon', 'gif_url' => '/ranks/dragon.gif', 'price_30' => 1000, 'price_90' => 2600],
-            ['group' => 'rune', 'name' => 'Rune', 'price_30' => 1500, 'price_90' => 3900],
+            ['group' => 'caster', 'name' => 'Caster', 'price_30' => 1000, 'price_90' => 2600],
+            ['group' => 'archmage', 'name' => 'Archmage', 'price_30' => 1500, 'price_90' => 3900],
             ['group' => 'sage', 'name' => 'Sage', 'price_30' => 2000, 'price_90' => 5200],
-            ['group' => 'archmage', 'name' => 'Archmage', 'price_30' => 2500, 'price_90' => 6500],
-            ['group' => 'caster', 'name' => 'Caster', 'price_30' => 3000, 'price_90' => 7800],
+            ['group' => 'rune', 'name' => 'Rune', 'price_30' => 2500, 'price_90' => 6500],
+            ['group' => 'dragon', 'name' => 'Dragon', 'gif_url' => '/ranks/dragon.gif', 'price_30' => 3000, 'price_90' => 7800],
         ];
 
         $serversOf = [
-            'dragon' => ['Lobby'],
-            'rune' => ['Lobby', 'Kingdoms'],
+            'caster' => ['Lobby'],
+            'archmage' => ['Lobby', 'Kingdoms'],
             'sage' => ['Lobby', 'Kingdoms', 'SkyPvp'],
-            'archmage' => self::SERVERS,
-            'caster' => self::SERVERS,
+            'rune' => self::SERVERS,
+            'dragon' => self::SERVERS,
         ];
 
         foreach ($ranks as $order => $rank) {

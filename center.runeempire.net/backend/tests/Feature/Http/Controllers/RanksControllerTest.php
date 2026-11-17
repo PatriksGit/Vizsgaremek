@@ -145,6 +145,40 @@ class RanksControllerTest extends TestCase
     }
 
     /**
+     * The shop's order is the ranks' LuckPerms weight, the lightest first
+     * (owner, 2026-11-17), so it follows the game when a weight changes; a rank
+     * without a weight comes after them, and sort_order breaks ties.
+     */
+    public function test_the_ranks_come_by_luckperms_weight_the_lightest_first(): void
+    {
+        Rank::factory()->create(['group' => 'dragon', 'sort_order' => 1]);
+        Rank::factory()->create(['group' => 'caster', 'sort_order' => 2]);
+        Rank::factory()->create(['group' => 'noweight', 'sort_order' => 0]);
+        Rank::factory()->create(['group' => 'sage', 'sort_order' => 3]);
+        PluginDatabase::table('luckperms', 'luckperms_group_permissions')->insert([
+            ['name' => 'dragon', 'permission' => 'weight.15', 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}'],
+            ['name' => 'caster', 'permission' => 'weight.10', 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}'],
+            ['name' => 'sage', 'permission' => 'weight.12', 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}'],
+        ]);
+
+        $this->getJson('/api/ranks')
+            ->assertOk()
+            ->assertJsonPath('data.*.group', ['caster', 'sage', 'dragon', 'noweight']);
+    }
+
+    /** Without LuckPerms the shop still has an order: the ranks' own sort_order. */
+    public function test_without_luckperms_the_ranks_come_by_their_sort_order(): void
+    {
+        Rank::factory()->create(['group' => 'dragon', 'sort_order' => 2]);
+        Rank::factory()->create(['group' => 'caster', 'sort_order' => 1]);
+        config(['database.plugins.luckperms' => 'center_missing_test']);
+
+        $this->getJson('/api/ranks')
+            ->assertOk()
+            ->assertJsonPath('data.*.group', ['caster', 'dragon']);
+    }
+
+    /**
      * Which servers a rank gives something on (owner, 2026-11-17: chips like
      * [Lobby] [Kingdoms] on the card; a server it gives nothing on is left out).
      * Servers are added once and ticked per rank, in the servers' own order.
@@ -177,9 +211,10 @@ class RanksControllerTest extends TestCase
 
     /**
      * The shop's ranks (owner, 2026-11-17): the network's five buyable groups,
-     * the smallest first, each with its prefix image (public/rank_icons/, later
-     * uploaded in the management section). Running it again must not duplicate
-     * them, and it clears the earlier placeholders.
+     * their sort_order following the LuckPerms weights (the fallback order),
+     * each with its prefix image (public/rank_icons/, later uploaded in the
+     * management section). Running it again must not duplicate them, and it
+     * clears the earlier placeholders.
      */
     public function test_the_seeder_fills_the_shop_with_the_five_ranks_once(): void
     {
@@ -190,7 +225,7 @@ class RanksControllerTest extends TestCase
         $this->seed(RankSeeder::class);
 
         $this->assertSame(
-            ['dragon' => 'Dragon', 'rune' => 'Rune', 'sage' => 'Sage', 'archmage' => 'Archmage', 'caster' => 'Caster'],
+            ['caster' => 'Caster', 'archmage' => 'Archmage', 'sage' => 'Sage', 'rune' => 'Rune', 'dragon' => 'Dragon'],
             Rank::query()->orderBy('sort_order')->pluck('name', 'group')->all(),
         );
         $dragon = Rank::query()->where('group', 'dragon')->sole();
@@ -198,8 +233,8 @@ class RanksControllerTest extends TestCase
         $this->assertSame('/rank_icons/dragon.png', $dragon->prefix_url);
         $this->assertSame(0, Rank::query()->whereNull('prefix_url')->count());
         $this->assertSame(['Lobby', 'Kingdoms', 'SkyPvp', 'KitPvp'], Server::query()->orderBy('sort_order')->pluck('name')->all());
-        $this->assertSame(['Lobby'], $dragon->servers->pluck('name')->all());
-        $this->assertSame(['Lobby', 'Kingdoms', 'SkyPvp', 'KitPvp'], Rank::query()->where('group', 'caster')->sole()->servers->pluck('name')->all());
+        $this->assertSame(['Lobby', 'Kingdoms', 'SkyPvp', 'KitPvp'], $dragon->servers->pluck('name')->all());
+        $this->assertSame(['Lobby'], Rank::query()->where('group', 'caster')->sole()->servers->pluck('name')->all());
         $this->assertStringContainsString('## Globális', $dragon->details);
         $this->assertSame(0, Rank::query()->whereNotNull('season_ends_at')->count());
         $this->assertTrue(Rank::query()->orderBy('sort_order')->pluck('price_30')->sliding(2)->every(fn ($pair): bool => $pair->first() < $pair->last()));

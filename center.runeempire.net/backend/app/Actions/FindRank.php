@@ -85,15 +85,18 @@ class FindRank
     }
 
     /**
-     * The website colours of these groups, by group (only those that have one;
-     * the same rules as forPlayers()). Used by the rank shop.
+     * These groups' LuckPerms weights and website colours, by group (only
+     * those that have one; the same rules as forPlayers()). Used by the rank
+     * shop: its order is the weights, the lightest first.
      *
      * @param  list<string>  $groups
-     * @return array<string, string>
+     * @return array{weights: array<string, int>, colors: array<string, string>}
      */
-    public function colors(array $groups): array
+    public function shopDetails(array $groups): array
     {
-        return $groups === [] ? [] : $this->groupDetails($groups)[1];
+        [$weights, $colors] = $groups === [] ? [[], []] : $this->groupDetails($groups);
+
+        return ['weights' => $weights, 'colors' => $colors];
     }
 
     /**

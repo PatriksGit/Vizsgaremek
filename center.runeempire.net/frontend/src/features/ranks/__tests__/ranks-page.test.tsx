@@ -188,6 +188,24 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     expect(screen.queryByText(/Aktív eddig/)).toBeNull()
   })
 
+  /** The balance above the ranks (owner, 2026-11-17): every button has a price, so the runes show too. */
+  it('shows the balance above the ranks, with a way to top it up', async () => {
+    backend(statsWith(null, 12500))
+    renderPage()
+
+    const balance = await screen.findByRole('region', { name: 'Egyenleged' })
+    await vi.waitFor(() => expect(balance.textContent?.replace(/\s/g, ' ')).toContain('12 500 rúna'))
+    expect(within(balance).getByRole('link', { name: 'Rúna-feltöltés' }).getAttribute('href')).toBe('/runak/vasarlas')
+  })
+
+  it('a balance that cannot be read is a dash', async () => {
+    backend('fails')
+    renderPage()
+
+    const balance = await screen.findByRole('region', { name: 'Egyenleged' })
+    await vi.waitFor(() => expect(balance.textContent).toContain('—'))
+  })
+
   /** Review 2026-11-17, F3: a fresh database, or every rank removed in the management section. */
   it('an empty shop says so instead of showing an empty page', async () => {
     backend(statsWith(null), [])

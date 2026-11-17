@@ -7,6 +7,7 @@ import { site } from '@/config/site'
 import { useMyStats } from '@/features/home/stats'
 
 import { type Rank, useRanks } from './api'
+import { BalanceBar } from './BalanceBar'
 import { ownedUntil } from './dates'
 import { PurchaseDialog } from './PurchaseDialog'
 import { RankCard } from './RankCard'
@@ -48,6 +49,8 @@ export function RanksPage() {
     <div className="flex flex-col gap-5">
       <title>{`Rangok | ${site.name}`}</title>
       <h1 className="sr-only">Rangok</h1>
+
+      <BalanceBar balance={balance} />
 
       {ranks?.length === 0 ? (
         // A fresh database, or every rank removed in the management section.
