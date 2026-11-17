@@ -6,12 +6,20 @@ use App\Models\Rank;
 use Illuminate\Database\Seeder;
 
 /**
- * The rank shop's placeholders from the owner's design, until the real names,
- * prices and perks are decided (later from the management section). Keyed by
- * group, so running it again updates instead of duplicating.
+ * The rank shop (owner, 2026-11-17): the network's five buyable LuckPerms
+ * groups, in their weight order (caster 10, archmage 11, sage 12, rune 13,
+ * dragon 15). Their prefix images are in the frontend's public/rank_icons/.
+ * Prices and texts are placeholders until the owner decides them (later in the
+ * management section). Keyed by group, so running it again updates instead of
+ * duplicating; it also clears the first placeholders.
  */
 class RankSeeder extends Seeder
 {
+    /**
+     * The groups the very first seeder version created as placeholders.
+     */
+    private const OLD_PLACEHOLDERS = ['karacsony', 'rang1', 'rang2', 'rang3', 'rang4'];
+
     private const DETAILS = <<<'MD'
         [Rövid bemutatás – mit ad ez a rang.]
 
@@ -27,13 +35,14 @@ class RankSeeder extends Seeder
 
     public function run(): void
     {
+        Rank::query()->whereIn('group', self::OLD_PLACEHOLDERS)->delete();
+
         $ranks = [
-            ['group' => 'karacsony', 'name' => '[KARÁCSONYI RANG]', 'price_30' => 1500, 'price_90' => 3900, 'season_ends_at' => '2026-12-26 23:00:00'],
-            ['group' => 'dragon', 'name' => 'Dragon', 'gif_url' => '/ranks/dragon.gif', 'price_30' => 2000, 'price_90' => 5200],
-            ['group' => 'rang1', 'name' => '[RANG NEVE]', 'price_30' => 1000, 'price_90' => 2600],
-            ['group' => 'rang2', 'name' => '[RANG NEVE]', 'price_30' => 2000, 'price_90' => 5200],
-            ['group' => 'rang3', 'name' => '[RANG NEVE]', 'price_30' => 3000, 'price_90' => 7800],
-            ['group' => 'rang4', 'name' => '[RANG NEVE]', 'price_30' => 4000, 'price_90' => 10400],
+            ['group' => 'caster', 'name' => 'Caster', 'price_30' => 1000, 'price_90' => 2600],
+            ['group' => 'archmage', 'name' => 'Archmage', 'price_30' => 1500, 'price_90' => 3900],
+            ['group' => 'sage', 'name' => 'Sage', 'price_30' => 2000, 'price_90' => 5200],
+            ['group' => 'rune', 'name' => 'Rune', 'price_30' => 2500, 'price_90' => 6500],
+            ['group' => 'dragon', 'name' => 'Dragon', 'gif_url' => '/ranks/dragon.gif', 'price_30' => 3000, 'price_90' => 7800],
         ];
 
         foreach ($ranks as $order => $rank) {

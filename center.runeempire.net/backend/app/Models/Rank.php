@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property int $price_90
  * @property Carbon|null $season_ends_at
  * @property int $sort_order
+ * @property string|null $color not a column: the in-game colour, set by RanksController from LuckPerms
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */

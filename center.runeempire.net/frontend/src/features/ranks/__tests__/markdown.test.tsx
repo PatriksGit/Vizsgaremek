@@ -6,6 +6,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { highlights } from '@/features/ranks/markdownBlocks'
 import { Markdown } from '@/features/ranks/Markdown'
 
 afterEach(cleanup)
@@ -38,6 +39,15 @@ describe('the rank details Markdown', () => {
     expect(container.querySelector('img')).toBeNull()
     expect(container.querySelector('b')).toBeNull()
     expect(container.textContent).toContain('<img src=x onerror=alert(1)>')
+  })
+
+  it('the card highlights are the first list items, bold marks dropped', () => {
+    expect(highlights('Bevezető.\n\n## Globális\n- **Repülés**\n- Napi rúna\n\n## Kingdoms\n- Extractor\n- Örök fly', 3)).toEqual([
+      'Repülés',
+      'Napi rúna',
+      'Extractor',
+    ])
+    expect(highlights('Csak egy bekezdés.', 3)).toEqual([])
   })
 
   it('an unclosed ** is just text', () => {

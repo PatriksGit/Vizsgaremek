@@ -34,9 +34,9 @@ const prices = (thirty: number) => [
 
 /** As GET /api/ranks answers, in shop order. */
 const RANKS = [
-  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString() },
-  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prices: prices(2000), season_ends_at: null },
-  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prices: prices(1000), season_ends_at: null },
+  { group: 'karacsony', name: 'Karácsony', details: DETAILS, gif_url: null, prices: prices(1500), season_ends_at: SEASON_END.toISOString(), color: null },
+  { group: 'dragon', name: 'Dragon', details: DETAILS, gif_url: '/ranks/dragon.gif', prices: prices(2000), season_ends_at: null, color: '#E5675A' },
+  { group: 'mage', name: 'Mage', details: DETAILS, gif_url: null, prices: prices(1000), season_ends_at: null, color: null },
 ]
 
 function statsWith(rank: MyStats['rank'], runes = 5000): MyStats {
@@ -119,6 +119,38 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     expect(within(xmas).getByText('A vásárlási idő lejárt')).toBeTruthy()
     expect(within(xmas).getByText('Már nem vásárolható')).toBeTruthy()
     expect(within(xmas).queryByRole('button', { name: /Megvásárlás/ })).toBeNull()
+  })
+
+  /**
+   * The cards were too empty (owner, 2026-11-17): the name in the rank's in-game
+   * colour, its first three perks, and how it looks on the player in game (the
+   * rank's prefix image from public/rank_icons/<group>.png, then their name).
+   */
+  it('a card shows the rank colour, its first three perks and how it looks on the player', async () => {
+    backend(statsWith(null))
+    renderPage()
+    const heading = await screen.findByRole('heading', { name: 'Dragon' })
+    const dragon = card('Dragon')
+
+    expect(heading.style.color).toBe('rgb(229, 103, 90)')
+    const perks = within(dragon).getByRole('list', { name: 'Fő előnyök' })
+    expect(within(perks).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Repülés', 'Napi rúna', 'Extractor'])
+
+    const preview = within(dragon).getByRole('figure', { name: 'Így néz ki rajtad a játékban' })
+    expect(within(preview).getByRole('img', { name: 'Dragon' }).getAttribute('src')).toBe('/rank_icons/dragon.png')
+    expect(within(preview).getByText('Shopper').style.color).toBe('rgb(229, 103, 90)')
+  })
+
+  it('a rank without a prefix image still shows the player name', async () => {
+    backend(statsWith(null))
+    renderPage()
+    await screen.findByRole('heading', { name: 'Mage' })
+    const preview = within(card('Mage')).getByRole('figure', { name: 'Így néz ki rajtad a játékban' })
+
+    fireEvent.error(within(preview).getByRole('img', { name: 'Mage' }))
+
+    expect(within(preview).queryByRole('img', { name: 'Mage' })).toBeNull()
+    expect(within(preview).getByText('Shopper')).toBeTruthy()
   })
 
   it('a duration button opens the purchase on that duration', async () => {

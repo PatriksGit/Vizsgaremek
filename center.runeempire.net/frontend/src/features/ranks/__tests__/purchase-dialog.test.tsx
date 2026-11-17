@@ -20,6 +20,7 @@ const dragon: Rank = {
     { days: 90, runes: 5200 },
   ],
   seasonEndsAt: null,
+  color: null,
 }
 const NOW = new Date('2026-11-16T12:00:00Z')
 

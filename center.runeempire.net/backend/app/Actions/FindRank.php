@@ -85,6 +85,18 @@ class FindRank
     }
 
     /**
+     * The website colours of these groups, by group (only those that have one;
+     * the same rules as forPlayers()). Used by the rank shop.
+     *
+     * @param  list<string>  $groups
+     * @return array<string, string>
+     */
+    public function colors(array $groups): array
+    {
+        return $groups === [] ? [] : $this->groupDetails($groups)[1];
+    }
+
+    /**
      * The groups' weights and website colours from their nodes.
      *
      * @param  array<int, string>  $groups

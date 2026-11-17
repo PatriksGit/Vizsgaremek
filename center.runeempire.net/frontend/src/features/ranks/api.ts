@@ -17,6 +17,8 @@ export type Rank = {
   prices: RankPrice[]
   /** A seasonal rank sells until this time (ISO 8601); null for the rest. */
   seasonEndsAt: string | null
+  /** The in-game colour (#RRGGBB, set with `/lp group <group> meta set color`), or null. */
+  color: string | null
 }
 
 type RankResponse = {
@@ -26,6 +28,7 @@ type RankResponse = {
   gif_url: string | null
   prices: RankPrice[]
   season_ends_at: string | null
+  color: string | null
 }
 
 async function fetchRanks(): Promise<Rank[]> {
@@ -37,6 +40,7 @@ async function fetchRanks(): Promise<Rank[]> {
     gifUrl: rank.gif_url,
     prices: [...rank.prices].sort((a, b) => a.days - b.days),
     seasonEndsAt: rank.season_ends_at,
+    color: rank.color,
   }))
 }
 
