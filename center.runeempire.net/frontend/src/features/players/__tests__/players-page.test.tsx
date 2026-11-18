@@ -129,6 +129,51 @@ it('after a search without hits, the next query does not say "none" before its o
   expect(await screen.findByRole('link', { name: 'Patrik' })).toBeTruthy()
 })
 
+/** Answers "pa" at once and holds every other search until release(). */
+function serveSlowAfterPa(later: string[]) {
+  let release = () => {}
+  getMock.mockImplementation(async (url: string, config: { params: { q: string } }) => {
+    if (url !== '/players') throw new Error(`unexpected GET ${url}`)
+    if (config.params.q === 'pa') return { data: { data: [{ name: 'PaBlo' }, { name: 'PatrikT' }, { name: 'PatrikT2' }], meta: { more: 0 } } }
+    await new Promise<void>((resolve) => (release = resolve))
+    return { data: { data: later.map((name) => ({ name })), meta: { more: 0 } } }
+  })
+  return () => release()
+}
+
+const shownNames = () => screen.queryAllByRole('link').map((link) => link.textContent)
+
+it('a new search after clearing the box never shows the earlier results (owner, 2026-11-18)', async () => {
+  const release = serveSlowAfterPa(['Benike'])
+  renderPage()
+  type('pa')
+  await screen.findByRole('link', { name: 'PatrikT2' })
+
+  type('')
+  type('b')
+  type('be')
+  await waitFor(() => expect(searches()).toEqual(['pa', 'be']))
+  expect(shownNames()).toEqual([])
+
+  release()
+  await screen.findByRole('link', { name: 'Benike' })
+  expect(shownNames()).toEqual(['Benike'])
+})
+
+it('typing on narrows the list at once, before the answer comes', async () => {
+  const release = serveSlowAfterPa(['PatrikT', 'PatrikT2'])
+  renderPage()
+  type('pa')
+  await screen.findByRole('link', { name: 'PaBlo' })
+
+  type('pat')
+  expect(shownNames()).toEqual(['PatrikT', 'PatrikT2'])
+
+  await waitFor(() => expect(searches()).toEqual(['pa', 'pat']))
+  release()
+  await waitFor(() => expect(screen.getByRole('status').textContent).toBe('2 találat'))
+})
+
 it('a character no name has finds nobody without asking', async () => {
   serve(['Patrik'])
   renderPage()

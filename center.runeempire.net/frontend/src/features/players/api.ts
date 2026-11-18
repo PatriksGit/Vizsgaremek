@@ -13,12 +13,34 @@ export const NAME_START = /^[A-Za-z0-9_]{1,16}$/
 /** The search asks from this many letters on; one letter would list too many players. */
 export const SEARCH_MIN_LENGTH = 2
 
-/** GET /api/players?q=: at most 30 players by name, and how many more match (counted up to 1000). */
-export type PlayerSearch = { players: { name: string }[]; more: number }
+/**
+ * GET /api/players?q=: at most 30 players by name, and how many more match
+ * (counted up to 1000), with the query they answer.
+ */
+export type PlayerSearch = { query: string; players: { name: string }[]; more: number }
 
 async function searchPlayers(query: string): Promise<PlayerSearch> {
   const response = await http.get<{ data: { name: string }[]; meta: { more: number } }>('/players', { params: { q: query } })
-  return { players: response.data.data, more: response.data.meta.more }
+  return { query, players: response.data.data, more: response.data.meta.more }
+}
+
+/**
+ * What an answer can show for the query in the box while that query's own
+ * answer is on its way. Only an answer to the start of it helps (typing "pat"
+ * after "pa"): its names that still match are a sure part of the new answer,
+ * shown at once; an answer to anything else ("be" after "pa") shows nothing,
+ * so earlier results never stand in for an unrelated search. `exact`: this
+ * is the query's own answer, so `more` and "no hit" can be trusted.
+ */
+export function resultsFor(result: PlayerSearch | undefined, query: string) {
+  const typed = query.toLowerCase()
+  if (!result || !typed.startsWith(result.query.toLowerCase())) return null
+  const exact = result.query.toLowerCase() === typed
+  return {
+    players: exact ? result.players : result.players.filter((player) => player.name.toLowerCase().startsWith(typed)),
+    more: exact ? result.more : 0,
+    exact,
+  }
 }
 
 /** Whether the search box holds something the backend can be asked about. */
@@ -28,8 +50,8 @@ export function searchable(query: string) {
 
 /**
  * The players whose name starts with the (already debounced) query. The
- * last answer stays on screen while the next one loads, so the list narrows
- * as the player types instead of flashing skeletons.
+ * last answer is kept while the next one loads (placeholder data); the page
+ * shows of it only what resultsFor lets through.
  */
 export function usePlayerSearch(query: string) {
   return useQuery({

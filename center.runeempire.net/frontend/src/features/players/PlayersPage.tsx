@@ -12,7 +12,7 @@ import { ApiError } from '@/lib/api'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-import { searchable, SEARCH_MIN_LENGTH, usePlayerSearch } from './api'
+import { resultsFor, searchable, SEARCH_MIN_LENGTH, usePlayerSearch } from './api'
 import { profilePath } from './links'
 
 /** How long the box waits after the last keystroke before it asks. */
@@ -59,7 +59,6 @@ export function PlayersPage() {
   }, [query, asked, setParams])
 
   const search = usePlayerSearch(asked)
-  const result = search.data
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 md:gap-6 lg:mt-6">
@@ -88,7 +87,7 @@ export function PlayersPage() {
         />
       </div>
 
-      <Results query={query} asked={asked} search={search} result={result} />
+      <Results query={query} search={search} />
     </div>
   )
 }
@@ -96,13 +95,11 @@ export function PlayersPage() {
 type ResultsProps = {
   /** What the box holds now. */
   query: string
-  /** What the search was last asked (the address). */
-  asked: string
+  /** The search for the address's query; its data may still be the previous query's answer. */
   search: ReturnType<typeof usePlayerSearch>
-  result: ReturnType<typeof usePlayerSearch>['data']
 }
 
-function Results({ query, asked, search, result }: ResultsProps) {
+function Results({ query, search }: ResultsProps) {
   if (query.length < SEARCH_MIN_LENGTH) {
     return (
       <p className="content-in text-center text-sm text-muted-foreground" style={enterAfter(BELOW_DELAY)}>
@@ -111,10 +108,10 @@ function Results({ query, asked, search, result }: ResultsProps) {
     )
   }
 
-  // A character no name has can match nobody: no need to ask. Otherwise "none" only from the answer to what the
-  // box holds: the previous query's empty answer, kept while the next loads, says nothing about this one.
-  const answered = result && !search.isPlaceholderData && asked === query
-  if (!searchable(query) || (answered && result.players.length === 0)) {
+  const shown = resultsFor(search.data, query)
+
+  // A character no name has can match nobody: no need to ask. Otherwise "none" only from this query's own answer.
+  if (!searchable(query) || (shown?.exact && shown.players.length === 0)) {
     return (
       <p role="status" className="content-in text-center text-muted-foreground">
         Erre a névre nincs találat
@@ -130,8 +127,8 @@ function Results({ query, asked, search, result }: ResultsProps) {
     )
   }
 
-  // Nothing to show yet: the first answer, or the next one after an empty answer.
-  if (!result || result.players.length === 0) {
+  // Nothing to show until this query's answer comes: the first search, or an earlier answer that does not fit.
+  if (!shown || shown.players.length === 0) {
     return (
       <div aria-busy="true" className="content-in" style={enterAfter(BELOW_DELAY)}>
         <span className="sr-only">Keresés…</span>
@@ -149,18 +146,17 @@ function Results({ query, asked, search, result }: ResultsProps) {
 
   return (
     <>
-      <p role="status" className="sr-only">
-        {countFormat.format(result.players.length + result.more)} találat
-      </p>
-      <ul
-        aria-label="Találatok"
-        className={cn('grid gap-3 transition-opacity sm:grid-cols-2 lg:grid-cols-3', search.isPlaceholderData && 'opacity-70')}
-      >
-        {result.players.map((player, index) => (
+      {shown.exact && (
+        <p role="status" className="sr-only">
+          {countFormat.format(shown.players.length + shown.more)} találat
+        </p>
+      )}
+      <ul aria-label="Találatok" className={cn('grid gap-3 transition-opacity sm:grid-cols-2 lg:grid-cols-3', !shown.exact && 'opacity-70')}>
+        {shown.players.map((player, index) => (
           <li key={player.name} className="content-in" style={enterAfter(cardEnterDelay(index))}>
             <Link
               to={profilePath(player.name)}
-              state={{ back: { to: `/jatekosok?q=${encodeURIComponent(asked)}`, label: 'Vissza a kereséshez' } }}
+              state={{ back: { to: `/jatekosok?q=${encodeURIComponent(query)}`, label: 'Vissza a kereséshez' } }}
               className={cn(cardClass, playerCardHover)}
             >
               <PlayerHead name={player.name} className={cn('size-10 shrink-0 rounded-md', playerHeadGrow)} />
@@ -168,12 +164,12 @@ function Results({ query, asked, search, result }: ResultsProps) {
             </Link>
           </li>
         ))}
-        {result.more > 0 && (
+        {shown.more > 0 && (
           <li
             className={cn(cardClass, 'content-in justify-center border-dashed text-center text-sm text-muted-foreground')}
-            style={enterAfter(cardEnterDelay(result.players.length))}
+            style={enterAfter(cardEnterDelay(shown.players.length))}
           >
-            Még {result.more > MORE_SHOWN_UP_TO ? `${MORE_SHOWN_UP_TO}+` : countFormat.format(result.more)} játékos – írj be többet a
+            Még {shown.more > MORE_SHOWN_UP_TO ? `${MORE_SHOWN_UP_TO}+` : countFormat.format(shown.more)} játékos – írj be többet a
             névből
           </li>
         )}
