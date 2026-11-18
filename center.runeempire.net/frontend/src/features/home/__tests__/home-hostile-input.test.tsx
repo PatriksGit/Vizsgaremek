@@ -5,6 +5,7 @@
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { DiscordCard } from '@/features/home/DiscordCard'
@@ -43,7 +44,11 @@ function serve(overrides: Record<string, unknown>) {
 }
 
 function renderWithClient(node: React.ReactNode) {
-  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{node}</QueryClientProvider>)
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter>{node}</MemoryRouter>
+    </QueryClientProvider>,
+  )
 }
 
 beforeEach(() => {
@@ -67,13 +72,19 @@ it('javascript: invite from the Discord widget is not a live link', async () => 
 it('hostile friend names and rank colours stay text and drop out of style', () => {
   const long = 'W'.repeat(200)
   render(
-    <FriendsCard
-      friends={[
-        { name: '<img src=x onerror=alert(1)>', online: true, rank: { name: '<b>x</b>', color: 'red; background-image: url(https://evil.invalid/x)' } },
-        { name: '‮evil​', online: false, rank: null },
-        { name: long, online: false, rank: { name: 'Játékos', color: null } },
-      ]}
-    />,
+    <MemoryRouter>
+      <FriendsCard
+        friends={[
+          { name: '<img src=x onerror=alert(1)>', online: true, rank: { name: '<b>x</b>', color: 'red; background-image: url(https://evil.invalid/x)' } },
+          { name: '‮evil​', online: false, rank: null },
+          { name: long, online: false, rank: { name: 'Játékos', color: null } },
+        ]}
+      />
+    </MemoryRouter>,
+  )
+  // The profile link carries the name encoded: it stays one path segment.
+  expect(screen.getByText('<img src=x onerror=alert(1)>').closest('a')?.getAttribute('href')).toBe(
+    '/jatekosok/%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E',
   )
   expect(document.querySelector('img[src="x"]')).toBeNull()
   expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeTruthy()

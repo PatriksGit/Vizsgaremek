@@ -4,7 +4,7 @@
  * about the player; an unknown name says so. Each `it` is one case.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
@@ -91,11 +91,28 @@ it('a name no player can have says so without asking', () => {
   expect(getMock).not.toHaveBeenCalled()
 })
 
+it('a friend opens their own profile, whose back link returns to the first one', async () => {
+  getMock.mockImplementation(async (url: string) => {
+    if (url === '/players/PatrikT/stats') return { data: { data: profile } }
+    if (url === '/players/PatrikT/friends') return { data: { data: [{ name: 'Barat', online: false, rank: null }] } }
+    if (url === '/players/Barat/stats') return { data: { data: { ...profile, name: 'Barat', runes: 7 } } }
+    if (url === '/players/Barat/friends') return { data: { data: [] } }
+    throw new Error(`unexpected GET ${url}`)
+  })
+  renderProfile()
+
+  fireEvent.click(await screen.findByRole('link', { name: /Barat/ }))
+
+  expect(await screen.findByRole('heading', { level: 1, name: 'Barat' })).toBeTruthy()
+  expect(await screen.findByText('7')).toBeTruthy()
+  expect(screen.getByRole('link', { name: 'Vissza: PatrikT' }).getAttribute('href')).toBe('/jatekosok/PatrikT')
+})
+
 it('the back link returns to the search the player came from', async () => {
   serve(() => profile)
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={[{ pathname: '/jatekosok/PatrikT', state: { search: '?q=pat' } }]}>
+      <MemoryRouter initialEntries={[{ pathname: '/jatekosok/PatrikT', state: { back: { to: '/jatekosok?q=pat', label: 'Vissza a kereséshez' } } }]}>
         <Routes>
           <Route path="jatekosok/:name" element={<PlayerProfilePage />} />
         </Routes>

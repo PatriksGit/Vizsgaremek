@@ -3,14 +3,17 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
+import { playerCardHover, playerHeadGrow } from '@/components/app/interactive'
 import { panelLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Skeleton } from '@/components/ui/skeleton'
 import { site } from '@/config/site'
 import { ApiError } from '@/lib/api'
+import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 import { searchable, SEARCH_MIN_LENGTH, usePlayerSearch } from './api'
+import { profilePath } from './links'
 
 /** How long the box waits after the last keystroke before it asks. */
 const DEBOUNCE_MS = 250
@@ -21,6 +24,18 @@ const MORE_SHOWN_UP_TO = 999
 const countFormat = new Intl.NumberFormat('hu-HU')
 
 const cardClass = cn(panelLook, 'flex min-h-16 items-center gap-3 px-4 py-3')
+
+/**
+ * Page-load order like the other pages: the title, then the search box, then
+ * what is under it. The results arrive one after another from the moment
+ * they replace the skeletons, the stagger capped after six like the rank
+ * shop; a card that stays while the player types on keeps its place without
+ * arriving again (keyed by name).
+ */
+const TITLE_DELAY = 100
+const SEARCH_DELAY = 200
+const BELOW_DELAY = 300
+const cardEnterDelay = (index: number) => Math.min(index, 6) * 50
 
 /**
  * The Játékosok page: a search box at the top centre; typing lists the
@@ -49,9 +64,11 @@ export function PlayersPage() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 md:gap-6 lg:mt-6">
       <title>{`Játékosok | ${site.name}`}</title>
-      <h1 className="text-center font-heading text-4xl font-bold text-foreground md:text-5xl">Játékosok</h1>
+      <h1 className="content-in text-center font-heading text-4xl font-bold text-foreground md:text-5xl" style={enterAfter(TITLE_DELAY)}>
+        Játékosok
+      </h1>
 
-      <div className="relative mx-auto w-full max-w-xl">
+      <div className="content-in relative mx-auto w-full max-w-xl" style={enterAfter(SEARCH_DELAY)}>
         <FontAwesomeIcon
           icon={faMagnifyingGlass}
           aria-hidden="true"
@@ -87,7 +104,11 @@ type ResultsProps = {
 
 function Results({ query, asked, search, result }: ResultsProps) {
   if (query.length < SEARCH_MIN_LENGTH) {
-    return <p className="text-center text-sm text-muted-foreground">Írj be legalább {SEARCH_MIN_LENGTH} betűt a névből.</p>
+    return (
+      <p className="content-in text-center text-sm text-muted-foreground" style={enterAfter(BELOW_DELAY)}>
+        Írj be legalább {SEARCH_MIN_LENGTH} betűt a névből.
+      </p>
+    )
   }
 
   // A character no name has can match nobody: no need to ask. Otherwise "none" only from the answer to what the
@@ -95,7 +116,7 @@ function Results({ query, asked, search, result }: ResultsProps) {
   const answered = result && !search.isPlaceholderData && asked === query
   if (!searchable(query) || (answered && result.players.length === 0)) {
     return (
-      <p role="status" className="text-center text-muted-foreground">
+      <p role="status" className="content-in text-center text-muted-foreground">
         Erre a névre nincs találat
       </p>
     )
@@ -103,7 +124,7 @@ function Results({ query, asked, search, result }: ResultsProps) {
 
   if (search.error && !search.isFetching) {
     return (
-      <p role="alert" className="text-center text-muted-foreground">
+      <p role="alert" className="content-in text-center text-muted-foreground">
         {search.error instanceof ApiError ? search.error.message : 'A keresés most nem sikerült, próbáld újra.'}
       </p>
     )
@@ -112,7 +133,7 @@ function Results({ query, asked, search, result }: ResultsProps) {
   // Nothing to show yet: the first answer, or the next one after an empty answer.
   if (!result || result.players.length === 0) {
     return (
-      <div aria-busy="true">
+      <div aria-busy="true" className="content-in" style={enterAfter(BELOW_DELAY)}>
         <span className="sr-only">Keresés…</span>
         <ul aria-hidden="true" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[28, 20, 32, 24, 18, 26].map((width, index) => (
@@ -131,24 +152,27 @@ function Results({ query, asked, search, result }: ResultsProps) {
       <p role="status" className="sr-only">
         {countFormat.format(result.players.length + result.more)} találat
       </p>
-      <ul aria-label="Találatok" className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-3', search.isPlaceholderData && 'opacity-70')}>
-        {result.players.map((player) => (
-          <li key={player.name}>
+      <ul
+        aria-label="Találatok"
+        className={cn('grid gap-3 transition-opacity sm:grid-cols-2 lg:grid-cols-3', search.isPlaceholderData && 'opacity-70')}
+      >
+        {result.players.map((player, index) => (
+          <li key={player.name} className="content-in" style={enterAfter(cardEnterDelay(index))}>
             <Link
-              to={`/jatekosok/${encodeURIComponent(player.name)}`}
-              state={{ search: `?q=${encodeURIComponent(asked)}` }}
-              className={cn(
-                cardClass,
-                'transition-colors outline-none hover:border-primary/45 focus-visible:border-primary/60 focus-visible:ring-3 focus-visible:ring-primary/20',
-              )}
+              to={profilePath(player.name)}
+              state={{ back: { to: `/jatekosok?q=${encodeURIComponent(asked)}`, label: 'Vissza a kereséshez' } }}
+              className={cn(cardClass, playerCardHover)}
             >
-              <PlayerHead name={player.name} className="size-10 shrink-0 rounded-md" />
+              <PlayerHead name={player.name} className={cn('size-10 shrink-0 rounded-md', playerHeadGrow)} />
               <span className="min-w-0 truncate font-bold text-foreground">{player.name}</span>
             </Link>
           </li>
         ))}
         {result.more > 0 && (
-          <li className={cn(cardClass, 'justify-center border-dashed text-center text-sm text-muted-foreground')}>
+          <li
+            className={cn(cardClass, 'content-in justify-center border-dashed text-center text-sm text-muted-foreground')}
+            style={enterAfter(cardEnterDelay(result.players.length))}
+          >
             Még {result.more > MORE_SHOWN_UP_TO ? `${MORE_SHOWN_UP_TO}+` : countFormat.format(result.more)} játékos – írj be többet a
             névből
           </li>

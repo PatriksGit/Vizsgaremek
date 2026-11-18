@@ -31,6 +31,7 @@ export function HomePage() {
         registeredAt={account?.registered_at}
         stats={stats}
         friends={friends}
+        friendBack={{ to: '/', label: 'Vissza a főoldalra' }}
       >
         {registeredWithin(account, JOIN_HINT_DAYS) && <JoinCard />}
       </Dashboard>

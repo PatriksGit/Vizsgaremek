@@ -10,6 +10,7 @@
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { HomePage } from '@/features/home/HomePage'
@@ -73,7 +74,9 @@ function renderHome() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <HomePage />
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }

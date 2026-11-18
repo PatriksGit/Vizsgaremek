@@ -2,6 +2,8 @@ import { faClock, faCoins, faHatWizard } from '@fortawesome/free-solid-svg-icons
 import { Clock } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import type { ProfileBack } from '@/features/players/links'
+
 import { enterAfter } from '@/lib/motion'
 
 import { DiscordCard } from './DiscordCard'
@@ -22,6 +24,8 @@ type DashboardProps = {
   registeredAt?: string | null
   stats: Loaded<MyStats>
   friends: Loaded<Friend[]>
+  /** Where a friend's profile, opened from this page, leads back to. */
+  friendBack: ProfileBack
   /** Shown under the hero, such as how to join for a new player. */
   children?: ReactNode
 }
@@ -32,7 +36,7 @@ type DashboardProps = {
  * overview shows the logged-in player's, a profile another player's; until
  * the numbers answer, skeletons.
  */
-export function Dashboard({ wording, name, registeredAt, stats: statsQuery, friends: friendsQuery, children }: DashboardProps) {
+export function Dashboard({ wording, name, registeredAt, stats: statsQuery, friends: friendsQuery, friendBack, children }: DashboardProps) {
   const stats = statsQuery.data
   // Failed = answered without data. Not isError: TanStack v5 makes a refetch of a failed query without data
   // pending again, so the dash would flip to a skeleton on every retry (review 2026-11-17).
@@ -116,6 +120,7 @@ export function Dashboard({ wording, name, registeredAt, stats: statsQuery, frie
       <FriendsCard
         title={wording.friends}
         emptyText={wording.noFriends}
+        back={friendBack}
         friends={friends ?? (friendsFailed ? null : undefined)}
       />
     </div>
