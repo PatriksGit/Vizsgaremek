@@ -73,7 +73,12 @@ export function isPage(to: string, pathname: string) {
   return matchPath(to, pathname) !== null
 }
 
-/** Whether the current page is this item, or one of the pages in its group. */
+/** Whether the address is a page under this one, such as a player's profile under /jatekosok. The overview has none. */
+export function isUnder(to: string, pathname: string) {
+  return to !== '/' && matchPath({ path: to, end: false }, pathname) !== null
+}
+
+/** Whether the current page is this item, one of the pages in its group, or a page under it. */
 export function isActive(item: NavItem, pathname: string) {
-  return isPage(item.to, pathname) || (item.children?.some((child) => isPage(child.to, pathname)) ?? false)
+  return isPage(item.to, pathname) || isUnder(item.to, pathname) || (item.children?.some((child) => isPage(child.to, pathname)) ?? false)
 }

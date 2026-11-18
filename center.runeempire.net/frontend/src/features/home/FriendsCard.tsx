@@ -21,8 +21,20 @@ const countFormat = new Intl.NumberFormat('hu-HU')
  * online, the online ones first (the server's order, like /fr in game). Each
  * name and its small rank label take the rank's colour, when it has one.
  * While the list loads, shimmering rows; a dash when it could not be loaded.
+ * The title and the empty line speak to the player on the overview, about
+ * the player on another player's profile.
  */
-export function FriendsCard({ friends, className }: { friends?: Friend[] | null; className?: string }) {
+export function FriendsCard({
+  friends,
+  title = 'Barátaid',
+  emptyText = 'Még nincs barátod a szerveren.',
+  className,
+}: {
+  friends?: Friend[] | null
+  title?: string
+  emptyText?: string
+  className?: string
+}) {
   const online = friends?.filter((friend) => friend.online).length ?? 0
 
   return (
@@ -33,7 +45,7 @@ export function FriendsCard({ friends, className }: { friends?: Friend[] | null;
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="friends-title" className="font-heading text-lg font-bold text-foreground md:text-xl">
-          Barátaid
+          {title}
         </h2>
         {friends ? (
           <span className="flex items-center gap-2 text-xs text-muted-foreground md:text-[13px]">
@@ -68,7 +80,7 @@ export function FriendsCard({ friends, className }: { friends?: Friend[] | null;
           <span className="sr-only">A barátok betöltése…</span>
         </div>
       ) : friends.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Még nincs barátod a szerveren.</p>
+        <p className="text-sm text-muted-foreground">{emptyText}</p>
       ) : (
         <ul className="grid gap-x-3 gap-y-0.5 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] sm:gap-y-3">
           {friends.map((friend) => (

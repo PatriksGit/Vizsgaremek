@@ -32,6 +32,8 @@ type PunishmentCardProps = {
   punishment?: Punishment | null
   /** The punishments could not be loaded: a dash. */
   unavailable?: boolean
+  /** "Büntetéseid" on the overview, "Büntetései" on another player's profile. */
+  label?: string
   className?: string
   style?: CSSProperties
 }
@@ -41,7 +43,7 @@ type PunishmentCardProps = {
  * or ban (red), or "Zárolva" with a red edge. Hovering, focusing or tapping the
  * value shows when it was given, by whom and why.
  */
-export function PunishmentCard({ punishment, unavailable = false, className, style }: PunishmentCardProps) {
+export function PunishmentCard({ punishment, unavailable = false, label = 'Büntetéseid', className, style }: PunishmentCardProps) {
   const look = punishment && !unavailable ? KIND[punishment.kind] : null
   // Controlled, so a tap opens the details too: Base UI's preview card opens only on a mouse hover or a
   // keyboard focus, which a phone never sends (review 2026-11-17, UI-N1).
@@ -60,7 +62,7 @@ export function PunishmentCard({ punishment, unavailable = false, className, sty
       style={style}
     >
       <div className="flex min-w-0 flex-col gap-1.5 md:gap-2.5">
-        <p className="text-sm font-bold text-soft md:text-base">Büntetéseid</p>
+        <p className="text-sm font-bold text-soft md:text-base">{label}</p>
         {unavailable ? (
           <p className="text-2xl leading-none font-extrabold text-muted-foreground md:text-3xl">
             {NO_DATA}

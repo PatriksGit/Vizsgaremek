@@ -1,114 +1,39 @@
-import { faClock, faCoins, faHatWizard } from '@fortawesome/free-solid-svg-icons'
-import { Clock } from 'lucide-react'
-
 import { site } from '@/config/site'
 import { useAccount } from '@/features/auth/queries'
-import { enterAfter } from '@/lib/motion'
 
-import { DiscordCard } from './DiscordCard'
-import { FriendsCard } from './FriendsCard'
-import { HeroCard } from './HeroCard'
+import { Dashboard } from './Dashboard'
 import { JoinCard } from './JoinCard'
-import { PlaytimeCard } from './PlaytimeCard'
-import { PunishmentCard } from './PunishmentCard'
 import { registeredWithin } from './registration'
-import { StatCard } from './StatCard'
-import {
-  hoursFormat,
-  rankColor,
-  runeCountFormat,
-  shortDate,
-  type StatPart,
-  toPunishment,
-  useMyFriends,
-  useMyStats,
-} from './stats'
+import { useMyFriends, useMyStats } from './stats'
+import { OWN_WORDING } from './wording'
 
 /** How long a new player sees how to join the server. */
 const JOIN_HINT_DAYS = 7
 
 /**
- * The overview a player lands on after logging in: the hero with the streak,
- * how to join (for new players), four numbers, this week's playtime beside
- * the Discord, then the friends. The numbers come from GET /api/me/stats,
- * the friends from GET /api/me/friends; until they answer, skeletons.
+ * The overview a player lands on after logging in: their own dashboard
+ * (Dashboard), with how to join for new players under the hero. The numbers
+ * come from GET /api/me/stats, the friends from GET /api/me/friends. A
+ * player on their first day is welcomed, not welcomed back.
  */
 export function HomePage() {
   const { data: account } = useAccount()
-  const { data: stats, isFetched: statsFetched, dataUpdatedAt } = useMyStats()
-  // Failed = answered without data. Not isError: TanStack v5 makes a refetch of a failed query without data
-  // pending again, so the dash would flip to a skeleton on every retry (review 2026-11-17).
-  const statsFailed = !stats && statsFetched
-  /** The moment the numbers are from: their week and today are that moment's, also when a later refresh fails. */
-  const asOf = dataUpdatedAt ? new Date(dataUpdatedAt) : new Date()
-  const { data: friends, isFetched: friendsFetched } = useMyFriends()
-  const friendsFailed = !friends && friendsFetched
-
-  /** A part that will not come: its plugin could not be read, or the whole request failed. */
-  const missing = (part: StatPart) => (stats ? stats.unavailable.includes(part) : statsFailed)
-  /** undefined while loading (a skeleton), null when missing (a dash), else the value. */
-  const shown = <T,>(part: StatPart, value: (loaded: NonNullable<typeof stats>) => T | null): T | null | undefined =>
-    missing(part) ? null : stats ? value(stats) : undefined
+  const stats = useMyStats()
+  const friends = useMyFriends()
+  const greeting = registeredWithin(account, 1) ? 'Üdv a birodalomban,' : 'Üdv újra a birodalomban,'
 
   return (
-    <div className="flex flex-col gap-3.5 md:gap-5">
+    <>
       <title>{`Főoldal | ${site.name}`}</title>
-
-      <HeroCard streak={shown('streak', (loaded) => loaded.streak)} asOf={asOf} />
-
-      {registeredWithin(account, JOIN_HINT_DAYS) && <JoinCard />}
-
-      <ul aria-label="Statisztikák" className="grid grid-cols-1 gap-2.5 sm:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] md:gap-5">
-        <StatCard
-          label="Rúnáid"
-          icon={faCoins}
-          value={shown('runes', (loaded) => (loaded.runes === null ? null : runeCountFormat.format(loaded.runes)))}
-          unit="rúna"
-          className="content-in"
-          style={enterAfter(560)}
-        />
-        <StatCard
-          label="Játékidőd"
-          icon={faClock}
-          value={shown('playtime', (loaded) => loaded.playtime && hoursFormat.format(loaded.playtime.total_seconds / 3600))}
-          unit="óra"
-          className="content-in"
-          style={enterAfter(620)}
-        />
-        <StatCard
-          label="Rangod"
-          icon={faHatWizard}
-          value={shown('rank', (loaded) =>
-            loaded.rank ? <span style={rankColor(loaded.rank.color)}>{loaded.rank.name}</span> : null,
-          )}
-          className="content-in"
-          style={enterAfter(680)}
-        >
-          {stats?.rank?.expires_at && (
-            <span className="inline-flex h-6.5 items-center gap-1.5 self-start rounded-full bg-primary/10 px-2.5 text-xs font-bold text-primary">
-              <Clock className="size-3.25" aria-hidden="true" />
-              Lejár: {shortDate(stats.rank.expires_at)}
-            </span>
-          )}
-        </StatCard>
-        <PunishmentCard
-          punishment={stats ? toPunishment(stats.punishment) : undefined}
-          unavailable={missing('punishment')}
-          className="content-in"
-          style={enterAfter(740)}
-        />
-      </ul>
-
-      <div className="flex flex-wrap gap-3.5 md:gap-5">
-        <PlaytimeCard
-          asOf={asOf}
-          week={shown('playtime', (loaded) => loaded.playtime?.week.map((seconds) => (seconds > 0 ? Math.max(1, Math.round(seconds / 60)) : 0)) ?? null)}
-          className="min-w-0 flex-[2_1_480px]"
-        />
-        <DiscordCard className="flex-[1_1_320px]" />
-      </div>
-
-      <FriendsCard friends={friends ?? (friendsFailed ? null : undefined)} />
-    </div>
+      <Dashboard
+        wording={{ ...OWN_WORDING, greeting }}
+        name={account?.display_name}
+        registeredAt={account?.registered_at}
+        stats={stats}
+        friends={friends}
+      >
+        {registeredWithin(account, JOIN_HINT_DAYS) && <JoinCard />}
+      </Dashboard>
+    </>
   )
 }

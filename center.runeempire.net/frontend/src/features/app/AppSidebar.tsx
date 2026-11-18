@@ -104,10 +104,10 @@ export function AppSidebar() {
   )
 }
 
-/** A page of its own on the top level: a gold tile and label, with a gold bar on the sidebar's edge, while it is open. */
+/** A page of its own on the top level: a gold tile and label, with a gold bar on the sidebar's edge, while it or a page under it is open. */
 function TopLink({ item }: { item: NavItem }) {
   const { pathname } = useLocation()
-  const current = isPage(item.to, pathname)
+  const current = isActive(item, pathname)
 
   return (
     <Link

@@ -71,6 +71,13 @@ it('a page in the Rúnák group marks itself in the sidebar and Rúnák on the t
   expect(currentLinks()).toEqual(['Vásárlás', 'Rúnák'])
 })
 
+it('a player profile marks Játékosok in the sidebar and on the tab bar', async () => {
+  renderMenuOn('/jatekosok/PatrikT', 'jatekosok/:name')
+
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  expect(currentLinks()).toEqual(['Játékosok', 'Játékosok'])
+})
+
 it('the overview is called Főoldal in the menu', async () => {
   renderMenuOn('/', '/')
 

@@ -86,4 +86,14 @@ return [
         'per_minute' => max(1, (int) env('RATE_LIMITS_SKINS_PER_MINUTE', 120)),
     ],
 
+    /*
+     * GET /api/players?q=, per account. The page asks after each pause in
+     * typing (a slow typer: once a letter), so 60 leaves room for about ten
+     * names a minute, while a script walking every two-letter prefix to list
+     * all the players still needs over 20 minutes.
+     */
+    'player_search' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_PLAYER_SEARCH_PER_MINUTE', 60)),
+    ],
+
 ];

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Actions\FindPlayerSkin;
-use App\Exceptions\Players\PlayerNotFound;
 use App\Exceptions\Players\SkinUnavailable;
 use App\Models\Account;
 use App\Support\SkinTextures;
+use Dedoc\Scramble\Attributes\PathParameter;
 use Illuminate\Http\Response;
 
 class PlayerSkinController extends Controller
@@ -16,16 +16,14 @@ class PlayerSkinController extends Controller
      * the website's heads and 3D figure. Public: skins are seen by everyone
      * in game. The browser never talks to Mojang itself, and keeps the image
      * for five minutes; a player's new skin shows after that.
+     *
+     * {player} is bound by name (RouteBindingServiceProvider); the attribute
+     * keeps the docs from calling it an integer id.
      */
-    public function __invoke(string $name, FindPlayerSkin $findSkin, SkinTextures $textures): Response
+    #[PathParameter('player', description: 'The player name, in any case.', type: 'string', infer: false)]
+    public function __invoke(Account $player, FindPlayerSkin $findSkin, SkinTextures $textures): Response
     {
-        $account = Account::query()->where('username', Account::usernameFor($name))->first();
-
-        if ($account === null) {
-            throw new PlayerNotFound;
-        }
-
-        $png = $textures->png($findSkin->handle($account));
+        $png = $textures->png($findSkin->handle($player));
 
         if ($png === null) {
             throw new SkinUnavailable;

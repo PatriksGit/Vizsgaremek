@@ -50,6 +50,8 @@ class RateLimitServiceProvider extends ServiceProvider
 
         RateLimiter::for('password-reset', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.password_reset.per_minute'))->by(RateLimitClient::of($request))->response(self::tooManyAttempts()));
 
+        RateLimiter::for('player-search', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.player_search.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));
+
         RateLimiter::for('skins', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.skins.per_minute'))->by(RateLimitClient::of($request))->response(self::tooManyAttempts()));
     }
 

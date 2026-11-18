@@ -29,6 +29,8 @@ type PlaytimeCardProps = {
   week?: number[] | null
   /** The moment the minutes are from (default now). */
   asOf?: Date
+  /** Over an empty week: to the player on the overview, about them on another player's profile. */
+  emptyText?: string
   className?: string
 }
 
@@ -36,7 +38,7 @@ type PlaytimeCardProps = {
  * This week's playtime as a gold line over the days, today's column lit.
  * Hovering a day shows its time. While the stats load, a skeleton.
  */
-export function PlaytimeCard({ week, asOf = new Date(), className }: PlaytimeCardProps) {
+export function PlaytimeCard({ week, asOf = new Date(), emptyText = 'Még nincs játékidőd ezen a héten', className }: PlaytimeCardProps) {
   const todayIndex = serverTodayIndex(asOf)
   const total = week ? playedSoFar(week, todayIndex).reduce((sum, minutes) => sum + minutes, 0) : 0
 
@@ -62,7 +64,7 @@ export function PlaytimeCard({ week, asOf = new Date(), className }: PlaytimeCar
       </div>
 
       {week ? (
-        <WeekChart week={week} total={total} todayIndex={todayIndex} />
+        <WeekChart week={week} total={total} todayIndex={todayIndex} emptyText={emptyText} />
       ) : week === null ? (
         <div className="grid h-47 place-items-center rounded-xl border border-dashed border-line text-3xl font-extrabold text-muted-foreground md:h-62">
           {NO_DATA}
@@ -78,7 +80,7 @@ export function PlaytimeCard({ week, asOf = new Date(), className }: PlaytimeCar
   )
 }
 
-function WeekChart({ week, total, todayIndex }: { week: number[]; total: number; todayIndex: number }) {
+function WeekChart({ week, total, todayIndex, emptyText }: { week: number[]; total: number; todayIndex: number; emptyText: string }) {
   const shown = playedSoFar(week, todayIndex)
 
   // Three equal steps of whole hours, high enough for the best day.
@@ -180,7 +182,7 @@ function WeekChart({ week, total, todayIndex }: { week: number[]; total: number;
       {total === 0 && (
         <div className="absolute top-[45%] left-1/2 flex -translate-1/2 items-center gap-2.5 rounded-xl border border-line bg-sunken px-4 py-3 text-center text-sm font-bold text-foreground max-sm:w-[85%]">
           <TrendingUp className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-          Még nincs játékidőd ezen a héten
+          {emptyText}
         </div>
       )}
     </div>

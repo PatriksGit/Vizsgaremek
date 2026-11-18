@@ -1,9 +1,8 @@
 import { Clock } from 'lucide-react'
 
-import { useAccount } from '@/features/auth/queries'
 import { enterAfter } from '@/lib/motion'
 
-import { registeredWithin, registrationDate } from './registration'
+import { registrationDate } from './registration'
 import { SkinFigure } from './SkinFigure'
 import { type Streak, StreakPanel } from './StreakPanel'
 
@@ -12,16 +11,29 @@ import { type Streak, StreakPanel } from './StreakPanel'
  * the player's name and the day they joined on the left, their skin as a 3D
  * figure to the right of the name (the middle of the card on wide screens),
  * and this week's login streak in a small box of its own on the right
- * (under them on narrower screens). A player on their first day is
- * welcomed, not welcomed back.
+ * (under them on narrower screens). The same card tops another player's
+ * profile, with a line naming the page instead of the greeting.
  */
-export function HeroCard({ streak, asOf }: { streak?: Streak | null; asOf?: Date }) {
-  const { data: account } = useAccount()
-  const greeting = registeredWithin(account, 1) ? 'Üdv a birodalomban,' : 'Üdv újra a birodalomban,'
-
+export function HeroCard({
+  label = 'Üdvözlés',
+  greeting,
+  name,
+  registeredAt,
+  streak,
+  asOf,
+}: {
+  /** The card's name for screen readers. */
+  label?: string
+  /** The small line above the name. */
+  greeting: string
+  name?: string
+  registeredAt?: string | null
+  streak?: Streak | null
+  asOf?: Date
+}) {
   return (
     <section
-      aria-label="Üdvözlés"
+      aria-label={label}
       className="card-rise relative isolate flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_1px_2px_rgb(0_0_0/0.35)] md:px-6 md:py-6 xl:min-h-57.5 xl:gap-6 xl:pr-8"
     >
       {/* In a layer of its own: a bare <picture> (its <source>) would take a slot in the row and push the name inwards. */}
@@ -40,23 +52,23 @@ export function HeroCard({ streak, asOf }: { streak?: Streak | null; asOf?: Date
       <div className="content-in flex min-w-0 flex-[1_1_0] flex-col gap-1 md:gap-2 xl:flex-none" style={enterAfter(400)}>
         <p className="text-[13px] font-semibold text-muted-foreground">{greeting}</p>
         <h1 className="font-heading text-4xl leading-[1.05] font-bold tracking-tight wrap-break-word text-foreground md:text-[52px]">
-          {account?.display_name}
+          {name}
         </h1>
-        {account?.registered_at && (
+        {registeredAt && (
           <>
             {/* Phones: a plain line. */}
             <p className="text-xs text-muted-foreground md:hidden">
-              Csatlakozott: <strong className="text-foreground">{registrationDate.format(new Date(account.registered_at))}</strong>
+              Csatlakozott: <strong className="text-foreground">{registrationDate.format(new Date(registeredAt))}</strong>
             </p>
             <p className="mt-2 hidden h-7 items-center gap-1.5 self-start rounded-full bg-raised px-2.5 text-xs font-semibold text-soft md:inline-flex">
               <Clock className="size-3.25" aria-hidden="true" />
-              Csatlakozott: {registrationDate.format(new Date(account.registered_at))}
+              Csatlakozott: {registrationDate.format(new Date(registeredAt))}
             </p>
           </>
         )}
       </div>
 
-      <SkinFigure name={account?.display_name} />
+      <SkinFigure name={name} />
 
       <StreakPanel
         streak={streak}

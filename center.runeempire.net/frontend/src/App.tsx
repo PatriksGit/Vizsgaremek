@@ -15,6 +15,8 @@ import { AuthPage } from '@/features/auth/AuthPage'
 import { GuestOnly, RequireAccount } from '@/features/auth/guards'
 import { useAccount } from '@/features/auth/queries'
 import { HomePage } from '@/features/home/HomePage'
+import { PlayerProfilePage } from '@/features/players/PlayerProfilePage'
+import { PlayersPage } from '@/features/players/PlayersPage'
 import { RanksPage } from '@/features/ranks/RanksPage'
 import { ApiError } from '@/lib/api'
 import { queryClient } from '@/queryClient'
@@ -47,7 +49,7 @@ function RootLayout() {
  * the rest say they are on the way. Pages marked coming soon get no route.
  */
 const menuPages = NAV.flatMap((item): NavItem[] => [item, ...(item.children ?? [])])
-  .filter((item) => item.to !== '/' && item.to !== '/rangok' && !item.comingSoon)
+  .filter((item) => !['/', '/rangok', '/jatekosok'].includes(item.to) && !item.comingSoon)
   .map((item) => ({
     path: item.to.slice(1),
     element: item.children ? (
@@ -76,6 +78,8 @@ const router = createBrowserRouter([
           { index: true, element: <HomePage /> },
           { path: 'beallitasok', element: <AccountPage /> },
           { path: 'rangok', element: <RanksPage /> },
+          { path: 'jatekosok', element: <PlayersPage /> },
+          { path: 'jatekosok/:name', element: <PlayerProfilePage /> },
           ...menuPages,
         ],
       },

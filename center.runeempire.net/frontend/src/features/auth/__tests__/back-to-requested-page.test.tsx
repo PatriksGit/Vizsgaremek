@@ -49,7 +49,7 @@ describe('where the player lands after logging in', { timeout: 15_000 }, () => {
     await openAsGuest('/jatekosok')
     await logIn()
 
-    await screen.findByText('Ez az oldal hamarosan elkészül.')
+    await screen.findByRole('heading', { name: 'Játékosok' })
     expect(window.location.pathname).toBe('/jatekosok')
   })
 
