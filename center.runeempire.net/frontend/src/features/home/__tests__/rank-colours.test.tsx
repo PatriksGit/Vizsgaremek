@@ -43,9 +43,9 @@ beforeEach(() => {
       return {
         data: {
           data: [
-            { name: 'Anna', online: true, rank: { name: 'Manager', color: '#E5675A' } },
-            { name: 'Bela', online: false, rank: { name: 'Játékos', color: null } },
-            { name: 'Cili', online: false, rank: null },
+            { name: 'Anna', online: true, has_profile: true, rank: { name: 'Manager', color: '#E5675A' } },
+            { name: 'Bela', online: false, has_profile: true, rank: { name: 'Játékos', color: null } },
+            { name: 'Cili', online: false, has_profile: true, rank: null },
           ],
         },
       }

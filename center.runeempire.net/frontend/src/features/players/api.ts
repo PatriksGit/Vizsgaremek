@@ -71,8 +71,9 @@ export type PlayerProfile = MyStats & { name: string; registered_at: string | nu
 /** The backend has no such player (players.not_found). */
 export const isMissingPlayer = (error: unknown) => error instanceof ApiError && error.status === 404
 
-/** One more try, except for a player who does not exist. */
-const retryUnlessMissing = (failures: number, error: Error) => !isMissingPlayer(error) && failures < 1
+/** One more try, except for a player who does not exist or a refusal for asking too often (a retry would spend more). */
+const retryUnlessMissing = (failures: number, error: Error) =>
+  !isMissingPlayer(error) && !(error instanceof ApiError && error.status === 429) && failures < 1
 
 /** Every minute, until the player turns out not to exist. */
 const everyMinuteUnlessMissing = ({ state }: { state: { error: unknown } }) => (isMissingPlayer(state.error) ? false : 60_000)

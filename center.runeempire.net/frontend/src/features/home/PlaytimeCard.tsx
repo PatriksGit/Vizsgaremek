@@ -30,7 +30,7 @@ type PlaytimeCardProps = {
   /** The moment the minutes are from (default now). */
   asOf?: Date
   /** Over an empty week: to the player on the overview, about them on another player's profile. */
-  emptyText?: string
+  emptyText: string
   className?: string
 }
 
@@ -38,7 +38,7 @@ type PlaytimeCardProps = {
  * This week's playtime as a gold line over the days, today's column lit.
  * Hovering a day shows its time. While the stats load, a skeleton.
  */
-export function PlaytimeCard({ week, asOf = new Date(), emptyText = 'Még nincs játékidőd ezen a héten', className }: PlaytimeCardProps) {
+export function PlaytimeCard({ week, asOf = new Date(), emptyText, className }: PlaytimeCardProps) {
   const todayIndex = serverTodayIndex(asOf)
   const total = week ? playedSoFar(week, todayIndex).reduce((sum, minutes) => sum + minutes, 0) : 0
 

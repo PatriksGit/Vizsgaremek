@@ -43,8 +43,11 @@ Route::get('/me/friends', MyFriendsController::class)->middleware('auth:sanctum'
 // player's profile, which shows what that player's overview shows.
 Route::middleware('auth:sanctum')->prefix('players')->name('players.')->group(function () {
     Route::get('/', PlayerSearchController::class)->middleware('throttle:player-search')->name('search');
-    Route::get('/{player}/stats', PlayerStatsController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('stats');
-    Route::get('/{player}/friends', PlayerFriendsController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('friends');
+    // One counter for both: a profile asks for its stats and its friends together.
+    Route::middleware('throttle:player-profile')->group(function () {
+        Route::get('/{player}/stats', PlayerStatsController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('stats');
+        Route::get('/{player}/friends', PlayerFriendsController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('friends');
+    });
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {

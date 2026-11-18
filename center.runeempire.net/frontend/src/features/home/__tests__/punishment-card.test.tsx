@@ -8,6 +8,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { PunishmentCard } from '@/features/home/PunishmentCard'
+import { OWN_WORDING } from '@/features/home/wording'
 import { stubBrowserApis } from '@/test/fakeBackend'
 
 const mute = {
@@ -21,7 +22,7 @@ const mute = {
 function renderCard() {
   render(
     <ul>
-      <PunishmentCard punishment={mute} />
+      <PunishmentCard label={OWN_WORDING.punishment} punishment={mute} />
     </ul>,
   )
   return screen.getByRole('button', { name: /Némítva eddig/ })

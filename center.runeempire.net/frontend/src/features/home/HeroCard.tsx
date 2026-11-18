@@ -15,15 +15,15 @@ import { type Streak, StreakPanel } from './StreakPanel'
  * profile, with a line naming the page instead of the greeting.
  */
 export function HeroCard({
-  label = 'Üdvözlés',
+  label,
   greeting,
   name,
   registeredAt,
   streak,
   asOf,
 }: {
-  /** The card's name for screen readers. */
-  label?: string
+  /** The card's name for screen readers (wording.ts). */
+  label: string
   /** The small line above the name. */
   greeting: string
   name?: string

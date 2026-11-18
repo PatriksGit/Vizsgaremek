@@ -62,7 +62,7 @@ beforeEach(() => {
 afterEach(cleanup)
 
 it('shows the player’s numbers and friends with labels about the player', async () => {
-  serve(() => profile, [{ name: 'Barat', online: true, rank: { name: 'Játékos', color: null } }])
+  serve(() => profile, [{ name: 'Barat', online: true, has_profile: true, rank: { name: 'Játékos', color: null } }])
   renderProfile()
 
   // hu-HU groups digits only from five on.
@@ -83,6 +83,29 @@ it('an unknown player says so and is not asked again', async () => {
   expect(asked('/players/PatrikT/stats')).toBe(1)
 })
 
+it('a friend without a website account is shown but not linked (repro review 2026-11-18, F1)', async () => {
+  serve(() => profile, [
+    { name: 'Barat', online: false, has_profile: true, rank: null },
+    { name: 'RegiJatekos', online: false, has_profile: false, rank: null },
+  ])
+  renderProfile()
+
+  expect((await screen.findByText('Barat')).closest('a')?.getAttribute('href')).toBe('/jatekosok/Barat')
+  expect(screen.getByText('RegiJatekos').closest('a')).toBeNull()
+})
+
+it('a refusal for asking too often is not asked again at once and shows dashes, not "no such player"', async () => {
+  serve(() => {
+    throw new ApiError(429, 'Túl sok próbálkozás. Próbáld újra 1 perc múlva.', {}, { code: 'too_many_requests' })
+  })
+  renderProfile()
+
+  expect(await screen.findByText('Rúnái')).toBeTruthy()
+  await screen.findAllByText('(most nem érhető el)', { exact: false })
+  expect(asked('/players/PatrikT/stats')).toBe(1)
+  expect(screen.queryByRole('heading', { name: 'Nincs ilyen játékos' })).toBeNull()
+})
+
 it('a name no player can have says so without asking', () => {
   serve(() => profile)
   renderProfile('/jatekosok/a%20b')
@@ -94,7 +117,7 @@ it('a name no player can have says so without asking', () => {
 it('a friend opens their own profile, whose back link returns to the first one', async () => {
   getMock.mockImplementation(async (url: string) => {
     if (url === '/players/PatrikT/stats') return { data: { data: profile } }
-    if (url === '/players/PatrikT/friends') return { data: { data: [{ name: 'Barat', online: false, rank: null }] } }
+    if (url === '/players/PatrikT/friends') return { data: { data: [{ name: 'Barat', online: false, has_profile: true, rank: null }] } }
     if (url === '/players/Barat/stats') return { data: { data: { ...profile, name: 'Barat', runes: 7 } } }
     if (url === '/players/Barat/friends') return { data: { data: [] } }
     throw new Error(`unexpected GET ${url}`)

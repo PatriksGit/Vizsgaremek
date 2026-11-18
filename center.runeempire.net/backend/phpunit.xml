@@ -65,6 +65,7 @@
         <env name="RUNEACTIVITY_TIMEZONE" value="Europe/Budapest" force="true"/>
         <env name="RATE_LIMITS_SKINS_PER_MINUTE" value="120" force="true"/>
         <env name="RATE_LIMITS_PLAYER_SEARCH_PER_MINUTE" value="60" force="true"/>
+        <env name="RATE_LIMITS_PLAYER_PROFILE_PER_MINUTE" value="120" force="true"/>
         <env name="PASSWORD_ARGON2_MEMORY_KIB" value="1024" force="true"/>
         <env name="PASSWORD_ARGON2_ITERATIONS" value="1" force="true"/>
         <env name="PASSWORD_ARGON2_PARALLELISM" value="1" force="true"/>

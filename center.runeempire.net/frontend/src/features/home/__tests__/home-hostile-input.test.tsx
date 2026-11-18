@@ -11,6 +11,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { DiscordCard } from '@/features/home/DiscordCard'
 import { FriendsCard } from '@/features/home/FriendsCard'
 import { HomePage } from '@/features/home/HomePage'
+import { OWN_WORDING } from '@/features/home/wording'
 import { stubBrowserApis } from '@/test/fakeBackend'
 
 const getMock = vi.hoisted(() => vi.fn())
@@ -74,10 +75,12 @@ it('hostile friend names and rank colours stay text and drop out of style', () =
   render(
     <MemoryRouter>
       <FriendsCard
+        title={OWN_WORDING.friends}
+        emptyText={OWN_WORDING.noFriends}
         friends={[
-          { name: '<img src=x onerror=alert(1)>', online: true, rank: { name: '<b>x</b>', color: 'red; background-image: url(https://evil.invalid/x)' } },
-          { name: '‮evil​', online: false, rank: null },
-          { name: long, online: false, rank: { name: 'Játékos', color: null } },
+          { name: '<img src=x onerror=alert(1)>', online: true, has_profile: true, rank: { name: '<b>x</b>', color: 'red; background-image: url(https://evil.invalid/x)' } },
+          { name: '‮evil​', online: false, has_profile: true, rank: null },
+          { name: long, online: false, has_profile: true, rank: { name: 'Játékos', color: null } },
         ]}
       />
     </MemoryRouter>,

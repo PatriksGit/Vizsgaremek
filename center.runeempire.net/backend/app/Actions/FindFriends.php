@@ -18,9 +18,12 @@ class FindFriends
      * name from the account, or the last name RuneFriends saw without one.
      * Each friend's rank (its name and website colour) comes from LuckPerms;
      * when LuckPerms cannot be read, the friends are still listed, with a
-     * null rank (the error goes to the log).
+     * null rank (the error goes to the log). has_profile: the friend has a
+     * website account, so their profile (/api/players/{name}/stats) exists;
+     * a friend RuneFriends knows without one has none, and the website must
+     * not link it (repro review 2026-11-18, F1).
      *
-     * @return list<array{name: string, online: bool, rank: array{name: string, color: string|null}|null}>
+     * @return list<array{name: string, online: bool, has_profile: bool, rank: array{name: string, color: string|null}|null}>
      */
     public function handle(Account $account): array
     {
@@ -46,6 +49,7 @@ class FindFriends
             ->map(fn (string $uuid): array => [
                 'name' => (string) ($accounts[$uuid]->display_name ?? $knownNames[$uuid] ?? '?'),
                 'online' => (bool) ($accounts[$uuid]->active ?? false),
+                'has_profile' => isset($accounts[$uuid]),
                 'rank' => isset($ranks[$uuid]) ? ['name' => $ranks[$uuid]['name'], 'color' => $ranks[$uuid]['color']] : null,
             ])
             ->sort(fn (array $a, array $b): int => [$b['online'], strtolower($a['name'])] <=> [$a['online'], strtolower($b['name'])])

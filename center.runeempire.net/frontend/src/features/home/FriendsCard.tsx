@@ -14,6 +14,8 @@ import { NO_DATA, rankColor } from './stats'
 export type Friend = {
   name: string
   online: boolean
+  /** They have a website account, so a profile to open; RuneFriends may know a friend without one. */
+  has_profile: boolean
   /** Their LuckPerms rank; null when LuckPerms could not be read. */
   rank: { name: string; color: string | null } | null
 }
@@ -26,19 +28,20 @@ const countFormat = new Intl.NumberFormat('hu-HU')
  * name and its small rank label take the rank's colour, when it has one.
  * While the list loads, shimmering rows; a dash when it could not be loaded.
  * The title and the empty line speak to the player on the overview, about
- * the player on another player's profile. Each friend opens their profile;
+ * the player on another player's profile. Each friend with a profile opens it;
  * `back` is where that profile's back link leads.
  */
 export function FriendsCard({
   friends,
-  title = 'Barátaid',
-  emptyText = 'Még nincs barátod a szerveren.',
+  title,
+  emptyText,
   back,
   className,
 }: {
   friends?: Friend[] | null
-  title?: string
-  emptyText?: string
+  /** From wording.ts: "Barátaid" on the overview, "Barátai" on a profile; so is the empty line. */
+  title: string
+  emptyText: string
   back?: ProfileBack
   className?: string
 }) {
@@ -92,49 +95,60 @@ export function FriendsCard({
         <ul className="grid gap-x-3 gap-y-0.5 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] sm:gap-y-3">
           {friends.map((friend) => (
             <li key={friend.name}>
-              <Link
-                to={profilePath(friend.name)}
-                state={back && { back }}
-                className={cn(
-                  playerCardHover,
-                  // Phones: a plain row, lit while pressed; wider: a card that lifts on hover.
-                  'flex min-h-13 items-center gap-3 rounded-lg max-sm:-mx-2 max-sm:px-2 max-sm:active:bg-raised sm:min-h-0 sm:rounded-xl sm:border sm:border-border sm:bg-sunken sm:px-3 sm:py-2.5',
-                )}
-              >
-                <span className="relative shrink-0">
-                  <PlayerHead name={friend.name} className={cn('size-8 rounded-sm', playerHeadGrow)} />
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      'absolute -right-0.75 -bottom-0.75 size-3 rounded-full border-2 border-card sm:border-sunken',
-                      friend.online ? 'bg-ok' : 'bg-sunken shadow-[inset_0_0_0_2px_var(--danger)]',
-                    )}
-                  />
-                </span>
-                <span className="min-w-0 truncate font-bold text-foreground" style={rankColor(friend.rank?.color ?? null)}>
-                  {friend.name}
-                </span>
-                {friend.rank && (
-                  <span
-                    className={cn(
-                      'ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-bold',
-                      !friend.rank.color && 'bg-raised text-soft',
-                    )}
-                    style={
-                      friend.rank.color
-                        ? { color: friend.rank.color, backgroundColor: `color-mix(in srgb, ${friend.rank.color} 14%, transparent)` }
-                        : undefined
-                    }
-                  >
-                    {friend.rank.name}
-                  </span>
-                )}
-                <span className="sr-only">{friend.online ? 'Online' : 'Offline'}</span>
-              </Link>
+              {friend.has_profile ? (
+                <Link to={profilePath(friend.name)} state={back && { back }} className={cn(rowClass, playerCardHover)}>
+                  <FriendRow friend={friend} />
+                </Link>
+              ) : (
+                <div className={rowClass}>
+                  <FriendRow friend={friend} />
+                </div>
+              )}
             </li>
           ))}
         </ul>
       )}
     </section>
+  )
+}
+
+/**
+ * A friend's row: a plain row on phones, a card from sm. A friend with a
+ * profile is a link that lifts on hover (playerCardHover) and lights up while
+ * pressed on phones; one without (no website account) stays a plain row.
+ */
+const rowClass =
+  'flex min-h-13 items-center gap-3 rounded-lg max-sm:-mx-2 max-sm:px-2 max-sm:active:bg-raised sm:min-h-0 sm:rounded-xl sm:border sm:border-border sm:bg-sunken sm:px-3 sm:py-2.5'
+
+function FriendRow({ friend }: { friend: Friend }) {
+  return (
+    <>
+      <span className="relative shrink-0">
+        <PlayerHead name={friend.name} className={cn('size-8 rounded-sm', friend.has_profile && playerHeadGrow)} />
+        <span
+          aria-hidden="true"
+          className={cn(
+            'absolute -right-0.75 -bottom-0.75 size-3 rounded-full border-2 border-card sm:border-sunken',
+            friend.online ? 'bg-ok' : 'bg-sunken shadow-[inset_0_0_0_2px_var(--danger)]',
+          )}
+        />
+      </span>
+      <span className="min-w-0 truncate font-bold text-foreground" style={rankColor(friend.rank?.color ?? null)}>
+        {friend.name}
+      </span>
+      {friend.rank && (
+        <span
+          className={cn('ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-bold', !friend.rank.color && 'bg-raised text-soft')}
+          style={
+            friend.rank.color
+              ? { color: friend.rank.color, backgroundColor: `color-mix(in srgb, ${friend.rank.color} 14%, transparent)` }
+              : undefined
+          }
+        >
+          {friend.rank.name}
+        </span>
+      )}
+      <span className="sr-only">{friend.online ? 'Online' : 'Offline'}</span>
+    </>
   )
 }

@@ -207,6 +207,7 @@ class ConfigDefaultsTest extends TestCase
             'RATE_LIMITS_PASSWORD_RESET_GUESSES_PER_DAY' => ['password_reset_guesses', 'per_day'],
             'RATE_LIMITS_SKINS_PER_MINUTE' => ['skins', 'per_minute'],
             'RATE_LIMITS_PLAYER_SEARCH_PER_MINUTE' => ['player_search', 'per_minute'],
+            'RATE_LIMITS_PLAYER_PROFILE_PER_MINUTE' => ['player_profile', 'per_minute'],
         ];
 
         $cases = [];

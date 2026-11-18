@@ -59,7 +59,7 @@ class PlayerFriendsControllerTest extends TestCase
         $this->befriend($this->viewer, $mine);
 
         $this->friends('PatrikT')->assertOk()->assertExactJson(['data' => [
-            ['name' => 'Barat', 'online' => false, 'rank' => ['name' => 'Játékos', 'color' => null]],
+            ['name' => 'Barat', 'online' => false, 'has_profile' => true, 'rank' => ['name' => 'Játékos', 'color' => null]],
         ]]);
     }
 }

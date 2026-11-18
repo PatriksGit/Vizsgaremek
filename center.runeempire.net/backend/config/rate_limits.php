@@ -96,4 +96,15 @@ return [
         'per_minute' => max(1, (int) env('RATE_LIMITS_PLAYER_SEARCH_PER_MINUTE', 60)),
     ],
 
+    /*
+     * GET /api/players/{name}/stats and /friends together, per account. One
+     * profile opened is two requests (and two more a minute while it stays
+     * open), so 120 is about 60 profiles a minute; it keeps a script from
+     * walking a list of names against the game servers' shared database
+     * (repro review 2026-11-18, K1). Unknown names count too.
+     */
+    'player_profile' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_PLAYER_PROFILE_PER_MINUTE', 120)),
+    ],
+
 ];

@@ -88,13 +88,13 @@ class MyFriendsControllerTest extends TestCase
         $this->online($zed);
 
         $this->friends()->assertOk()->assertExactJson(['data' => [
-            ['name' => 'zed', 'online' => true, 'rank' => self::PLAYER],
-            ['name' => 'Anna', 'online' => false, 'rank' => self::PLAYER],
-            ['name' => 'Bela', 'online' => false, 'rank' => self::PLAYER],
+            ['name' => 'zed', 'online' => true, 'has_profile' => true, 'rank' => self::PLAYER],
+            ['name' => 'Anna', 'online' => false, 'has_profile' => true, 'rank' => self::PLAYER],
+            ['name' => 'Bela', 'online' => false, 'has_profile' => true, 'rank' => self::PLAYER],
         ]]);
     }
 
-    public function test_a_friend_without_an_account_keeps_the_name_runefriends_knows(): void
+    public function test_a_friend_without_an_account_keeps_the_name_runefriends_knows_and_has_no_profile(): void
     {
         $uuid = Account::offlineUuid('RegiJatekos');
         PluginDatabase::table('runefriends', 'known_players')->insert([
@@ -102,7 +102,7 @@ class MyFriendsControllerTest extends TestCase
         ]);
         $this->befriend($this->account->uuid, $uuid);
 
-        $this->friends()->assertExactJson(['data' => [['name' => 'RegiJatekos', 'online' => false, 'rank' => self::PLAYER]]]);
+        $this->friends()->assertExactJson(['data' => [['name' => 'RegiJatekos', 'online' => false, 'has_profile' => false, 'rank' => self::PLAYER]]]);
     }
 
     public function test_other_players_friendships_are_not_listed(): void
@@ -120,7 +120,7 @@ class MyFriendsControllerTest extends TestCase
         $anna = Account::factory()->create(['display_name' => 'Anna']);
         $this->befriend($anna->uuid, $this->account->uuid);
 
-        $this->friends()->assertExactJson(['data' => [['name' => 'Anna', 'online' => false, 'rank' => self::PLAYER]]]);
+        $this->friends()->assertExactJson(['data' => [['name' => 'Anna', 'online' => false, 'has_profile' => true, 'rank' => self::PLAYER]]]);
     }
 
     public function test_each_friend_has_their_rank_and_its_colour(): void
@@ -133,8 +133,8 @@ class MyFriendsControllerTest extends TestCase
         $this->rank($bela, 'archmage', 11);
 
         $this->friends()->assertExactJson(['data' => [
-            ['name' => 'Anna', 'online' => false, 'rank' => ['name' => 'Manager', 'color' => '#E5675A']],
-            ['name' => 'Bela', 'online' => false, 'rank' => ['name' => 'Archmage', 'color' => null]],
+            ['name' => 'Anna', 'online' => false, 'has_profile' => true, 'rank' => ['name' => 'Manager', 'color' => '#E5675A']],
+            ['name' => 'Bela', 'online' => false, 'has_profile' => true, 'rank' => ['name' => 'Archmage', 'color' => null]],
         ]]);
     }
 
@@ -145,6 +145,6 @@ class MyFriendsControllerTest extends TestCase
         // As on a server where the website's user was not granted the LuckPerms database yet.
         config(['database.plugins.luckperms' => 'center_missing_test']);
 
-        $this->friends()->assertOk()->assertExactJson(['data' => [['name' => 'Anna', 'online' => false, 'rank' => null]]]);
+        $this->friends()->assertOk()->assertExactJson(['data' => [['name' => 'Anna', 'online' => false, 'has_profile' => true, 'rank' => null]]]);
     }
 }
