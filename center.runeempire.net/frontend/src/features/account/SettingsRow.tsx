@@ -1,0 +1,43 @@
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import type { ReactNode } from 'react'
+
+type SettingsRowProps = {
+  id: string
+  icon: IconDefinition
+  title: string
+  /** Beside the title, such as the 2FA state. */
+  badge?: ReactNode
+  description: string
+  /** The row's one action; hidden while the row is open (its form has its own buttons). */
+  action?: ReactNode
+  /** What opens under the row, such as the password form. */
+  children?: ReactNode
+}
+
+/**
+ * One way of logging in in the Biztonság card (owner, 2026-11-22, the modern
+ * account page pattern): an icon, what it is, one action on the right.
+ */
+export function SettingsRow({ id, icon, title, badge, description, action, children }: SettingsRowProps) {
+  return (
+    <section aria-labelledby={id} className="px-5 py-5 md:px-6">
+      <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
+        <span aria-hidden="true" className="flex size-10 flex-none items-center justify-center rounded-xl bg-raised text-soft">
+          <FontAwesomeIcon icon={icon} className="size-4" />
+        </span>
+        <div className="flex min-w-0 flex-1 basis-56 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <h3 id={id} className="text-[15px] font-bold text-foreground">
+              {title}
+            </h3>
+            {badge}
+          </div>
+          <p className="max-w-[60ch] text-sm text-muted-foreground">{description}</p>
+        </div>
+        {action && <div className="flex-none max-sm:w-full max-sm:pl-14">{action}</div>}
+      </div>
+      {children}
+    </section>
+  )
+}

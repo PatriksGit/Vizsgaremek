@@ -50,7 +50,11 @@ function renderPage(changePassword: Handler = () => ({ status: 204 })) {
 
 const field = (name: string) => screen.getByLabelText(name) as HTMLInputElement
 const type = (name: string, value: string) => fireEvent.change(field(name), { target: { value } })
-const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Jelszó módosítása' }))
+const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Mentés' }))
+/** The password form opens under its row (owner, 2026-11-22). */
+const openPasswordForm = () => fireEvent.click(screen.getByRole('button', { name: 'Jelszó módosítása' }))
+/** The form stays in the page so it can slide; closed, it is inert (no Tab, no screen reader). */
+const passwordFormOpen = () => field('Jelenlegi jelszó').closest('[inert]') === null
 
 function fillAll(current = 'regi-jelszo', next = 'uj-jelszo-1', again = next) {
   type('Jelenlegi jelszó', current)
@@ -58,24 +62,40 @@ function fillAll(current = 'regi-jelszo', next = 'uj-jelszo-1', again = next) {
   type('Új jelszó újra', again)
 }
 
-it('shows the name and the own e-mail address, which only staff can change', () => {
+it('shows the player on top: the name and the own e-mail address', () => {
   renderPage()
 
-  const details = screen.getByRole('region', { name: 'Fiókadatok' })
-  expect(within(details).getByText('Steve_01')).toBeTruthy()
-  expect(within(details).getByText('steve@example.com')).toBeTruthy()
-  expect(within(details).getByText('A játékosnevet és az e-mail címet csak adminisztrátor módosíthatja.')).toBeTruthy()
+  const profile = screen.getByRole('region', { name: 'Profil' })
+  expect(within(profile).getByText('Steve_01')).toBeTruthy()
+  expect(within(profile).getByText('steve@example.com')).toBeTruthy()
+  expect(screen.getByRole('heading', { level: 1, name: 'Beállítások' })).toBeTruthy()
   expect(document.title).toBe('Beállítások | RuneEmpire')
+})
+
+it('keeps the password form closed until "Jelszó módosítása", and Mégse closes it empty', () => {
+  renderPage()
+
+  expect(passwordFormOpen()).toBe(false)
+  openPasswordForm()
+  expect(passwordFormOpen()).toBe(true)
+  type('Jelenlegi jelszó', 'regi-jelszo')
+  fireEvent.click(screen.getByRole('button', { name: 'Mégse' }))
+
+  expect(passwordFormOpen()).toBe(false)
+  openPasswordForm()
+  expect(field('Jelenlegi jelszó').value).toBe('')
 })
 
 it('links a forgotten current password to the reset panel', () => {
   renderPage()
+  openPasswordForm()
 
   expect(screen.getByRole('link', { name: 'Elfelejtetted?' }).getAttribute('href')).toBe('/forgot-password')
 })
 
 it('ticks the site\'s real password rules while typing, read with the field', () => {
   renderPage()
+  openPasswordForm()
 
   type('Új jelszó', 'jelszó 1')
   const rules = field('Új jelszó').getAttribute('aria-describedby')!
@@ -83,19 +103,24 @@ it('ticks the site\'s real password rules while typing, read with the field', ()
   expect(hint).toContain('8–64 karakter – teljesül')
   expect(hint).toContain('Szóköz nélkül – még nem teljesül')
   expect(hint).toContain('Magyar vagy angol betűk, számok, alap jelek (pl. ! @ # _ -) – teljesül')
+  // What saving does to the other devices is said there too (owner, 2026-11-22: not in a footer).
+  expect(hint).toContain('Mentés után kijelentkeztetünk a többi eszközről.')
 
   type('Új jelszó', 'jelszó€12')
   expect(document.getElementById(rules)!.textContent).toContain('alap jelek (pl. ! @ # _ -) – még nem teljesül')
 })
 
-it('sends the passwords, then empties the form and says the other devices were logged out', async () => {
+it('sends the passwords, then closes the form and says the other devices were logged out', async () => {
   const { bodies } = renderPage()
+  openPasswordForm()
 
   fillAll()
   submit()
 
   await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith('Megváltozott a jelszavad. A többi eszközödről kijelentkeztettünk.'))
   expect(bodies).toEqual([{ current_password: 'regi-jelszo', password: 'uj-jelszo-1', password_confirmation: 'uj-jelszo-1' }])
+  expect(passwordFormOpen()).toBe(false)
+  openPasswordForm()
   expect([field('Jelenlegi jelszó').value, field('Új jelszó').value, field('Új jelszó újra').value]).toEqual(['', '', ''])
 })
 
@@ -104,6 +129,7 @@ it('puts a wrong current password on its field', async () => {
     status: 422,
     data: { message: 'A jelenlegi jelszó hibás.', code: 'validation_failed', errors: { current_password: ['A jelenlegi jelszó hibás.'] } },
   }))
+  openPasswordForm()
 
   fillAll()
   submit()
@@ -115,6 +141,7 @@ it('puts a wrong current password on its field', async () => {
 
 it('shows a refusal without a field (too many tries) on the form', async () => {
   renderPage(() => ({ status: 429, data: { message: 'Túl sok próbálkozás. Próbáld újra később.', code: 'too_many_requests' } }))
+  openPasswordForm()
 
   fillAll()
   submit()
@@ -124,6 +151,7 @@ it('shows a refusal without a field (too many tries) on the form', async () => {
 
 it('catches mistakes before a request: two different new passwords, or the same as the current one', async () => {
   const { calls } = renderPage()
+  openPasswordForm()
 
   fillAll('regi-jelszo', 'uj-jelszo-1', 'uj-jelszo-2')
   submit()

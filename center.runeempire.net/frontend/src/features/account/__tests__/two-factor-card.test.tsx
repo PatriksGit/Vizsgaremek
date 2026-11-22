@@ -54,6 +54,7 @@ function renderPage(twoFactor: boolean, routes: Record<string, Handler> = {}) {
 }
 
 const card = () => within(screen.getByRole('region', { name: 'Kétlépcsős azonosítás' }))
+const next = (dialog: HTMLElement) => fireEvent.click(within(dialog).getByRole('button', { name: 'Tovább' }))
 
 it('shows it off, with the way to switch it on', () => {
   renderPage(false)
@@ -62,15 +63,33 @@ it('shows it off, with the way to switch it on', () => {
   expect(card().getByRole('button', { name: 'Bekapcsolás' })).toBeTruthy()
 })
 
-it('switching on shows the QR code and the key, and the right code turns it on', async () => {
-  const { client } = renderPage(false)
+it('step 1 offers three apps, each with its App Store and Google Play listing', async () => {
+  renderPage(false)
 
   fireEvent.click(card().getByRole('button', { name: 'Bekapcsolás' }))
   const dialog = await screen.findByRole('dialog', { name: 'Kétlépcsős azonosítás bekapcsolása' })
 
+  expect(within(dialog).getByRole('heading', { name: 'Telepíts egy hitelesítő alkalmazást' })).toBeTruthy()
+  const google = within(dialog).getByRole('link', { name: 'Google Authenticator letöltése: Android' })
+  expect(google.getAttribute('href')).toBe('https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2')
+  expect(google.getAttribute('rel')).toBe('noopener noreferrer')
+  expect(within(dialog).getByRole('link', { name: 'Proton Authenticator letöltése: iPhone' })).toBeTruthy()
+  expect(within(dialog).getByRole('link', { name: 'Microsoft Authenticator letöltése: iPhone' })).toBeTruthy()
+})
+
+it('switching on goes app → QR code and key → code, and the right code turns it on', async () => {
+  const { client } = renderPage(false)
+
+  fireEvent.click(card().getByRole('button', { name: 'Bekapcsolás' }))
+  const dialog = await screen.findByRole('dialog', { name: 'Kétlépcsős azonosítás bekapcsolása' })
+  next(dialog)
+
   const qr = (await within(dialog).findByAltText('QR-kód a hitelesítő alkalmazáshoz')) as HTMLImageElement
   expect(atob(qr.src.split(',')[1])).toBe(OTPAUTH)
   expect(within(dialog).getByText('JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP')).toBeTruthy()
+  // On a phone the app opens the address itself: a plain link, not a button.
+  expect(within(dialog).getByRole('link', { name: 'Megnyitás az alkalmazásban' }).getAttribute('href')).toBe(OTPAUTH)
+  next(dialog)
 
   fireEvent.change(within(dialog).getByLabelText('Kód az alkalmazásból'), { target: { value: '123456' } })
 
@@ -87,7 +106,9 @@ it('a wrong code keeps it off and says why', async () => {
 
   fireEvent.click(card().getByRole('button', { name: 'Bekapcsolás' }))
   const dialog = await screen.findByRole('dialog')
+  next(dialog)
   await within(dialog).findByText('JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP')
+  next(dialog)
   fireEvent.change(within(dialog).getByLabelText('Kód az alkalmazásból'), { target: { value: '111111' } })
 
   expect(await within(dialog).findByText(WRONG)).toBeTruthy()
@@ -103,8 +124,34 @@ it('without a key on the server the dialog says it is not available', async () =
   })
 
   fireEvent.click(card().getByRole('button', { name: 'Bekapcsolás' }))
+  next(await screen.findByRole('dialog'))
 
   expect(await screen.findByText('A kétlépcsős azonosítás most nem érhető el, próbáld újra később.')).toBeTruthy()
+  expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tovább' }).hasAttribute('disabled')).toBe(true)
+})
+
+/**
+ * Found in the browser (2026-11-22): React reused the Tovább button as the
+ * Bekapcsolás submit button, so in Chrome its own click submitted the empty
+ * form and the code step opened with "Írd be mind a 6 számjegyet.". jsdom does
+ * not submit there, so this checks the cause: the submit button must be a new
+ * element, not the Tovább button changed in place.
+ */
+it("the code step's submit button is a new element, not the reused Tovább button", async () => {
+  const { calls } = renderPage(false)
+
+  fireEvent.click(card().getByRole('button', { name: 'Bekapcsolás' }))
+  const dialog = await screen.findByRole('dialog')
+  next(dialog)
+  await within(dialog).findByText('JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP')
+  const tovabb = within(dialog).getByRole('button', { name: 'Tovább' })
+  fireEvent.click(tovabb)
+
+  expect(await within(dialog).findByRole('heading', { name: 'Írd be a kódot' })).toBeTruthy()
+  expect(within(dialog).getByRole('button', { name: 'Bekapcsolás' })).not.toBe(tovabb)
+  expect(tovabb.isConnected).toBe(false)
+  expect(within(dialog).queryByText(/számjegyet/)).toBeNull()
+  expect(calls).not.toContain('POST /auth/two-factor/enable')
 })
 
 it('switching off asks for a code, then shows it off', async () => {

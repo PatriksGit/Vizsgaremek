@@ -1,4 +1,4 @@
-import { faLock, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { toast } from 'sonner'
 
@@ -13,58 +13,52 @@ import { NO_DATA } from '@/features/home/stats'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-import { PasswordCard } from './PasswordCard'
-import { TwoFactorCard } from './TwoFactorCard'
+import { PasswordRow } from './PasswordRow'
+import { TwoFactorRow } from './TwoFactorRow'
 
 /**
- * Beállítások (the owner's design "Asztali/Mobil – Beállítások"): the account's
- * details, the password change and 2FA. No Munkamenetek card (owner, 2026-11-22).
+ * Beállítások (owner, 2026-11-22: the modern account page pattern): the
+ * player on top, then one Biztonság card with a row per way of logging in.
  */
 export function AccountPage() {
   // RequireAccount renders this page only for a logged-in player.
   const account = useAccount().data!
 
   return (
-    <div className="mx-auto flex w-full max-w-220 flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-220 flex-col gap-6 lg:mt-4">
       <title>{`Beállítások | ${site.name}`}</title>
-      <h1 className="sr-only">Beállítások</h1>
+      <h1 style={enterAfter(50)} className="content-in font-heading text-3xl font-bold text-foreground md:text-4xl">
+        Beállítások
+      </h1>
 
-      <AccountDetailsCard account={account} />
-      <PasswordCard username={account.username} enterDelay={200} />
-      <TwoFactorCard enabled={account.two_factor_enabled} enterDelay={300} />
+      <ProfileCard account={account} />
+
+      <section aria-labelledby="security-title" style={enterAfter(200)} className="content-in flex flex-col gap-3">
+        <h2 id="security-title" className="font-heading text-xl font-bold text-foreground">
+          Biztonság
+        </h2>
+        <div className={cn(panelLook, 'divide-y divide-border p-0')}>
+          <PasswordRow username={account.username} />
+          <TwoFactorRow enabled={account.two_factor_enabled} />
+        </div>
+      </section>
+
       <LogoutButton />
     </div>
   )
 }
 
-/** Fiókadatok: the name and the e-mail address, which only staff can change. */
-function AccountDetailsCard({ account }: { account: Account }) {
+/** The player: their head, name and own e-mail address. */
+function ProfileCard({ account }: { account: Account }) {
   return (
-    <section aria-labelledby="account-title" style={enterAfter(100)} className={cn(panelLook, 'content-in overflow-hidden p-0')}>
-      <div className="p-5 md:p-6">
-        <h2 id="account-title" className="font-heading text-lg font-bold text-foreground md:text-xl">
-          Fiókadatok
-        </h2>
-        <dl className="mt-5 grid gap-5 sm:grid-cols-2 sm:gap-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <PlayerHead name={account.display_name} className="size-10 flex-none" />
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <dt className="text-xs font-semibold text-faint">Játékosnév</dt>
-              <dd className="truncate text-[15px] font-bold text-foreground">{account.display_name}</dd>
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-col justify-center gap-0.5">
-            <dt className="text-xs font-semibold text-faint">E-mail cím</dt>
-            <dd className="truncate text-[15px] font-bold text-foreground" title={account.email ?? undefined}>
-              {account.email ?? <span className="text-muted-foreground">{NO_DATA}</span>}
-            </dd>
-          </div>
-        </dl>
+    <section aria-label="Profil" style={enterAfter(100)} className={cn(panelLook, 'content-in flex items-center gap-4 md:gap-5')}>
+      <PlayerHead name={account.display_name} className="size-14 flex-none md:size-16" />
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <p className="truncate font-heading text-xl font-bold text-foreground md:text-2xl">{account.display_name}</p>
+        <p className="truncate text-sm text-muted-foreground" title={account.email ?? undefined}>
+          {account.email ?? NO_DATA}
+        </p>
       </div>
-      <footer className="flex items-center gap-2 border-t border-border bg-sunken/60 px-5 py-3 text-xs text-faint md:px-6">
-        <FontAwesomeIcon icon={faLock} aria-hidden="true" className="size-3.5 flex-none" />
-        A játékosnevet és az e-mail címet csak adminisztrátor módosíthatja.
-      </footer>
     </section>
   )
 }
@@ -80,7 +74,7 @@ function LogoutButton() {
       // Logged out: the guard sends the player to the login page.
       onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
       disabled={logout.isPending}
-      style={enterAfter(400)}
+      style={enterAfter(300)}
       className="content-in h-11 self-start px-4 hover:border-redstone/40 hover:bg-redstone/10 hover:text-redstone md:hidden"
     >
       <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />

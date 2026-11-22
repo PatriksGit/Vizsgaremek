@@ -51,13 +51,14 @@ export function CodeField({ id, label, control, disabled = false, success = fals
             aria-invalid={fieldState.error ? true : undefined}
             aria-describedby={fieldState.error ? errorId : undefined}
           >
-            <InputOTPGroup className="w-full gap-2">
+            <InputOTPGroup className="w-full justify-center gap-2 sm:gap-2.5">
               {Array.from({ length }, (_, index) => (
                 <InputOTPSlot
                   key={index}
                   index={index}
                   className={cn(
-                    'h-12 flex-1 rounded-lg border border-white/10 bg-black/40 text-xl font-semibold text-foreground tabular-nums shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] first:rounded-lg last:rounded-lg',
+                    // Squares (owner, 2026-11-22: not long bars), at most 56 px, shrinking together on a narrow phone.
+                    'aspect-square size-auto max-w-14 min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 text-2xl font-semibold text-foreground tabular-nums shadow-[inset_0_1px_3px_rgb(0_0_0/0.35)] first:rounded-xl last:rounded-xl',
                     fieldState.error && 'border-destructive',
                     success && 'border-ok text-ok',
                   )}
