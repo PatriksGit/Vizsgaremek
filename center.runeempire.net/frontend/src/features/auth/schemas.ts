@@ -17,7 +17,7 @@ const EMAIL_PATTERN = /^[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
  * `/login <jelszó>` splits at it) plus the Hungarian accented letters. No emoji,
  * copied symbols, other alphabets or separate accent marks.
  */
-const ALLOWED_PASSWORD_PATTERN = /^[\x21-\x7EáéíóöőúüűÁÉÍÓÖŐÚÜŰ]+$/
+export const ALLOWED_PASSWORD_PATTERN = /^[\x21-\x7EáéíóöőúüűÁÉÍÓÖŐÚÜŰ]+$/
 
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 64
@@ -100,3 +100,22 @@ export const newPasswordSchema = z
   })
 
 export type NewPasswordValues = z.infer<typeof newPasswordSchema>
+
+/** The Beállítások page's password change: the current password, then the new one twice. */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, { error: 'Add meg a jelenlegi jelszavad.' }),
+    password,
+    passwordConfirmation: z.string(),
+  })
+  .refine((values) => values.password === values.passwordConfirmation, {
+    error: 'A két jelszó nem egyezik.',
+    path: ['passwordConfirmation'],
+  })
+  // The backend's `different` rule, with its message.
+  .refine((values) => values.password !== values.currentPassword, {
+    error: 'Az új jelszó nem lehet ugyanaz, mint a jelenlegi.',
+    path: ['password'],
+  })
+
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>

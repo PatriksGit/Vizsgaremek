@@ -48,6 +48,7 @@ class VerifyRegistrationControllerTest extends TestCase
             'uuid' => '70404374-69da-35c1-82bc-fcf925aa903a',
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
+            'email' => 'patrik@example.com',
             'registered_at' => Account::query()->sole()->created_at->toIso8601String(),
         ]]);
         $this->assertDatabaseHas('accounts', [

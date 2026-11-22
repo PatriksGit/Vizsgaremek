@@ -5,6 +5,8 @@ export type Account = {
   uuid: string
   username: string
   display_name: string
+  /** The player's own address (only ever sent about the logged-in account); null only for a row made without one. */
+  email: string | null
   /** When the account was created (ISO 8601); null only if the backend could not read it. */
   registered_at: string | null
 }
@@ -91,6 +93,18 @@ export type ResetCodeSent = {
   expiresAt: number
   /** From when "Kód újraküldése" may be used. */
   resendAt: number
+}
+
+/**
+ * Changes the logged-in player's password. This browser stays logged in (under a
+ * new session id); every other session of the account ends on its next request.
+ */
+export async function changePassword(request: { currentPassword: string; password: string; passwordConfirmation: string }): Promise<void> {
+  await http.put('/auth/password', {
+    current_password: request.currentPassword,
+    password: request.password,
+    password_confirmation: request.passwordConfirmation,
+  })
 }
 
 /** Forgotten password, step 1: mails a code to the account of this address. */

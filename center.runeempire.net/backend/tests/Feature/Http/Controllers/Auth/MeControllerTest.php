@@ -13,7 +13,7 @@ class MeControllerTest extends TestCase
     public function test_returns_200_with_the_logged_in_account(): void
     {
         // Read back like the guard would, so created_at (set by the database) is loaded.
-        $account = Account::factory()->create(['display_name' => 'PatrikT'])->refresh();
+        $account = Account::factory()->create(['display_name' => 'PatrikT', 'email' => 'patrik@example.com'])->refresh();
 
         $response = $this->actingAs($account, 'web')->getJson('/api/auth/me', self::FROM_WEBSITE);
 
@@ -21,6 +21,7 @@ class MeControllerTest extends TestCase
             'uuid' => '70404374-69da-35c1-82bc-fcf925aa903a',
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
+            'email' => 'patrik@example.com',
             'registered_at' => $account->created_at->toIso8601String(),
         ]]);
     }
