@@ -20,7 +20,7 @@ class AccountResource extends JsonResource
      * describes the logged-in account (another player's data goes through
      * PlayerResource and the stats, never with an address).
      *
-     * @return array{uuid: string, username: string, display_name: string, email: string|null, registered_at: string|null}
+     * @return array{uuid: string, username: string, display_name: string, email: string|null, two_factor_enabled: bool, registered_at: string|null}
      */
     public function toArray(Request $request): array
     {
@@ -29,6 +29,8 @@ class AccountResource extends JsonResource
             'username' => $this->username,
             'display_name' => $this->display_name,
             'email' => $this->email,
+            // (bool): a model just created (registration) has no value read back yet; the column defaults to 0.
+            'two_factor_enabled' => (bool) $this->twofa_enabled,
             'registered_at' => $this->created_at?->toIso8601String(),
         ];
     }

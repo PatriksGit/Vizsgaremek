@@ -11,9 +11,9 @@ use Symfony\Component\HttpFoundation\Response;
 class LogOutBlockedAccounts
 {
     /**
-     * End a website session whose account was locked (staff lock it in game:
-     * a row in RuneAuth's account_locks) or got two-factor authentication
-     * after logging in. The request goes on as a guest's: /api/auth/me answers
+     * End a website session whose account was locked after logging in (staff
+     * lock it in game: a row in RuneAuth's account_locks). Switching 2FA on
+     * does not end it: the player does that from this very session. The request goes on as a guest's: /api/auth/me answers
      * null and the routes behind auth:sanctum answer 401.
      */
     public function handle(Request $request, Closure $next): Response

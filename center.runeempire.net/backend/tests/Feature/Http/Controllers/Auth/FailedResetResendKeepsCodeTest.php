@@ -52,7 +52,7 @@ class FailedResetResendKeepsCodeTest extends TestCase
         $this->mock(Dispatcher::class, fn (MockInterface $mock) => $mock->shouldReceive('send')->andThrow(new TransportException('SMTP down')));
         $this->postJson('/api/auth/password/forgot', ['email' => 'patrik@example.com'], self::FROM_WEBSITE)->assertServiceUnavailable();
 
-        $this->assertSame(204, $this->verify($code), 'the first, still valid code after a failed resend');
+        $this->assertSame(200, $this->verify($code), 'the first, still valid code after a failed resend');
     }
 
     public function test_the_first_code_works_without_a_resend(): void
@@ -61,6 +61,6 @@ class FailedResetResendKeepsCodeTest extends TestCase
 
         $this->travel(2)->minutes();
 
-        $this->assertSame(204, $this->verify($code));
+        $this->assertSame(200, $this->verify($code));
     }
 }

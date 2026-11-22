@@ -44,11 +44,11 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
         return RateLimiter::attempts('password-reset-guess:'.$this->account->id);
     }
 
-    public function test_right_code_returns_204_deletes_the_code_and_grants_the_session(): void
+    public function test_right_code_returns_200_deletes_the_code_and_grants_the_session(): void
     {
         $resetCode = $this->resetCode();
 
-        $this->verify('123456')->assertNoContent();
+        $this->verify('123456')->assertOk()->assertExactJson(['data' => ['two_factor_required' => false]]);
 
         $this->assertModelMissing($resetCode);
         $this->assertSame($this->account->id, session('password_reset.account_id'));
@@ -58,7 +58,7 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
     {
         $this->resetCode();
 
-        $this->verify('123456', ' Patrik@Example.com ')->assertNoContent();
+        $this->verify('123456', ' Patrik@Example.com ')->assertOk()->assertExactJson(['data' => ['two_factor_required' => false]]);
     }
 
     public function test_wrong_code_returns_422_counts_an_attempt_and_spends_the_budget(): void
@@ -98,7 +98,7 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
     {
         $this->resetCode();
 
-        $this->verify('123456')->assertNoContent();
+        $this->verify('123456')->assertOk()->assertExactJson(['data' => ['two_factor_required' => false]]);
         $this->verify('123456')->assertUnprocessable()->assertJsonValidationErrors(['code' => self::INVALID_CODE]);
     }
 
@@ -108,7 +108,7 @@ class VerifyPasswordResetCodeControllerTest extends TestCase
         $this->verify('654321')->assertUnprocessable();
         $this->verify('111111')->assertUnprocessable();
 
-        $this->verify('123456')->assertNoContent();
+        $this->verify('123456')->assertOk()->assertExactJson(['data' => ['two_factor_required' => false]]);
 
         $this->assertSame(0, $this->guesses());
     }

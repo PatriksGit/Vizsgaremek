@@ -1,4 +1,4 @@
-import { faEnvelope, faKey, faPaperPlane } from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope, faKey, faPaperPlane, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
@@ -22,6 +22,7 @@ import {
   forgotEmailSchema,
   newPasswordSchema,
   PASSWORD_MIN_LENGTH,
+  TOTP_LENGTH,
   type CodeValues,
   type ForgotEmailValues,
   type NewPasswordValues,
@@ -55,6 +56,8 @@ export function ForgotPasswordForm() {
   // After a reload: a code went to this address a moment ago and may be in the mailbox.
   const [codeMayBeOut, setCodeMayBeOut] = useState<{ email: string; resendAt: number } | null>(null)
   const [checking, setChecking] = useState(false)
+  // The verified account has 2FA: the last step asks its authenticator code too (2026-11-22).
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false)
   const [resending, setResending] = useState(false)
   // Set before a request starts, so a second submit in the same moment sends nothing.
   const verifying = useRef(false)
@@ -65,7 +68,7 @@ export function ForgotPasswordForm() {
   const codeForm = useForm<CodeValues>({ resolver: zodResolver(codeSchema), defaultValues: { code: '' } })
   const passwordForm = useForm<NewPasswordValues>({
     resolver: zodResolver(newPasswordSchema),
-    defaultValues: { password: '', passwordConfirmation: '' },
+    defaultValues: { password: '', passwordConfirmation: '', twoFactorCode: '' },
   })
 
   // Focus is asked for and given once the field can take it: a browser refuses
@@ -105,6 +108,7 @@ export function ForgotPasswordForm() {
     setStep('email')
     setSent(null)
     setCodeMayBeOut(null)
+    setTwoFactorRequired(false)
     emailForm.reset()
     codeForm.reset()
     passwordForm.reset()
@@ -142,7 +146,8 @@ export function ForgotPasswordForm() {
     verifying.current = true
     setChecking(true)
     try {
-      await verifyCode.mutateAsync({ email: sent.email, code })
+      const verified = await verifyCode.mutateAsync({ email: sent.email, code })
+      setTwoFactorRequired(verified.twoFactorRequired)
       setStep('password')
       askFocus('password')
     } catch (error) {
@@ -178,9 +183,18 @@ export function ForgotPasswordForm() {
 
   const onPassword = async (values: NewPasswordValues) => {
     if (saving.current) return
+    const twoFactorCode = values.twoFactorCode?.replace(/\s/g, '') ?? ''
+    if (twoFactorRequired && !new RegExp(`^\\d{${TOTP_LENGTH}}$`).test(twoFactorCode)) {
+      passwordForm.setError('twoFactorCode', { message: `Írd be a hitelesítő alkalmazásban látható ${TOTP_LENGTH} jegyű kódot.` })
+      return
+    }
     saving.current = true
     try {
-      const { username, account } = await resetPassword.mutateAsync(values)
+      const { username, account } = await resetPassword.mutateAsync({
+        password: values.password,
+        passwordConfirmation: values.passwordConfirmation,
+        ...(twoFactorRequired ? { twoFactorCode } : {}),
+      })
       // The panel stays mounted beside the login: nothing of this reset, the new password least of all, stays in it.
       startOver()
       toast.success('Megváltozott a jelszavad, most már beléphetsz.')
@@ -194,7 +208,11 @@ export function ForgotPasswordForm() {
         askFocus('email')
         return
       }
-      applyApiError(error, passwordForm.setError, { password: 'password', password_confirmation: 'passwordConfirmation' })
+      applyApiError(error, passwordForm.setError, {
+        password: 'password',
+        password_confirmation: 'passwordConfirmation',
+        two_factor_code: 'twoFactorCode',
+      })
     } finally {
       saving.current = false
     }
@@ -313,6 +331,19 @@ export function ForgotPasswordForm() {
                 error={passwordForm.formState.errors.passwordConfirmation?.message}
                 {...passwordForm.register('passwordConfirmation')}
               />
+              {twoFactorRequired && (
+                <TextField
+                  label="Kód a hitelesítő alkalmazásból"
+                  icon={faShieldHalved}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={TOTP_LENGTH + 1}
+                  placeholder="000000"
+                  description="A fiókodon kétlépcsős azonosítás van bekapcsolva, ezért a kódját is kérjük."
+                  error={passwordForm.formState.errors.twoFactorCode?.message}
+                  {...passwordForm.register('twoFactorCode')}
+                />
+              )}
               <Button type="submit" disabled={passwordForm.formState.isSubmitting} className={submitClass}>
                 {passwordForm.formState.isSubmitting ? 'Mentés…' : 'Jelszó mentése'}
               </Button>

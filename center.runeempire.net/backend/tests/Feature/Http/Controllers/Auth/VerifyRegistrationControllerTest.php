@@ -49,6 +49,7 @@ class VerifyRegistrationControllerTest extends TestCase
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
             'email' => 'patrik@example.com',
+            'two_factor_enabled' => false,
             'registered_at' => Account::query()->sole()->created_at->toIso8601String(),
         ]]);
         $this->assertDatabaseHas('accounts', [

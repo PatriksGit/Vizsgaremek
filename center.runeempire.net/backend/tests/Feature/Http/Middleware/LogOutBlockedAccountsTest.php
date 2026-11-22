@@ -25,8 +25,7 @@ class LogOutBlockedAccountsTest extends TestCase
     }
 
     /**
-     * Staff lock the account in game, or the player turns on two-factor
-     * authentication, while the website session is still open.
+     * Staff lock the account in game while the website session is still open.
      *
      * @param  array<string, bool>  $flags
      */
@@ -52,8 +51,16 @@ class LogOutBlockedAccountsTest extends TestCase
     {
         return [
             'locked' => [['locked' => true]],
-            'two-factor' => [['twofa_enabled' => true]],
         ];
+    }
+
+    /** 2FA is switched on on the website itself, from this very session: it must not log the player out (2026-11-22). */
+    public function test_two_factor_switched_on_keeps_the_session(): void
+    {
+        [$account, $session] = $this->loggedIn();
+        $this->enableTwoFactor($account);
+
+        $this->asBrowserWithSession($session)->getJson('/api/auth/me', self::FROM_WEBSITE)->assertJsonPath('data.username', 'patrikt');
     }
 
     public function test_an_unblocked_session_stays_logged_in(): void

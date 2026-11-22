@@ -1,12 +1,16 @@
 <?php
 
 use App\Http\Controllers\Auth\ChangePasswordController;
+use App\Http\Controllers\Auth\DisableTwoFactorController;
+use App\Http\Controllers\Auth\EnableTwoFactorController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\LoginTwoFactorController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\StartRegistrationController;
+use App\Http\Controllers\Auth\StartTwoFactorSetupController;
 use App\Http\Controllers\Auth\VerifyPasswordResetCodeController;
 use App\Http\Controllers\Auth\VerifyRegistrationController;
 use App\Http\Controllers\DiscordWidgetController;
@@ -63,6 +67,11 @@ Route::prefix('auth')->name('auth.')->group(function () {
         ->middleware('throttle:login')
         ->name('login');
 
+    // The second step of a 2FA account's login, on the session whose password checked out.
+    Route::post('/login/two-factor', LoginTwoFactorController::class)
+        ->middleware('throttle:two-factor')
+        ->name('login.two-factor');
+
     // Open to guests: "not logged in" is an answer here, not an error.
     Route::get('/me', MeController::class)->name('me');
 
@@ -85,5 +94,12 @@ Route::prefix('auth')->name('auth.')->group(function () {
         Route::put('/password', ChangePasswordController::class)
             ->middleware('throttle:password-change')
             ->name('password.update');
+
+        // Switching 2FA on (a secret in the session, then a code from the app) and off (a code).
+        Route::middleware('throttle:two-factor')->prefix('two-factor')->name('two-factor.')->group(function () {
+            Route::post('/setup', StartTwoFactorSetupController::class)->name('setup');
+            Route::post('/enable', EnableTwoFactorController::class)->name('enable');
+            Route::post('/disable', DisableTwoFactorController::class)->name('disable');
+        });
     });
 });

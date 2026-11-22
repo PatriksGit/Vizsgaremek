@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $password_hash
  * @property string|null $email
  * @property bool $twofa_enabled
+ * @property string|null $twofa_secret the RuneAuth contract form (App\Support\TwoFactorSecret)
  * @property-read bool $locked
  * @property-read AccountLock|null $lock
  * @property-read CarbonImmutable|null $created_at
@@ -96,13 +97,12 @@ class Account extends Model implements AuthenticatableContract
     }
 
     /**
-     * Whether the account may be used on the website: not locked by staff,
-     * and without two-factor authentication, which the website cannot check
-     * yet (it would let the password alone in).
+     * Whether the account may be used on the website: not locked by staff.
+     * (2FA accounts may: the login asks for their code, LoginController.)
      */
     public function canUseWebsite(): bool
     {
-        return ! $this->locked && ! $this->twofa_enabled;
+        return ! $this->locked;
     }
 
     /**

@@ -7,15 +7,42 @@ export type Account = {
   display_name: string
   /** The player's own address (only ever sent about the logged-in account); null only for a row made without one. */
   email: string | null
+  /** 2FA (an authenticator app's code) is on: the login asks for the code after the password. */
+  two_factor_enabled: boolean
   /** When the account was created (ISO 8601); null only if the backend could not read it. */
   registered_at: string | null
 }
 
 type Wrapped<T> = { data: T }
 
-export async function login(credentials: { username: string; password: string }): Promise<Account> {
+/** A login either logs in, or (a 2FA account, 202) waits for the authenticator code on this browser session. */
+export type LoginResult = { account: Account; twoFactorRequired?: never } | { account?: never; twoFactorRequired: true }
+
+export async function login(credentials: { username: string; password: string }): Promise<LoginResult> {
   const response = await http.post<Wrapped<Account>>('/auth/login', credentials)
+  return response.status === 202 ? { twoFactorRequired: true } : { account: response.data.data }
+}
+
+/** The login's second step: the authenticator code, within five minutes of the password. */
+export async function loginWithTwoFactor(code: string): Promise<Account> {
+  const response = await http.post<Wrapped<Account>>('/auth/login/two-factor', { code })
   return response.data.data
+}
+
+/** A 2FA secret to switch on, kept on the server until a code from the app confirms it. */
+export type TwoFactorSetup = { secret: string; otpauthUrl: string }
+
+export async function startTwoFactorSetup(): Promise<TwoFactorSetup> {
+  const response = await http.post<Wrapped<{ secret: string; otpauth_url: string }>>('/auth/two-factor/setup')
+  return { secret: response.data.data.secret, otpauthUrl: response.data.data.otpauth_url }
+}
+
+export async function enableTwoFactor(code: string): Promise<void> {
+  await http.post('/auth/two-factor/enable', { code })
+}
+
+export async function disableTwoFactor(code: string): Promise<void> {
+  await http.post('/auth/two-factor/disable', { code })
 }
 
 /** Ends the session. A session that already ended (401) counts as logged out. */
@@ -131,16 +158,26 @@ export function resendAtFromError(error: unknown): number | null {
   return Date.now() + error.retryAfter * 1000
 }
 
-/** Forgotten password, step 2: the right code lets this browser set a new password for a few minutes. */
-export async function verifyResetCode(request: { email: string; code: string }): Promise<void> {
-  await http.post('/auth/password/forgot/verify', request)
+/**
+ * Forgotten password, step 2: the right code lets this browser set a new password for a few minutes.
+ * Says whether the last step also needs the account's 2FA code.
+ */
+export async function verifyResetCode(request: { email: string; code: string }): Promise<{ twoFactorRequired: boolean }> {
+  const response = await http.post<Wrapped<{ two_factor_required: boolean }>>('/auth/password/forgot/verify', request)
+  return { twoFactorRequired: response.data.data.two_factor_required }
 }
 
 /** Forgotten password, last step: sets the new password; answers the account's name for the login form. */
-export async function resetPassword(request: { password: string; passwordConfirmation: string }): Promise<{ username: string }> {
+export async function resetPassword(request: {
+  password: string
+  passwordConfirmation: string
+  /** Only for a 2FA account: the authenticator code. */
+  twoFactorCode?: string
+}): Promise<{ username: string }> {
   const response = await http.post<Wrapped<{ username: string }>>('/auth/password/reset', {
     password: request.password,
     password_confirmation: request.passwordConfirmation,
+    ...(request.twoFactorCode ? { two_factor_code: request.twoFactorCode } : {}),
   })
   return response.data.data
 }

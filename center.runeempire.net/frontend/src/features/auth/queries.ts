@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import {
   fetchCurrentAccount,
   login,
+  loginWithTwoFactor,
   logout,
   requestPasswordReset,
   resetPassword,
@@ -52,11 +53,24 @@ async function setAccount(queryClient: QueryClient, account: Account | null, byL
   queryClient.setQueryData(accountQueryKey, account)
 }
 
+/** The password step. A 2FA account is not logged in yet: the caller asks for the code (useLoginWithTwoFactor). */
 export function useLogin() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: login,
+    onSuccess: async (result) => {
+      if (result.account) await setAccount(queryClient, result.account)
+    },
+  })
+}
+
+/** The login's second step for a 2FA account. */
+export function useLoginWithTwoFactor() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: loginWithTwoFactor,
     onSuccess: (account) => setAccount(queryClient, account),
   })
 }
@@ -93,7 +107,7 @@ export function useResetPassword() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (request: { password: string; passwordConfirmation: string }) => {
+    mutationFn: async (request: { password: string; passwordConfirmation: string; twoFactorCode?: string }) => {
       const { username } = await resetPassword(request)
       let account: Account | null
       try {

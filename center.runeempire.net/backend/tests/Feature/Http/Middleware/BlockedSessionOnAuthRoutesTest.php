@@ -50,7 +50,6 @@ class BlockedSessionOnAuthRoutesTest extends TestCase
     {
         return [
             'locked' => [['locked' => true]],
-            'two-factor' => [['twofa_enabled' => true]],
         ];
     }
 

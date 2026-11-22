@@ -79,6 +79,23 @@ return [
     ],
 
     /*
+     * The 2FA code endpoints: the login's second step per IP, switching 2FA
+     * on and off per account.
+     */
+    'two_factor' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_TWO_FACTOR_PER_MINUTE', 10)),
+    ],
+
+    /*
+     * Wrong 2FA codes per account in an hour, at login, switching off and the
+     * password reset together (App\Support\TwoFactorGuesses): a 6-digit code
+     * must not be guessable by opening new sessions with the password.
+     */
+    'two_factor_guesses' => [
+        'per_hour' => max(1, (int) env('RATE_LIMITS_TWO_FACTOR_GUESSES_PER_HOUR', 10)),
+    ],
+
+    /*
      * GET /api/players/{name}/skin, per IP. A page with a friends list asks
      * for one skin per friend; the browser keeps each for five minutes.
      */

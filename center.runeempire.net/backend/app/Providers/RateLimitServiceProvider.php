@@ -48,6 +48,9 @@ class RateLimitServiceProvider extends ServiceProvider
             Limit::perHour(config('rate_limits.password_forgot.per_hour'))->by('hour:'.RateLimitClient::of($request))->response(self::tooManyAttempts()),
         ]);
 
+        // Per account once logged in (switching 2FA on and off), per IP at the login's code step.
+        RateLimiter::for('two-factor', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.two_factor.per_minute'))->by($request->user() ? 'account:'.$request->user()->getAuthIdentifier() : 'ip:'.RateLimitClient::of($request))->response(self::tooManyAttempts()));
+
         RateLimiter::for('password-reset', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.password_reset.per_minute'))->by(RateLimitClient::of($request))->response(self::tooManyAttempts()));
 
         RateLimiter::for('player-search', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.player_search.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));

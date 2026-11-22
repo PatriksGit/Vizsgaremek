@@ -23,6 +23,8 @@ export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 64
 /** Backend default (REGISTRATION_CODE_LENGTH); keep in sync if changed. */
 export const CODE_LENGTH = 6
+/** An authenticator app's code: always 6 digits (the TOTP contract with RuneAuth), whatever the e-mail codes are. */
+export const TOTP_LENGTH = 6
 
 export const loginSchema = z.object({
   username: z.string().trim().min(1, { error: 'Add meg a játékosneved.' }),
@@ -91,9 +93,13 @@ export const forgotEmailSchema = z.object({ email, newsletter: z.boolean().optio
 
 export type ForgotEmailValues = z.infer<typeof forgotEmailSchema>
 
-/** The forgotten password panel, last step: the new password, typed twice. */
+/**
+ * The forgotten password panel, last step: the new password, typed twice, and
+ * for a 2FA account its authenticator code (the panel checks that one, since
+ * only the code step knows whether it is needed).
+ */
 export const newPasswordSchema = z
-  .object({ password, passwordConfirmation: z.string() })
+  .object({ password, passwordConfirmation: z.string(), twoFactorCode: z.string().optional() })
   .refine((values) => values.password === values.passwordConfirmation, {
     error: 'A két jelszó nem egyezik.',
     path: ['passwordConfirmation'],
@@ -119,3 +125,8 @@ export const changePasswordSchema = z
   })
 
 export type ChangePasswordValues = z.infer<typeof changePasswordSchema>
+
+/** An authenticator app's 6-digit code (login step, switching 2FA on and off). Same shape as the e-mail code's form. */
+export const totpSchema = z.object({
+  code: z.string().regex(new RegExp(`^\\d{${TOTP_LENGTH}}$`), { error: `Írd be mind a ${TOTP_LENGTH} számjegyet.` }),
+})

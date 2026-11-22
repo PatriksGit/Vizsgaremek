@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers\Auth;
 
+use App\Actions\CheckTwoFactorCode;
 use App\Exceptions\Auth\AccountLocked;
 use App\Exceptions\Auth\InvalidCredentials;
 use App\Models\Account;
@@ -39,7 +40,7 @@ class ResetPasswordControllerTest extends TestCase
             $this->asBrowserWithSession($session);
         }
 
-        $this->postJson('/api/auth/password/forgot/verify', ['email' => $account->email, 'code' => '123456'], self::FROM_WEBSITE)->assertNoContent();
+        $this->postJson('/api/auth/password/forgot/verify', ['email' => $account->email, 'code' => '123456'], self::FROM_WEBSITE)->assertOk();
 
         return $this->lastSessionId();
     }
@@ -229,14 +230,75 @@ class ResetPasswordControllerTest extends TestCase
             ->assertJsonValidationErrors(['username' => AccountLocked::MESSAGE]);
     }
 
-    public function test_a_two_factor_account_can_reset(): void
+    /** The e-mail alone must not get past 2FA (owner, 2026-11-22): the verify answer says the code is needed. */
+    public function test_verify_says_a_two_factor_account_needs_its_code(): void
     {
         $account = $this->account();
-        $this->blockAccount($account, ['twofa_enabled' => true]);
+        $this->enableTwoFactor($account);
+        PasswordResetCode::factory()->forAccount($account)->withCode('123456')->create();
 
-        $this->asBrowserWithSession($this->verifiedBrowser($account))->reset()->assertOk();
+        $this->postJson('/api/auth/password/forgot/verify', ['email' => $account->email, 'code' => '123456'], self::FROM_WEBSITE)
+            ->assertOk()
+            ->assertExactJson(['data' => ['two_factor_required' => true]]);
+    }
+
+    public function test_a_two_factor_account_resets_with_its_code(): void
+    {
+        $account = $this->account();
+        $this->enableTwoFactor($account);
+
+        $this->asBrowserWithSession($this->verifiedBrowser($account))->reset(['two_factor_code' => $this->totp()])->assertOk();
 
         $this->assertTrue(Hash::check('uj-titkos-jelszo', $account->fresh()->password_hash));
+    }
+
+    public function test_a_two_factor_account_without_its_code_keeps_its_password_and_the_permission(): void
+    {
+        $account = $this->account();
+        $this->enableTwoFactor($account);
+        $session = $this->verifiedBrowser($account);
+
+        $this->asBrowserWithSession($session)->reset()
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['two_factor_code' => 'Add meg a hitelesítő alkalmazásban látható kódot.']);
+        $this->assertPasswordUnchanged($account);
+
+        $this->asBrowserWithSession($session)->reset(['two_factor_code' => $this->totp()])->assertOk();
+    }
+
+    public function test_a_wrong_two_factor_code_is_refused_and_counted(): void
+    {
+        config(['rate_limits.two_factor_guesses.per_hour' => 1]);
+        $account = $this->account();
+        $this->enableTwoFactor($account);
+        $session = $this->verifiedBrowser($account);
+
+        $this->asBrowserWithSession($session)->reset(['two_factor_code' => $this->totp(5)])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['two_factor_code' => CheckTwoFactorCode::WRONG_CODE]);
+        $this->assertPasswordUnchanged($account);
+
+        $this->asBrowserWithSession($session)->reset(['two_factor_code' => $this->totp()])
+            ->assertTooManyRequests()
+            ->assertJsonPath('code', 'auth.two_factor_guesses_spent');
+        $this->assertPasswordUnchanged($account);
+    }
+
+    public function test_an_account_without_two_factor_ignores_a_code(): void
+    {
+        $account = $this->account();
+
+        $this->asBrowserWithSession($this->verifiedBrowser($account))->reset(['two_factor_code' => '000000'])->assertOk();
+    }
+
+    public function test_the_two_factor_code_must_be_six_digits(): void
+    {
+        $account = $this->account();
+        $this->enableTwoFactor($account);
+
+        $this->asBrowserWithSession($this->verifiedBrowser($account))->reset(['two_factor_code' => '12345'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('two_factor_code');
     }
 
     public function test_reset_is_rate_limited_per_ip(): void

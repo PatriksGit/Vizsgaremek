@@ -16,10 +16,12 @@ type CodeFieldProps = {
   success?: boolean
   /** Called once the last digit is typed (or a whole code is pasted). */
   onComplete?: (code: string) => void
+  /** Digits: the e-mail code's by default; an authenticator code is TOTP_LENGTH. */
+  length?: number
 }
 
-/** The emailed code, one box per digit (registration and forgotten password). */
-export function CodeField({ id, label, control, disabled = false, success = false, onComplete }: CodeFieldProps) {
+/** A code, one box per digit: the e-mailed code (registration, forgotten password) or an authenticator app's. */
+export function CodeField({ id, label, control, disabled = false, success = false, onComplete, length = CODE_LENGTH }: CodeFieldProps) {
   const errorId = `${id}-error`
 
   return (
@@ -35,7 +37,7 @@ export function CodeField({ id, label, control, disabled = false, success = fals
           <InputOTP
             id={id}
             ref={field.ref}
-            maxLength={CODE_LENGTH}
+            maxLength={length}
             inputMode="numeric"
             pattern="^[0-9]*$"
             // A pasted "123 456" or " 123456" keeps only its digits.
@@ -50,7 +52,7 @@ export function CodeField({ id, label, control, disabled = false, success = fals
             aria-describedby={fieldState.error ? errorId : undefined}
           >
             <InputOTPGroup className="w-full gap-2">
-              {Array.from({ length: CODE_LENGTH }, (_, index) => (
+              {Array.from({ length }, (_, index) => (
                 <InputOTPSlot
                   key={index}
                   index={index}

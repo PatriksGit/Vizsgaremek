@@ -3,6 +3,8 @@
 namespace Tests;
 
 use App\Models\Account;
+use App\Support\Totp;
+use App\Support\TwoFactorSecret;
 use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -351,6 +353,27 @@ abstract class TestCase extends BaseTestCase
      *
      * @param  array{locked?: bool, twofa_enabled?: bool}  $flags
      */
+    /** The RFC 4226 test secret as Base32, the 2FA secret of the test accounts. */
+    protected const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+
+    /**
+     * Switch 2FA on for the account as the website stores it (the RuneAuth
+     * contract: encrypted with the test key, bound to its uuid).
+     */
+    protected function enableTwoFactor(Account $account, string $secret = self::TOTP_SECRET): void
+    {
+        DB::connection('global')->table('accounts')->where('id', $account->id)->update([
+            'twofa_enabled' => true,
+            'twofa_secret' => TwoFactorSecret::seal($secret, $account->uuid),
+        ]);
+    }
+
+    /** The authenticator app's code for now, or a number of 30-second steps away. */
+    protected function totp(int $stepsAway = 0, string $secret = self::TOTP_SECRET): string
+    {
+        return Totp::code($secret, intdiv(now()->getTimestamp(), 30) + $stepsAway);
+    }
+
     protected function blockAccount(Account $account, array $flags): void
     {
         if ($flags['locked'] ?? false) {

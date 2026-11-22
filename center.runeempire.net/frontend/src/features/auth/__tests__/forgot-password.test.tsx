@@ -38,7 +38,7 @@ function codeSent(email: string, resendInSeconds = 600): Reply {
 
 function verify(config: Parameters<Handler>[0]): Reply {
   const { code } = JSON.parse(config.data as string) as { code: string }
-  if (code === RIGHT_CODE) return { status: 204 }
+  if (code === RIGHT_CODE) return { status: 200, data: { data: { two_factor_required: false } } }
   return { status: 422, data: { message: 'A kód érvénytelen vagy lejárt.', code: 'validation_failed', errors: { code: ['A kód érvénytelen vagy lejárt.'] } } }
 }
 

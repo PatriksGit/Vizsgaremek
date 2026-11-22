@@ -22,6 +22,7 @@ class MeControllerTest extends TestCase
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
             'email' => 'patrik@example.com',
+            'two_factor_enabled' => false,
             'registered_at' => $account->created_at->toIso8601String(),
         ]]);
     }

@@ -4,7 +4,6 @@ namespace Tests\Feature\Http\Controllers\Auth;
 
 use App\Exceptions\Auth\AccountLocked;
 use App\Exceptions\Auth\InvalidCredentials;
-use App\Exceptions\Auth\TwoFactorEnabled;
 use App\Models\Account;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -68,6 +67,7 @@ class LoginControllerTest extends TestCase
             'username' => 'patrikt',
             'display_name' => 'PatrikT',
             'email' => $account->email,
+            'two_factor_enabled' => false,
             'registered_at' => $account->refresh()->created_at->toIso8601String(),
         ]]);
         $this->assertAuthenticatedAs($account, 'web');
@@ -210,7 +210,7 @@ class LoginControllerTest extends TestCase
     {
         return [
             'locked' => [['locked' => true], AccountLocked::MESSAGE, 'auth.account_locked'],
-            'two-factor' => [['twofa_enabled' => true], TwoFactorEnabled::MESSAGE, 'auth.two_factor_enabled'],
+            // A lock is told before any 2FA code is asked for.
             'locked and two-factor' => [['locked' => true, 'twofa_enabled' => true], AccountLocked::MESSAGE, 'auth.account_locked'],
         ];
     }

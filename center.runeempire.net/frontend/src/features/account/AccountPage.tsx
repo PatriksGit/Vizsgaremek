@@ -14,11 +14,11 @@ import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 import { PasswordCard } from './PasswordCard'
+import { TwoFactorCard } from './TwoFactorCard'
 
 /**
  * Beállítások (the owner's design "Asztali/Mobil – Beállítások"): the account's
- * details and the password change. The design's Kétlépcsős azonosítás card
- * comes with web 2FA, its Munkamenetek card later (owner, 2026-11-22).
+ * details, the password change and 2FA. No Munkamenetek card (owner, 2026-11-22).
  */
 export function AccountPage() {
   // RequireAccount renders this page only for a logged-in player.
@@ -31,6 +31,7 @@ export function AccountPage() {
 
       <AccountDetailsCard account={account} />
       <PasswordCard username={account.username} enterDelay={200} />
+      <TwoFactorCard enabled={account.two_factor_enabled} enterDelay={300} />
       <LogoutButton />
     </div>
   )
@@ -79,7 +80,7 @@ function LogoutButton() {
       // Logged out: the guard sends the player to the login page.
       onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
       disabled={logout.isPending}
-      style={enterAfter(300)}
+      style={enterAfter(400)}
       className="content-in h-11 self-start px-4 hover:border-redstone/40 hover:bg-redstone/10 hover:text-redstone md:hidden"
     >
       <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />

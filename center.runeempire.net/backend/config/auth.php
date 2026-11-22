@@ -2,6 +2,11 @@
 
 use App\Models\Account;
 
+// The 2FA key: 32 bytes as standard Base64, the same as RuneAuth's twofa.secret-key.
+// Anything else is no key at all (2FA unavailable), never a broken one to encrypt with.
+$twoFactorKey = env('TWOFA_SECRET_KEY');
+$twoFactorKey = is_string($twoFactorKey) && strlen((string) base64_decode($twoFactorKey, true)) === 32 ? $twoFactorKey : null;
+
 $passwordLengths = [
     min(128, max(8, (int) env('PASSWORD_MIN_LENGTH', 8) ?: 8)),
     min(128, max(8, (int) env('PASSWORD_MAX_LENGTH', 64) ?: 64)),
@@ -47,6 +52,17 @@ return [
         // let a code die before the mail is read, or one typo cancel it.
         'expires_minutes' => max(1, (int) env('REGISTRATION_CODE_EXPIRES_MINUTES', 15) ?: 15),
         'max_attempts' => max(1, min(255, (int) env('REGISTRATION_CODE_MAX_ATTEMPTS', 5) ?: 5)),
+    ],
+
+    /*
+     * Two-factor authentication (App\Support\TwoFactorSecret, App\Support\Totp).
+     * The key encrypts accounts.twofa_secret and must be RuneAuth's
+     * twofa.secret-key, or players cannot log in to the game with 2FA.
+     */
+    'two_factor' => [
+        'key' => $twoFactorKey,
+        // The name authenticator apps list the account under.
+        'issuer' => env('TWOFA_ISSUER', 'RuneEmpire') ?: 'RuneEmpire',
     ],
 
 ];
