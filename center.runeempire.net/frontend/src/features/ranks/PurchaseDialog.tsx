@@ -1,7 +1,6 @@
 import { faQuestion, faXmark, type IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { type ReactNode, useId } from 'react'
-import { Link } from 'react-router'
 
 import {
   AlertDialog,
@@ -43,7 +42,8 @@ const buttonLook = 'flex min-h-12 items-center justify-center rounded-full px-4 
 /**
  * The popup a duration button opens (owner, 2026-11-17): it checks the runes
  * first. Too few -> an X in a circle, "Nincs elég rúnád a rang
- * megvásárlásához.", how many are missing, Rúna-feltöltés or Bezárás. Enough
+ * megvásárlásához.", how many are missing, and Bezárás (no top-up link while
+ * rune buying is hidden, owner 2026-11-22). Enough
  * (or a balance that cannot be read: it never claims a shortage it cannot
  * see) -> a ? in a circle, "Biztosan szeretnéd megvásárolni a rangot?", the
  * price and the expiry, then Igen / Mégse. A seasonal rank whose time ran out
@@ -98,14 +98,9 @@ export function PurchaseDialog({
                 </>
               }
             >
-              <div className="grid w-full grid-cols-2 gap-3">
-                <Link to="/runak/vasarlas" className={cn(buttonLook, 'bg-primary text-primary-foreground hover:bg-primary/85')}>
-                  Rúna-feltöltés
-                </Link>
-                <AlertDialogCancel variant="ghost" className={cn(buttonLook, 'h-auto bg-raised text-foreground hover:bg-raised/80')}>
-                  Bezárás
-                </AlertDialogCancel>
-              </div>
+              <AlertDialogCancel variant="ghost" className={cn(buttonLook, 'h-auto w-full bg-raised text-foreground hover:bg-raised/80')}>
+                Bezárás
+              </AlertDialogCancel>
             </Popup>
           ) : (
             <Popup

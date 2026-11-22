@@ -101,10 +101,10 @@ describe('with too few runes', () => {
     expect(within(dialog).queryByText('A vásárlás nem visszavonható.')).toBeNull()
   })
 
-  it('offers topping up, or closing', () => {
+  it('offers only closing: rune buying is hidden (owner, 2026-11-22)', () => {
     const { dialog, onClose } = renderDialog({ balance: 1500 })
 
-    expect(within(dialog).getByRole('link', { name: 'Rúna-feltöltés' }).getAttribute('href')).toBe('/runak/vasarlas')
+    expect(within(dialog).queryByRole('link')).toBeNull()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Bezárás' }))
     expect(onClose).toHaveBeenCalled()
   })

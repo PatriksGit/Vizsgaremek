@@ -241,13 +241,13 @@ describe('the rank cards', { timeout: 15_000 }, () => {
   })
 
   /** The balance above the ranks (owner, 2026-11-17): every button has a price, so the runes show too. */
-  it('shows the balance above the ranks, with a way to top it up', async () => {
+  it('shows the balance above the ranks, with no top-up link while rune buying is hidden', async () => {
     backend(statsWith(null, 12500))
     renderPage()
 
     const balance = await screen.findByRole('region', { name: 'Egyenleged' })
     await vi.waitFor(() => expect(balance.textContent?.replace(/\s/g, ' ')).toContain('12 500 rúna'))
-    expect(within(balance).getByRole('link', { name: 'Rúna-feltöltés' }).getAttribute('href')).toBe('/runak/vasarlas')
+    expect(within(balance).queryByRole('link')).toBeNull()
   })
 
   it('a balance that cannot be read is a dash', async () => {

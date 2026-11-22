@@ -1,6 +1,5 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
-  faCartShopping,
   faClockRotateLeft,
   faCoins,
   faHatWizard,
@@ -33,7 +32,9 @@ export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faUser, to: '/be
 /**
  * The logged-in pages: the one list the sidebar and the phone tab bar are
  * both built from. For now only these (owner, 2026-11-13): the runes with
- * buying, sending and their log, the ranks, and the players.
+ * sending and their log, the ranks, and the players. No rune buying for real
+ * money (owner, 2026-11-22): it needs a company, so it is out of the exam and
+ * hidden until then.
  */
 export const NAV: NavItem[] = [
   { label: 'Főoldal', icon: faHouse, to: '/', comingSoon: false },
@@ -44,13 +45,6 @@ export const NAV: NavItem[] = [
     to: '/runak',
     comingSoon: false,
     children: [
-      {
-        label: 'Vásárlás',
-        icon: faCartShopping,
-        to: '/runak/vasarlas',
-        description: 'Rúnacsomagok a szerver pénzéhez',
-        comingSoon: false,
-      },
       {
         label: 'Átutalás',
         icon: faRightLeft,

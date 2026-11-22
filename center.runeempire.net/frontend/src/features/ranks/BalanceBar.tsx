@@ -1,6 +1,5 @@
-import { faChevronRight, faCoins } from '@fortawesome/free-solid-svg-icons'
+import { faCoins } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Link } from 'react-router'
 
 import { panelLook } from '@/components/app/Panel'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,7 +9,8 @@ import { cn } from '@/lib/utils'
 
 /**
  * The player's runes above the rank cards (owner, 2026-11-17): every button
- * carries a price, so the balance is in view too, with the way to top it up.
+ * carries a price, so the balance is in view too. No top-up link: rune buying
+ * is hidden until there is a company (owner, 2026-11-22).
  * undefined while the stats load (a skeleton), null when they cannot be read (a dash).
  * On phones it stays under the top bar while the cards scroll, so the balance
  * is in view when a price is tapped (review 2026-11-17).
@@ -43,13 +43,6 @@ export function BalanceBar({ balance }: { balance: number | null | undefined }) 
           )}
         </div>
       </div>
-      <Link
-        to="/runak/vasarlas"
-        className="inline-flex min-h-11 items-center gap-1.5 px-1 text-sm font-bold text-primary hover:text-primary/80"
-      >
-        Rúna-feltöltés
-        <FontAwesomeIcon icon={faChevronRight} aria-hidden="true" className="size-3" />
-      </Link>
     </section>
   )
 }

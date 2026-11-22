@@ -1,6 +1,5 @@
 import { faDiscord, faTiktok, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import {
-  faCartShopping,
   faCircleInfo,
   faComments,
   faCompass,
@@ -52,7 +51,7 @@ export const site = {
     {
       icon: faCompass,
       title: 'Mi az a Center?',
-      text: 'A szerver weboldala: itt kezeled a fiókod, és itt látod, ki van fent a Discordon. Itt látod a statisztikáidat és a barátaidat is, hamarosan pedig a webshop is ide költözik.',
+      text: 'A szerver weboldala: itt kezeled a fiókod, és itt látod, ki van fent a Discordon. Itt látod a statisztikáidat és a barátaidat is.',
     },
     {
       icon: faGamepad,
@@ -66,7 +65,6 @@ export const site = {
       title: 'Szerver',
       links: [
         { label: 'Ranglisták', href: '#', icon: faTrophy },
-        { label: 'Webshop', href: '#', icon: faCartShopping },
         { label: 'Szabályzat', href: '#', icon: faScroll },
       ],
     },

@@ -64,11 +64,14 @@ it('the open page is marked in the menu', async () => {
   expect(currentLinks()).toEqual(['Rangok', 'Rangok'])
 })
 
-it('a page in the Rúnák group marks itself in the sidebar and Rúnák on the tab bar', async () => {
-  renderMenuOn('/runak/vasarlas/', 'runak/vasarlas')
+// The Rúnák group has no open page of its own yet (Vásárlás is hidden, owner 2026-11-22;
+// Átutalás and Napló are coming soon): once Átutalás is built, test that it marks itself
+// in the sidebar and Rúnák on the tab bar.
+it('the Rúnák page marks Rúnák on the tab bar', async () => {
+  renderMenuOn('/runak/', 'runak')
 
   expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
-  expect(currentLinks()).toEqual(['Vásárlás', 'Rúnák'])
+  expect(currentLinks()).toEqual(['Rúnák'])
 })
 
 it('a player profile marks Játékosok in the sidebar and on the tab bar', async () => {
@@ -86,7 +89,7 @@ it('the overview is called Főoldal in the menu', async () => {
 })
 
 it('the runes have the coin icon in the menu', async () => {
-  renderMenuOn('/runak/vasarlas/', 'runak/vasarlas')
+  renderMenuOn('/runak/', 'runak')
 
   expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
   const runeLinks = screen.getAllByText('Rúnák').map((label) => label.closest('a, button')!)
