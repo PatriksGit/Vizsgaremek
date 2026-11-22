@@ -53,8 +53,8 @@ export function SiteFooter() {
         <div className="mx-auto flex max-w-300 flex-col gap-2 px-4 py-6 text-xs sm:px-6 md:flex-row md:justify-between md:gap-8">
           <p>© {new Date().getFullYear()} {site.name}</p>
           <p className="max-w-xl text-balance md:text-right">
-            Nem hivatalos Minecraft termék. Nem a Mojang vagy a Microsoft által jóváhagyott, és nem
-            kapcsolódik hozzájuk.
+            Nem hivatalos Minecraft termék. Nem a Mojang vagy a Microsoft hagyta jóvá, és nem áll
+            kapcsolatban velük.
           </p>
         </div>
       </div>

@@ -37,7 +37,7 @@ const password = z
   .string()
   .min(1, { error: 'Adj meg egy jelszót.' })
   .refine((value) => ALLOWED_PASSWORD_PATTERN.test(value), {
-    error: 'Csak a magyar és az angol ábécé betűit, számokat és egyszerű szimbólumokat tartalmazhat, szóközt nem.',
+    error: 'Csak magyar vagy angol betűket, számokat és alap jeleket (pl. ! @ # _ -) tartalmazhat, szóközt nem.',
   })
   // Every allowed character is one UTF-16 unit, so .length counts characters like the backend.
   .refine((value) => value.length >= PASSWORD_MIN_LENGTH, { error: `Legalább ${PASSWORD_MIN_LENGTH} karakter legyen.` })

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 import { newPasswordSchema } from '@/features/auth/schemas'
 
-const NO_SPACE = 'Csak a magyar és az angol ábécé betűit, számokat és egyszerű szimbólumokat tartalmazhat, szóközt nem.'
+const NO_SPACE = 'Csak magyar vagy angol betűket, számokat és alap jeleket (pl. ! @ # _ -) tartalmazhat, szóközt nem.'
 
 const errorOf = (password: string) => {
   const result = newPasswordSchema.safeParse({ password, passwordConfirmation: password })

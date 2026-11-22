@@ -63,7 +63,7 @@ function AccountDetailsCard({ account }: { account: Account }) {
       </div>
       <footer className="flex items-center gap-2 border-t border-border bg-sunken/60 px-5 py-3 text-xs text-faint md:px-6">
         <FontAwesomeIcon icon={faLock} aria-hidden="true" className="size-3.5 flex-none" />
-        Ezeket az adatokat csak adminisztrátor módosíthatja.
+        A játékosnevet és az e-mail címet csak adminisztrátor módosíthatja.
       </footer>
     </section>
   )

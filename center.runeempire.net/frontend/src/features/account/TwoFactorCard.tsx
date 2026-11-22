@@ -35,13 +35,12 @@ export function TwoFactorCard({ enabled, enterDelay }: { enabled: boolean; enter
           </span>
         </div>
         <p className="mt-1.5 max-w-[62ch] text-sm text-muted-foreground">
-          Belépéskor a jelszavad mellett egy 6 jegyű kódot is kérünk a telefonod hitelesítő alkalmazásából (pl. Google Authenticator,
-          Authy).
+          Belépéskor a jelszavad után egy 6 jegyű kódot is kérünk a hitelesítő appodból (pl. Google Authenticator, Authy).
         </p>
       </div>
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-sunken/60 px-5 py-3.5 md:px-6">
         <span className="text-xs text-faint">
-          {enabled ? 'A weboldalon és a szerveren is kérjük a kódot.' : 'Ajánlott: így a jelszavad ismeretében sem tud más belépni.'}
+          {enabled ? 'A weboldalon és a szerveren is kérjük a kódot.' : 'Ajánlott: így akkor sem tudnak belépni, ha valaki megszerzi a jelszavad.'}
         </span>
         {enabled ? (
           <Button

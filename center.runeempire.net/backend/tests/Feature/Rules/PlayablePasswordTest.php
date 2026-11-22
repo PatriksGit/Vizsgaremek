@@ -12,7 +12,7 @@ use Tests\TestCase;
  */
 class PlayablePasswordTest extends TestCase
 {
-    private const CHARACTERS = 'Jelszó csak a magyar és az angol ábécé betűit, számokat és egyszerű szimbólumokat tartalmazhat, szóközt nem.';
+    private const CHARACTERS = 'Jelszó csak magyar vagy angol betűket, számokat és alap jeleket (pl. ! @ # _ -) tartalmazhat, szóközt nem.';
 
     /**
      * @return array<int, string>

@@ -55,7 +55,7 @@ const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Jelszó
 function fillAll(current = 'regi-jelszo', next = 'uj-jelszo-1', again = next) {
   type('Jelenlegi jelszó', current)
   type('Új jelszó', next)
-  type('Új jelszó még egyszer', again)
+  type('Új jelszó újra', again)
 }
 
 it('shows the name and the own e-mail address, which only staff can change', () => {
@@ -64,7 +64,7 @@ it('shows the name and the own e-mail address, which only staff can change', () 
   const details = screen.getByRole('region', { name: 'Fiókadatok' })
   expect(within(details).getByText('Steve_01')).toBeTruthy()
   expect(within(details).getByText('steve@example.com')).toBeTruthy()
-  expect(within(details).getByText('Ezeket az adatokat csak adminisztrátor módosíthatja.')).toBeTruthy()
+  expect(within(details).getByText('A játékosnevet és az e-mail címet csak adminisztrátor módosíthatja.')).toBeTruthy()
   expect(document.title).toBe('Beállítások | RuneEmpire')
 })
 
@@ -82,10 +82,10 @@ it('ticks the site\'s real password rules while typing, read with the field', ()
   const hint = document.getElementById(rules)!.textContent
   expect(hint).toContain('8–64 karakter – teljesül')
   expect(hint).toContain('Szóköz nélkül – még nem teljesül')
-  expect(hint).toContain('Magyar vagy angol betűk, számok, egyszerű szimbólumok – teljesül')
+  expect(hint).toContain('Magyar vagy angol betűk, számok, alap jelek (pl. ! @ # _ -) – teljesül')
 
   type('Új jelszó', 'jelszó€12')
-  expect(document.getElementById(rules)!.textContent).toContain('egyszerű szimbólumok – még nem teljesül')
+  expect(document.getElementById(rules)!.textContent).toContain('alap jelek (pl. ! @ # _ -) – még nem teljesül')
 })
 
 it('sends the passwords, then empties the form and says the other devices were logged out', async () => {
@@ -96,7 +96,7 @@ it('sends the passwords, then empties the form and says the other devices were l
 
   await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith('Megváltozott a jelszavad. A többi eszközödről kijelentkeztettünk.'))
   expect(bodies).toEqual([{ current_password: 'regi-jelszo', password: 'uj-jelszo-1', password_confirmation: 'uj-jelszo-1' }])
-  expect([field('Jelenlegi jelszó').value, field('Új jelszó').value, field('Új jelszó még egyszer').value]).toEqual(['', '', ''])
+  expect([field('Jelenlegi jelszó').value, field('Új jelszó').value, field('Új jelszó újra').value]).toEqual(['', '', ''])
 })
 
 it('puts a wrong current password on its field', async () => {

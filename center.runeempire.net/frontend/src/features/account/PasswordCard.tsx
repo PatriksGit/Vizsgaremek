@@ -35,7 +35,7 @@ function passwordRules(value: string) {
     { label: `${PASSWORD_MIN_LENGTH}–${PASSWORD_MAX_LENGTH} karakter`, ok: value.length >= PASSWORD_MIN_LENGTH && value.length <= PASSWORD_MAX_LENGTH },
     { label: 'Szóköz nélkül', ok: typed && !/\s/.test(value) },
     {
-      label: 'Magyar vagy angol betűk, számok, egyszerű szimbólumok',
+      label: 'Magyar vagy angol betűk, számok, alap jelek (pl. ! @ # _ -)',
       ok: typed && (withoutSpaces === '' || ALLOWED_PASSWORD_PATTERN.test(withoutSpaces)),
     },
   ]
@@ -100,7 +100,7 @@ export function PasswordCard({ username, enterDelay }: { username: string; enter
             <h2 id="password-title" className="font-heading text-lg font-bold text-foreground md:text-xl">
               Jelszó módosítása
             </h2>
-            <p className="mt-1.5 max-w-[62ch] text-sm text-muted-foreground">Ugyanezt a jelszót használod a szerveren való belépéshez is.</p>
+            <p className="mt-1.5 max-w-[62ch] text-sm text-muted-foreground">Ezzel a jelszóval lépsz be a szerverre is.</p>
           </div>
 
           {/* For password managers: which account the new password belongs to. */}
@@ -128,7 +128,7 @@ export function PasswordCard({ username, enterDelay }: { username: string; enter
               {...form.register('password')}
             />
             <PasswordField
-              label="Új jelszó még egyszer"
+              label="Új jelszó újra"
               autoComplete="new-password"
               error={errors.passwordConfirmation?.message}
               {...form.register('passwordConfirmation')}
@@ -138,7 +138,7 @@ export function PasswordCard({ username, enterDelay }: { username: string; enter
         </div>
 
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-sunken/60 px-5 py-3.5 md:px-6">
-          <span className="text-xs text-faint">A módosítás után a többi eszközödről kijelentkeztetünk.</span>
+          <span className="text-xs text-faint">Mentés után kijelentkeztetünk a többi eszközről.</span>
           <Button type="submit" disabled={isSubmitting} className="h-10 rounded-full px-5 text-sm font-extrabold">
             <FontAwesomeIcon icon={faKey} aria-hidden="true" />
             {isSubmitting ? 'Mentés…' : 'Jelszó módosítása'}

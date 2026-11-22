@@ -18,7 +18,7 @@ return [
     ],
     'not_regex' => ':Attribute formátuma érvénytelen.',
     // App\Rules\PlayablePassword: printable ASCII plus the Hungarian accented letters.
-    'password_characters' => ':Attribute csak a magyar és az angol ábécé betűit, számokat és egyszerű szimbólumokat tartalmazhat, szóközt nem.',
+    'password_characters' => ':Attribute csak magyar vagy angol betűket, számokat és alap jeleket (pl. ! @ # _ -) tartalmazhat, szóközt nem.',
     'regex' => ':Attribute formátuma érvénytelen.',
     'required' => ':Attribute megadása kötelező.',
     'string' => ':Attribute csak szöveg lehet.',
