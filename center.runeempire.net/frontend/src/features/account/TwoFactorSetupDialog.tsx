@@ -1,3 +1,4 @@
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faApple, faGooglePlay } from '@fortawesome/free-brands-svg-icons'
 import { faArrowLeft, faArrowRight, faCheck, faCopy, faMobileScreen, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -49,7 +50,7 @@ function Stepper({ current }: { current: Step }) {
               >
                 {done ? <FontAwesomeIcon icon={faCheck} className="size-3" /> : step}
               </span>
-              <span className={cn('text-[13px] font-bold', active ? 'text-foreground' : 'text-muted-foreground max-sm:sr-only')}>
+              <span className={cn('text-[13px] font-bold whitespace-nowrap', active ? 'text-foreground' : 'text-muted-foreground max-sm:sr-only')}>
                 {label}
                 {done && <span className="sr-only"> (kész)</span>}
               </span>
@@ -99,7 +100,7 @@ function StepHeading({ children, description }: { children: ReactNode; descripti
   )
 }
 
-function StoreLink({ href, icon, label, appName }: { href: string; icon: typeof faApple; label: string; appName: string }) {
+function StoreLink({ href, icon, label, appName }: { href: string; icon: IconDefinition; label: string; appName: string }) {
   return (
     <a
       href={href}
@@ -150,11 +151,15 @@ function AppsStep() {
 export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const setTwoFactorEnabled = useSetTwoFactorEnabled()
   const setup = useMutation({ mutationFn: startTwoFactorSetup })
+  // A mutation, so a 401 reaches the MutationCache and forgets the account (src/queryClient.ts).
+  const enable = useMutation({ mutationFn: enableTwoFactor })
   const codeForm = useForm<CodeValues>({ resolver: zodResolver(totpSchema), defaultValues: { code: '' } })
   const [step, setStep] = useState<Step>(1)
   const [done, setDone] = useState(false)
   const [copied, setCopied] = useState(false)
   const sending = useRef(false)
+  // Bumped on every close: an answer that arrives after the dialog closed belongs to no opening.
+  const opening = useRef(0)
   const titleRef = useRef<HTMLHeadingElement>(null)
 
   // Each opening starts a fresh setup (a new secret); the last one is forgotten on close.
@@ -169,6 +174,7 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
   }, [step, codeForm])
 
   const reset = () => {
+    opening.current += 1
     setup.reset()
     codeForm.reset({ code: '' })
     setStep(1)
@@ -188,11 +194,14 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
   const onCode = async ({ code }: CodeValues) => {
     if (sending.current) return
     sending.current = true
+    const mine = opening.current
     try {
-      await enableTwoFactor(code)
+      await enable.mutateAsync(code)
+      // Switched on at the server either way; the success screen only for the opening that asked.
       setTwoFactorEnabled(true)
-      setDone(true)
+      if (mine === opening.current) setDone(true)
     } catch (error) {
+      if (mine !== opening.current) return
       codeForm.reset({ code: '' })
       if (error instanceof ApiError && error.code === 'auth.two_factor_expired') {
         // The 15 minutes ran out: a new secret, to be scanned again.
@@ -217,7 +226,7 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
       {/* Focus starts on the title: on a phone, a button at the bottom scrolled the top out of view. */}
       <DialogContent
         initialFocus={titleRef}
-        className="max-h-[calc(100svh-2rem)] gap-6 overflow-y-auto rounded-3xl border border-line bg-card p-6 ring-0 sm:max-w-2xl md:p-8"
+        className="max-h-[calc(100svh-2rem)] grid-cols-1 gap-6 overflow-y-auto rounded-3xl border border-line bg-card p-6 ring-0 sm:max-w-2xl md:p-8"
       >
         {done ? (
           <div role="status" className="flex flex-col items-center gap-4 px-2 pt-6 pb-2 text-center">
@@ -234,8 +243,8 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
           </div>
         ) : (
           <form onSubmit={(event) => void codeForm.handleSubmit(onCode)(event)} noValidate className="flex flex-col gap-7">
-            <div className="flex flex-col gap-5 pr-10">
-              <DialogTitle ref={titleRef} tabIndex={-1} className="font-heading text-2xl leading-tight font-bold outline-none md:text-[28px]">
+            <div className="flex flex-col gap-5">
+              <DialogTitle ref={titleRef} tabIndex={-1} className="pr-10 font-heading text-2xl leading-tight font-bold outline-none md:text-[28px]">
                 Kétlépcsős azonosítás bekapcsolása
               </DialogTitle>
               <DialogDescription className="sr-only">Három lépés: alkalmazás telepítése, a QR-kód beolvasása, végül a kód beírása.</DialogDescription>
@@ -319,7 +328,7 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
               )}
             </div>
 
-            <div className="flex justify-between gap-2.5 border-t border-border pt-5">
+            <div className="flex flex-wrap justify-between gap-2.5 border-t border-border pt-5">
               {step === 1 ? (
                 <Button key="cancel" type="button" variant="outline" onClick={onClose} className="h-11 rounded-full px-5 font-bold">
                   Mégse

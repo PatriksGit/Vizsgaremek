@@ -1,8 +1,9 @@
 /**
  * The Management menu item and the /management page (owner, 2026-11-23): no
- * login card. The menu goes straight to the backend's Google redirect, which
- * skips Google when the grant is still live; a signed-out /management forwards
- * there at once, and a failed sign-in (?error=) toasts the reason and goes home.
+ * login card. The menu asks /management/me first (useOpenManagement): a live
+ * grant opens /management in the app, none goes to the Google redirect; a
+ * signed-out /management forwards there at once, and a failed sign-in (?error=)
+ * toasts the reason and goes home.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -14,7 +15,7 @@ import { AppLayout } from '@/features/app/AppLayout'
 import type { Account } from '@/features/auth/api'
 import { ManagementPage } from '@/features/management/ManagementPage'
 import { RequireManager } from '@/features/management/RequireManager'
-import { installFakeBackend, stubBrowserApis, type Handler } from '@/test/fakeBackend'
+import { installFakeBackend, stubBrowserApis, type Handler, type Reply } from '@/test/fakeBackend'
 
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
 vi.mock('sonner', async (importOriginal) => ({ ...(await importOriginal<typeof import('sonner')>()), toast: toastMock }))
@@ -128,6 +129,22 @@ it('/management without can_manage goes home', async () => {
   expect(await screen.findByRole('heading', { name: 'Főoldal' })).toBeTruthy()
   expect(calls).not.toContain('GET /management/me')
   expect(document.querySelector('[data-quiet]')).toBeNull()
+})
+
+// Review 2026-11-23 account-management K1: a failure without a management code shows the app's usual, exact message.
+it('a failed check names a management code by its own text, anything else by the app\'s usual message', async () => {
+  const failedWith = async (reply: Reply) => {
+    renderAt('/management', ACCOUNT, () => reply)
+    const text = (await screen.findByRole('alert')).textContent
+    cleanup()
+    return text
+  }
+
+  expect(await failedWith({ status: 403, data: { message: 'Ehhez nincs jogosultságod.', code: 'management.forbidden' } })).toBe(
+    'Ehhez nincs jogosultságod.',
+  )
+  expect(await failedWith({ status: 503, data: {} })).toBe('A szerver most nem érhető el, próbáld újra később.')
+  expect(await failedWith({ status: 500, data: { message: 'Server Error' } })).toBe('Váratlan hiba történt, próbáld újra később.')
 })
 
 it('signed out without an error forwards to the Google redirect at once, with no login card', async () => {

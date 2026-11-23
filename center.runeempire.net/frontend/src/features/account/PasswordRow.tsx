@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { faCheck, faCircleInfo, faKey } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useEffect, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
@@ -91,28 +92,34 @@ const empty: ChangePasswordValues = { currentPassword: '', password: '', passwor
 export function PasswordRow({ username }: { username: string }) {
   const [open, setOpen] = useState(false)
   const form = useForm<ChangePasswordValues>({ resolver: zodResolver(changePasswordSchema), defaultValues: empty })
+  // A mutation, so a 401 reaches the MutationCache and forgets the account (src/queryClient.ts).
+  const change = useMutation({ mutationFn: changePassword })
   const newPassword = useWatch({ control: form.control, name: 'password' })
   const { errors, isSubmitting } = form.formState
+  // Bumped on every close: a refusal that arrives after Mégse belongs to no opening.
+  const opening = useRef(0)
 
   useEffect(() => {
     if (open) form.setFocus('currentPassword')
   }, [open, form])
 
   const close = () => {
+    opening.current += 1
     form.reset(empty)
     setOpen(false)
   }
 
   const onSubmit = async (values: ChangePasswordValues) => {
+    const mine = opening.current
     try {
-      await changePassword(values)
+      await change.mutateAsync(values)
       close()
       toast.success('Megváltozott a jelszavad. A többi eszközödről kijelentkeztettünk.')
     } catch (error) {
+      if (mine !== opening.current) return
       applyApiError(error, form.setError, {
         current_password: 'currentPassword',
         password: 'password',
-        password_confirmation: 'passwordConfirmation',
       })
     }
   }

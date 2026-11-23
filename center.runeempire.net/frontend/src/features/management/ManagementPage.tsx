@@ -1,6 +1,6 @@
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 
@@ -27,6 +27,8 @@ export function ManagementPage() {
   // A refused sign-in never shows this page: no /me request, no "Betöltés…", straight home with a toast (owner, 2026-11-23).
   const refused = params.has('error')
   const me = useManagementMe({ enabled: !refused })
+  // Fresh when the page opened (the menu's answer): decided once, so the data turning stale later does not hide the page.
+  const [freshOnArrival] = useState(me.data !== undefined && !me.isStale)
 
   if (refused) return <SignInError errorCode={params.get('error')} email={params.get('email')} />
 
@@ -38,9 +40,9 @@ export function ManagementPage() {
        * earlier visit (e.g. before "Kilépés a managementből", or a grant that ran out) must not show the
        * dashboard for a moment before this visit's answer forwards to Google (owner, 2026-11-23).
        */}
-      {!(me.isFetchedAfterMount || (me.data !== undefined && !me.isStale)) ? (
+      {!(me.isFetchedAfterMount || freshOnArrival) ? (
         <Loading />
-      ) : !me.data ? (
+      ) : me.isError || !me.data ? (
         <FailedCard error={me.error} />
       ) : me.data.signed_in ? (
         <SignedIn email={me.data.email} />
@@ -102,26 +104,20 @@ function SignInError({ errorCode, email }: { errorCode: string | null; email: st
   return null
 }
 
-function ErrorNote({ text, detail }: { text: string; detail: string | null }) {
-  return (
-    <div role="alert" className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
-      <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 size-4 flex-none" aria-hidden="true" />
-      <div className="flex min-w-0 flex-col gap-1">
-        <p className="font-semibold">{text}</p>
-        {detail && <p className="break-words">{`Ezzel a címmel próbáltad: ${detail}`}</p>}
-      </div>
-    </div>
-  )
-}
-
-/** The grant could not be read (a 403 without the permission, the server down): the text, no retry button; a refresh asks again. */
+/**
+ * The grant could not be read (a 403 without the permission, the server down): the text, no retry button; a refresh asks again.
+ * A management code gets its own text; anything else (a timeout, no connection, a 5xx) the app's usual message (review K1).
+ */
 function FailedCard({ error }: { error: unknown }) {
   const code = error instanceof ApiError ? (error.code ?? (error.status === 429 ? 'too_many_requests' : null)) : null
   return (
     <>
       <h1 className="sr-only">Management</h1>
       <Panel as="section" style={enterAfter(50)} className="content-in">
-        <ErrorNote text={errorText(code)} detail={null} />
+        <div role="alert" className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+          <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 size-4 flex-none" aria-hidden="true" />
+          <p className="font-semibold">{errorText(code, formMessage(error))}</p>
+        </div>
       </Panel>
     </>
   )

@@ -9,7 +9,7 @@ import { z } from 'zod'
 const NAME_PATTERN = /^[A-Za-z0-9_]{3,16}$/
 
 /** Account::EMAIL_PATTERN: ASCII address with a dotted domain. */
-const EMAIL_PATTERN = /^[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
+export const EMAIL_PATTERN = /^[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
 
 /**
  * PlayablePassword::ALLOWED_PATTERN: what a keyboard types -- the English letters,

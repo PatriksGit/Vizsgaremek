@@ -53,7 +53,7 @@ export function AccountPage() {
                 title="Management"
                 description="A szerver kezelőfelülete, Google-fiókkal léphetsz be."
                 action={
-                  // The router's link, like the sidebar's: /management forwards to Google only without a live grant.
+                  // The router's link, like the sidebar's: the click asks first and goes to Google only without a live grant.
                   <Link to="/management" onClick={openManagement} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
                     Megnyitás
                   </Link>

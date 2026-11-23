@@ -38,7 +38,7 @@ const faProton: IconDefinition = {
   ],
 }
 
-export type AuthenticatorApp = { name: string; icon: IconDefinition; ios: string; android: string }
+type AuthenticatorApp = { name: string; icon: IconDefinition; ios: string; android: string }
 
 /**
  * The apps the setup suggests (owner, 2026-11-22: Google, Proton and one

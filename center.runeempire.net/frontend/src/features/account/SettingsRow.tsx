@@ -9,7 +9,7 @@ type SettingsRowProps = {
   /** Beside the title, such as the 2FA state. */
   badge?: ReactNode
   description: string
-  /** The row's one action; hidden while the row is open (its form has its own buttons). */
+  /** The row's one action (a caller with a form, like PasswordRow, leaves it out while the form is open). */
   action?: ReactNode
   /** What opens under the row, such as the password form. */
   children?: ReactNode

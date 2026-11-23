@@ -245,8 +245,8 @@ function PlayerCard() {
         {account?.can_manage && (
           <MenuPrimitive.LinkItem
             closeOnClick
-            // The router's link, like every other page (owner, 2026-11-23: no full reload); /management
-            // itself forwards to Google only when there is no live grant.
+            // The router's link, like every other page (owner, 2026-11-23: no full reload); the click
+            // asks first (useOpenManagement) and goes to Google only when there is no live grant.
             onClick={openManagement}
             render={<Link to="/management" aria-current={isPage('/management', pathname) ? 'page' : undefined} />}
             className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}

@@ -1,6 +1,7 @@
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
 import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -21,18 +22,24 @@ import { useSetTwoFactorEnabled } from './twoFactor'
  */
 export function TwoFactorDisableDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const setTwoFactorEnabled = useSetTwoFactorEnabled()
+  // A mutation, so a 401 reaches the MutationCache and forgets the account (src/queryClient.ts).
+  const disable = useMutation({ mutationFn: disableTwoFactor })
   const codeForm = useForm<CodeValues>({ resolver: zodResolver(totpSchema), defaultValues: { code: '' } })
   const sending = useRef(false)
+  // Bumped on every close: a wrong-code answer that arrives after the dialog closed belongs to no opening.
+  const opening = useRef(0)
 
   const onCode = async ({ code }: CodeValues) => {
     if (sending.current) return
     sending.current = true
+    const mine = opening.current
     try {
-      await disableTwoFactor(code)
+      await disable.mutateAsync(code)
       setTwoFactorEnabled(false)
       onClose()
       toast.success('A kétlépcsős azonosítás kikapcsolva.')
     } catch (error) {
+      if (mine !== opening.current) return
       codeForm.reset({ code: '' })
       applyApiError(error, codeForm.setError, { code: 'code' })
       codeForm.setFocus('code')
@@ -43,8 +50,13 @@ export function TwoFactorDisableDialog({ open, onClose }: { open: boolean; onClo
 
   const { errors, isSubmitting } = codeForm.formState
 
+  const reset = () => {
+    opening.current += 1
+    codeForm.reset({ code: '' })
+  }
+
   return (
-    <AlertDialog open={open} onOpenChange={(next) => !next && onClose()} onOpenChangeComplete={(next) => !next && codeForm.reset({ code: '' })}>
+    <AlertDialog open={open} onOpenChange={(next) => !next && onClose()} onOpenChangeComplete={(next) => !next && reset()}>
       <AlertDialogContent className="max-h-[calc(100svh-2rem)] gap-4.5 overflow-y-auto rounded-2xl border border-line bg-card p-6 text-left ring-0 data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-115">
         <form onSubmit={(event) => void codeForm.handleSubmit(onCode)(event)} noValidate className="flex flex-col gap-4.5">
           <AlertDialogTitle className="font-heading text-2xl leading-tight font-bold">Kétlépcsős azonosítás kikapcsolása</AlertDialogTitle>

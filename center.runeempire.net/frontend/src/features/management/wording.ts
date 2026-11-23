@@ -1,5 +1,7 @@
+import { EMAIL_PATTERN } from '@/features/auth/schemas'
+
 /** The texts of the management sign-in errors, by the backend's stable code. The code itself is never shown. */
-export const GENERIC_ERROR_TEXT = 'A belépés nem sikerült.'
+const GENERIC_ERROR_TEXT = 'A belépés nem sikerült.'
 
 const ERROR_TEXTS: Record<string, string> = {
   'management.not_allowed': 'Ez az e-mail cím nem jogosult a belépésre.',
@@ -11,9 +13,9 @@ const ERROR_TEXTS: Record<string, string> = {
   too_many_requests: 'Túl sok próbálkozás, próbáld újra később.',
 }
 
-/** A lookup only: an unknown (or hostile) code gets the generic text. */
-export function errorText(code: string | null | undefined): string {
-  return (code && Object.hasOwn(ERROR_TEXTS, code) && ERROR_TEXTS[code]) || GENERIC_ERROR_TEXT
+/** A lookup only: an unknown (or hostile) code gets the fallback, by default the generic text. */
+export function errorText(code: string | null | undefined, fallback = GENERIC_ERROR_TEXT): string {
+  return (code && Object.hasOwn(ERROR_TEXTS, code) && ERROR_TEXTS[code]) || fallback
 }
 
 /**
@@ -21,5 +23,5 @@ export function errorText(code: string | null | undefined): string {
  * anything else in the link is left out, not shown as "the address you tried".
  */
 export function isEmailAddress(value: string): boolean {
-  return /^[\x21-\x3F\x41-\x7E]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(value)
+  return EMAIL_PATTERN.test(value)
 }

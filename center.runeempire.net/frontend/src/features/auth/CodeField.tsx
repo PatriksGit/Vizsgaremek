@@ -43,6 +43,8 @@ export function CodeField({ id, label, control, disabled = false, success = fals
             // A pasted "123 456" or " 123456" keeps only its digits.
             pasteTransformer={(pasted) => pasted.replace(/\D/g, '')}
             autoComplete="one-time-code"
+            // No 40 px "password manager badge" room: measured mid-zoom it made the dialogs scroll sideways (V5).
+            pushPasswordManagerStrategy="none"
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
