@@ -14,6 +14,8 @@ import { SectionPage } from '@/features/app/SectionPage'
 import { AuthPage } from '@/features/auth/AuthPage'
 import { GuestOnly, RequireAccount } from '@/features/auth/guards'
 import { useAccount } from '@/features/auth/queries'
+import { ManagementPage } from '@/features/management/ManagementPage'
+import { RequireManager } from '@/features/management/RequireManager'
 import { HomePage } from '@/features/home/HomePage'
 import { PlayerProfilePage } from '@/features/players/PlayerProfilePage'
 import { PlayersPage } from '@/features/players/PlayersPage'
@@ -77,6 +79,14 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <HomePage /> },
           { path: 'beallitasok', element: <AccountPage /> },
+          {
+            path: 'management',
+            element: (
+              <RequireManager>
+                <ManagementPage />
+              </RequireManager>
+            ),
+          },
           { path: 'rangok', element: <RanksPage /> },
           { path: 'jatekosok', element: <PlayersPage /> },
           { path: 'jatekosok/:name', element: <PlayerProfilePage /> },

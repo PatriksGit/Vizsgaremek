@@ -9,6 +9,8 @@ export type Account = {
   email: string | null
   /** 2FA (an authenticator app's code) is on: the login asks for the code after the password. */
   two_factor_enabled: boolean
+  /** The account holds the management permission: the Management menu item and page are for it. */
+  can_manage: boolean
   /** When the account was created (ISO 8601); null only if the backend could not read it. */
   registered_at: string | null
 }

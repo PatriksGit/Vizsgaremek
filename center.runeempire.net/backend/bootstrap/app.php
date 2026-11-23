@@ -1,13 +1,17 @@
 <?php
 
 use App\Exceptions\ApiErrorResponse;
+use App\Http\Middleware\EnsureManagementAccess;
 use App\Http\Middleware\LogOutBlockedAccounts;
+use App\Http\Middleware\ManagementPageErrors;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -24,6 +28,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // ...and before auth:sanctum, which the framework would otherwise sort
         // ahead of it: the blocked session's request must reach it as a guest's.
         $middleware->prependToPriorityList(AuthenticatesRequests::class, LogOutBlockedAccounts::class);
+        // The Google sign-in's pages turn every error into a redirect, so this
+        // must wrap the session, auth and throttle middleware listed after it.
+        $middleware->prependToPriorityList(EncryptCookies::class, ManagementPageErrors::class);
+        // There, Sanctum's session password check is listed by hand (routes/api.php); it is in no
+        // priority list, so auth:sanctum and the throttle would be sorted ahead of it.
+        $middleware->prependToPriorityList(AuthenticatesRequests::class, AuthenticateSession::class);
+
+        // The guard of every management route (the permission and a live, listed Google grant).
+        $middleware->alias(['management' => EnsureManagementAccess::class]);
 
         // An API has no login page: guests get a JSON 401, never a redirect.
         $middleware->redirectGuestsTo(fn () => null);

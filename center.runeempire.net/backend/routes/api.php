@@ -14,6 +14,10 @@ use App\Http\Controllers\Auth\StartTwoFactorSetupController;
 use App\Http\Controllers\Auth\VerifyPasswordResetCodeController;
 use App\Http\Controllers\Auth\VerifyRegistrationController;
 use App\Http\Controllers\DiscordWidgetController;
+use App\Http\Controllers\Management\GoogleCallbackController;
+use App\Http\Controllers\Management\GoogleRedirectController;
+use App\Http\Controllers\Management\ManagementLogoutController;
+use App\Http\Controllers\Management\ManagementMeController;
 use App\Http\Controllers\MyFriendsController;
 use App\Http\Controllers\MyStatsController;
 use App\Http\Controllers\PlayerFriendsController;
@@ -21,7 +25,13 @@ use App\Http\Controllers\PlayerSearchController;
 use App\Http\Controllers\PlayerSkinController;
 use App\Http\Controllers\PlayerStatsController;
 use App\Http\Controllers\RanksController;
+use App\Http\Middleware\ManagementPageErrors;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // {player} in a path is a player name (RouteBindingServiceProvider); each route also pins it to
 // Account::NAME_PATTERN, so anything else is a 404 before the database is asked.
@@ -52,6 +62,30 @@ Route::middleware('auth:sanctum')->prefix('players')->name('players.')->group(fu
         Route::get('/{player}/stats', PlayerStatsController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('stats');
         Route::get('/{player}/friends', PlayerFriendsController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('friends');
     });
+});
+
+// The management area's Google sign-in, opened as full pages: every refusal is a redirect to the
+// frontend (ManagementPageErrors). The session is started here explicitly: Google's callback
+// carries Google's Referer, so statefulApi() would not start it. And statefulApi() is left out:
+// on the redirect (the website's Referer) it would start the session a second time around this
+// one, and the second cookie decryption gave the browser a new, empty session. Its
+// AuthenticateSession comes along explicitly: it ends a session whose password was changed or
+// reset elsewhere (bootstrap/app.php keeps it before auth:sanctum).
+Route::prefix('management/google')->name('management.google.')
+    ->withoutMiddleware(EnsureFrontendRequestsAreStateful::class)
+    ->middleware([ManagementPageErrors::class, EncryptCookies::class, AddQueuedCookiesToResponse::class, StartSession::class, AuthenticateSession::class, 'auth:sanctum', 'throttle:management'])
+    ->group(function () {
+        Route::get('/redirect', GoogleRedirectController::class)->name('redirect');
+        Route::get('/callback', GoogleCallbackController::class)->name('callback');
+    });
+
+// The management area's own state: normal SPA routes (unlike the Google pages above). /me makes
+// the guard's own check (ManagementAccess) but answers "not signed in" instead of a 403; the logout
+// needs only the website login. Every later management route sits in a group with the `management`
+// middleware (the full guard): /me, the logout and google.* are the only routes without it.
+Route::middleware('auth:sanctum')->prefix('management')->name('management.')->group(function () {
+    Route::get('/me', ManagementMeController::class)->name('me');
+    Route::post('/logout', ManagementLogoutController::class)->name('logout');
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {

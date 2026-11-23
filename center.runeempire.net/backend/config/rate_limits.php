@@ -124,4 +124,12 @@ return [
         'per_minute' => max(1, (int) env('RATE_LIMITS_PLAYER_PROFILE_PER_MINUTE', 120)),
     ],
 
+    /*
+     * The management area's Google sign-in (GET /api/management/google/redirect
+     * and /callback together), per account. One sign-in is two requests.
+     */
+    'management' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_MANAGEMENT_PER_MINUTE', 10)),
+    ],
+
 ];

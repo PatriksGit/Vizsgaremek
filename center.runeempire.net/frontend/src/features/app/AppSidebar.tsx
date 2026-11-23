@@ -1,6 +1,6 @@
 import { Menu as MenuPrimitive } from '@base-ui/react/menu'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faChevronRight, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight, faGear, faRightFromBracket, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 import { toast } from 'sonner'
@@ -23,6 +23,7 @@ import {
 import { site } from '@/config/site'
 import { formMessage } from '@/features/auth/errors'
 import { useAccount, useLogout } from '@/features/auth/queries'
+import { GOOGLE_REDIRECT_URL } from '@/features/management/api'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
@@ -240,6 +241,17 @@ function PlayerCard() {
         sideOffset={8}
         className="w-(--anchor-width) rounded-xl border border-[#2f2a21] p-1.5 shadow-[0_12px_32px_rgb(0_0_0/0.55)] ring-0"
       >
+        {account?.can_manage && (
+          <MenuPrimitive.LinkItem
+            closeOnClick
+            // A full-page link, not the router's: the backend skips Google when the grant is still live.
+            render={<a href={GOOGLE_REDIRECT_URL} aria-current={isPage('/management', pathname) ? 'page' : undefined} />}
+            className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
+          >
+            <FontAwesomeIcon icon={faShieldHalved} className="size-3.75 text-muted-foreground" aria-hidden="true" />
+            Management
+          </MenuPrimitive.LinkItem>
+        )}
         <MenuPrimitive.LinkItem
           closeOnClick
           render={<Link to={ACCOUNT_NAV.to} aria-current={current ? 'page' : undefined} />}

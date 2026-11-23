@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
-#[Signature('user:register {username?} {email?} {--password=}')]
-#[Description('Register a new user')]
-class RegisterUser extends Command
+#[Signature('create:user {username?} {email?} {--password=}')]
+#[Description('Create a new user')]
+class CreateUser extends Command
 {
     /**
      * Execute the console command.

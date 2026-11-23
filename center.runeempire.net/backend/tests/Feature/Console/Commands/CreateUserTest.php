@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
-class RegisterUserTest extends TestCase
+class CreateUserTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
@@ -16,7 +16,7 @@ class RegisterUserTest extends TestCase
     {
         Notification::fake();
 
-        $this->artisan('user:register', ['username' => 'PatrikT', 'email' => 'Patrik@Example.com', '--password' => 'titkos-jelszo'])
+        $this->artisan('create:user', ['username' => 'PatrikT', 'email' => 'Patrik@Example.com', '--password' => 'titkos-jelszo'])
             ->expectsOutputToContain('User [PatrikT] registered.')
             ->assertSuccessful();
 
@@ -35,7 +35,7 @@ class RegisterUserTest extends TestCase
     {
         $password = '$argon2id$v=19$m=1024,t=1,p=1$YWFhYWFhYWE$YWFhYWFhYWFhYWFhYWFhYQ';
 
-        $this->artisan('user:register', ['username' => 'PatrikT', 'email' => 'patrik@example.com', '--password' => $password])
+        $this->artisan('create:user', ['username' => 'PatrikT', 'email' => 'patrik@example.com', '--password' => $password])
             ->assertSuccessful();
 
         $hash = Account::query()->sole()->password_hash;
@@ -45,7 +45,7 @@ class RegisterUserTest extends TestCase
 
     public function test_asks_for_missing_values(): void
     {
-        $this->artisan('user:register')
+        $this->artisan('create:user')
             ->expectsQuestion('Username', 'PatrikT')
             ->expectsQuestion('Email', 'patrik@example.com')
             ->expectsQuestion('Password', 'titkos-jelszo')
@@ -58,7 +58,7 @@ class RegisterUserTest extends TestCase
 
     public function test_fails_when_the_confirmation_does_not_match(): void
     {
-        $this->artisan('user:register', ['username' => 'PatrikT', 'email' => 'patrik@example.com'])
+        $this->artisan('create:user', ['username' => 'PatrikT', 'email' => 'patrik@example.com'])
             ->expectsQuestion('Password', 'titkos-jelszo')
             ->expectsQuestion('Confirm password', 'masik-jelszo')
             ->expectsOutputToContain('A két jelszó nem egyezik.')
@@ -71,7 +71,7 @@ class RegisterUserTest extends TestCase
     {
         Account::factory()->create(['display_name' => 'PatrikT']);
 
-        $this->artisan('user:register', ['username' => 'PATRIKT', 'email' => 'patrik@example.com', '--password' => 'titkos-jelszo'])
+        $this->artisan('create:user', ['username' => 'PATRIKT', 'email' => 'patrik@example.com', '--password' => 'titkos-jelszo'])
             ->expectsOutputToContain('Ezt a játékosnevet már regisztrálták.')
             ->assertFailed();
 
@@ -82,7 +82,7 @@ class RegisterUserTest extends TestCase
     {
         Account::factory()->create(['email' => 'patrik@example.com']);
 
-        $this->artisan('user:register', ['username' => 'PatrikT', 'email' => 'PATRIK@example.com', '--password' => 'titkos-jelszo'])
+        $this->artisan('create:user', ['username' => 'PatrikT', 'email' => 'PATRIK@example.com', '--password' => 'titkos-jelszo'])
             ->expectsOutputToContain('Ez az e-mail cím már használatban van.')
             ->assertFailed();
 
@@ -93,7 +93,7 @@ class RegisterUserTest extends TestCase
     {
         $this->logAuthQueries();
 
-        $this->artisan('user:register', ['username' => 'Patrík', 'email' => 'patrik@example.com', '--password' => 'titkos-jelszo'])
+        $this->artisan('create:user', ['username' => 'Patrík', 'email' => 'patrik@example.com', '--password' => 'titkos-jelszo'])
             ->expectsOutputToContain('Játékosnév formátuma érvénytelen.')
             ->assertFailed();
 

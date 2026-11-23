@@ -68,6 +68,7 @@ class LoginControllerTest extends TestCase
             'display_name' => 'PatrikT',
             'email' => $account->email,
             'two_factor_enabled' => false,
+            'can_manage' => false,
             'registered_at' => $account->refresh()->created_at->toIso8601String(),
         ]]);
         $this->assertAuthenticatedAs($account, 'web');

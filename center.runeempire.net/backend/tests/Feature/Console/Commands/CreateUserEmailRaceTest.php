@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * Review 2026-11-16, AUTH-6: an operator runs user:register while a website registration of
+ * Review 2026-11-16, AUTH-6: an operator runs create:user while a website registration of
  * another name with the same email is being redeemed. The other account is
  * inserted between the command's validation and its own insert (forced with
  * a one-shot model event, the project's way of forcing races), 10 rounds.
  */
-class RegisterUserEmailRaceTest extends TestCase
+class CreateUserEmailRaceTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
@@ -43,7 +43,7 @@ class RegisterUserEmailRaceTest extends TestCase
     }
 
     /**
-     * Run the race once; the console output of user:register.
+     * Run the race once; the console output of create:user.
      */
     private function round(int $round, bool $emailClash): string
     {
@@ -57,7 +57,7 @@ class RegisterUserEmailRaceTest extends TestCase
             ? ['display_name' => 'Other'.$round, 'email' => $email]
             : ['display_name' => strtolower($name), 'email' => "other{$round}@example.com"]);
 
-        $exitCode = Artisan::call('user:register', ['username' => $name, 'email' => $email, '--password' => 'titkos-jelszo']);
+        $exitCode = Artisan::call('create:user', ['username' => $name, 'email' => $email, '--password' => 'titkos-jelszo']);
         $this->assertSame(1, $exitCode);
 
         return Artisan::output();

@@ -1,19 +1,21 @@
-import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { faRightFromBracket, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { toast } from 'sonner'
 
 import { panelLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { site } from '@/config/site'
 import type { Account } from '@/features/auth/api'
 import { formMessage } from '@/features/auth/errors'
 import { useAccount, useLogout } from '@/features/auth/queries'
+import { GOOGLE_REDIRECT_URL } from '@/features/management/api'
 import { NO_DATA } from '@/features/home/stats'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 import { PasswordRow } from './PasswordRow'
+import { SettingsRow } from './SettingsRow'
 import { TwoFactorRow } from './TwoFactorRow'
 
 /**
@@ -40,6 +42,23 @@ export function AccountPage() {
         <div className={cn(panelLook, 'divide-y divide-border p-0')}>
           <PasswordRow username={account.username} />
           <TwoFactorRow enabled={account.two_factor_enabled} />
+          {/* The sidebar's account menu is a desktop thing: phones reach the management page from here. */}
+          {account.can_manage && (
+            <div className="md:hidden">
+              <SettingsRow
+                id="management-title"
+                icon={faShieldHalved}
+                title="Management"
+                description="A szerver kezelőfelülete, Google-fiókkal léphetsz be."
+                action={
+                  // A full-page link, like the sidebar's: the backend's Google redirect.
+                  <a href={GOOGLE_REDIRECT_URL} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+                    Megnyitás
+                  </a>
+                }
+              />
+            </div>
+          )}
         </div>
       </section>
 

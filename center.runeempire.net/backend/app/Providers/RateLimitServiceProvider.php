@@ -57,6 +57,8 @@ class RateLimitServiceProvider extends ServiceProvider
 
         RateLimiter::for('player-profile', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.player_profile.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));
 
+        RateLimiter::for('management', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.management.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));
+
         RateLimiter::for('skins', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.skins.per_minute'))->by(RateLimitClient::of($request))->response(self::tooManyAttempts()));
     }
 

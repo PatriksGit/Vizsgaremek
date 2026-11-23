@@ -96,5 +96,12 @@
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <env name="SESSION_DRIVER" value="array" force="true"/>
+        <!-- The management area's Google sign-in: fake client values (Google is faked in the tests). -->
+        <env name="GOOGLE_CLIENT_ID" value="test-client-id.apps.googleusercontent.com" force="true"/>
+        <env name="GOOGLE_CLIENT_SECRET" value="test-client-secret" force="true"/>
+        <env name="GOOGLE_REDIRECT_URI" value="http://localhost:5173/api/management/google/callback" force="true"/>
+        <env name="FRONTEND_URL" value="http://localhost:5173" force="true"/>
+        <env name="MANAGEMENT_SESSION_MINUTES" value="30" force="true"/>
+        <env name="RATE_LIMITS_MANAGEMENT_PER_MINUTE" value="10" force="true"/>
     </php>
 </phpunit>

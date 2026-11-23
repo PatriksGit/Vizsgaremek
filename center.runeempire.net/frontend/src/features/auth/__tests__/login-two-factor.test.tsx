@@ -17,6 +17,7 @@ const ACCOUNT = {
   display_name: 'Steve_01',
   email: 'steve@example.com',
   two_factor_enabled: true,
+  can_manage: false,
   registered_at: '2026-01-01T00:00:00Z',
 }
 const WRONG = 'Hibás kód. Nézd meg újra az alkalmazásban, a kód 30 másodpercenként változik.'
