@@ -18,7 +18,7 @@ export type Account = {
 type Wrapped<T> = { data: T }
 
 /** A login either logs in, or (a 2FA account, 202) waits for the authenticator code on this browser session. */
-export type LoginResult = { account: Account; twoFactorRequired?: never } | { account?: never; twoFactorRequired: true }
+type LoginResult = { account: Account; twoFactorRequired?: never } | { account?: never; twoFactorRequired: true }
 
 export async function login(credentials: { username: string; password: string }): Promise<LoginResult> {
   const response = await http.post<Wrapped<Account>>('/auth/login', credentials)
@@ -29,22 +29,6 @@ export async function login(credentials: { username: string; password: string })
 export async function loginWithTwoFactor(code: string): Promise<Account> {
   const response = await http.post<Wrapped<Account>>('/auth/login/two-factor', { code })
   return response.data.data
-}
-
-/** A 2FA secret to switch on, kept on the server until a code from the app confirms it. */
-export type TwoFactorSetup = { secret: string; otpauthUrl: string }
-
-export async function startTwoFactorSetup(): Promise<TwoFactorSetup> {
-  const response = await http.post<Wrapped<{ secret: string; otpauth_url: string }>>('/auth/two-factor/setup')
-  return { secret: response.data.data.secret, otpauthUrl: response.data.data.otpauth_url }
-}
-
-export async function enableTwoFactor(code: string): Promise<void> {
-  await http.post('/auth/two-factor/enable', { code })
-}
-
-export async function disableTwoFactor(code: string): Promise<void> {
-  await http.post('/auth/two-factor/disable', { code })
 }
 
 /** Ends the session. A session that already ended (401) counts as logged out. */
@@ -72,7 +56,7 @@ export async function fetchCurrentAccount(): Promise<Account | null> {
   }
 }
 
-export type RegistrationRequest = {
+type RegistrationRequest = {
   displayName: string
   email: string
   password: string
@@ -116,24 +100,12 @@ function localTime(serverIso: string, dateHeader: unknown): number {
 }
 
 /** A password reset code that went out; the times are epoch ms on the visitor's clock. */
-export type ResetCodeSent = {
+type ResetCodeSent = {
   email: string
   /** Until when the code works. */
   expiresAt: number
   /** From when "Kód újraküldése" may be used. */
   resendAt: number
-}
-
-/**
- * Changes the logged-in player's password. This browser stays logged in (under a
- * new session id); every other session of the account ends on its next request.
- */
-export async function changePassword(request: { currentPassword: string; password: string; passwordConfirmation: string }): Promise<void> {
-  await http.put('/auth/password', {
-    current_password: request.currentPassword,
-    password: request.password,
-    password_confirmation: request.passwordConfirmation,
-  })
 }
 
 /** Forgotten password, step 1: mails a code to the account of this address. */

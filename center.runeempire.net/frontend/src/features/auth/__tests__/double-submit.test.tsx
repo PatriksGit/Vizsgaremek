@@ -40,7 +40,7 @@ describe('double submits', () => {
     expect(calls.filter((call) => call === 'POST /auth/login')).toHaveLength(1)
   })
 
-  it('registration code: two clicks on "Fiók létrehozása", one verify', async () => {
+  it('registration code: the last digit sends it, two clicks on "Fiók létrehozása" add nothing: one verify', async () => {
     const calls = installFakeBackend({
       'POST /auth/register': () => ({ status: 202, data: { data: { email: 'steve@example.com', expires_at: new Date(Date.now() + 900_000).toISOString() } } }),
       'POST /auth/register/verify': slow({ status: 422, data: { message: 'A kód érvénytelen vagy lejárt.', errors: { code: ['A kód érvénytelen vagy lejárt.'] } } }),
@@ -55,9 +55,12 @@ describe('double submits', () => {
     await screen.findByText('Nézd meg az e-mailed')
 
     fireEvent.change(screen.getByLabelText('Megerősítő kód'), { target: { value: '123456' } })
-    const create = screen.getByRole('button', { name: 'Fiók létrehozása' })
+    // The last digit already sent the code (auth K1): the button reads "Fiók létrehozása…" now.
+    const create = screen.getByRole('button', { name: /^Fiók létrehozása/ })
     fireEvent.click(create)
     await wait(10)
+    // The code field waits too while the code is checked (auth K1).
+    expect((screen.getByLabelText('Megerősítő kód') as HTMLInputElement).disabled).toBe(true)
     fireEvent.click(create)
     fireEvent.click(screen.getByRole('button', { name: 'Új kódot kérek' }))
     await wait(300)

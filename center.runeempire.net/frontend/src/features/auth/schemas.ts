@@ -26,6 +26,22 @@ export const CODE_LENGTH = 6
 /** An authenticator app's code: always 6 digits (the TOTP contract with RuneAuth), whatever the e-mail codes are. */
 export const TOTP_LENGTH = 6
 
+/** The new-password field's hint (registration, forgotten password). */
+export const PASSWORD_HINT =
+  `Min. ${PASSWORD_MIN_LENGTH} karakter, szóköz nélkül: magyar vagy angol betűk, számok és alap jelek (pl. ! @ # _ -).`
+
+/** The resend toast (registration, forgotten password). */
+export const CODE_RESENT_MESSAGE = 'Új kódot küldtünk. A korábbi kód már nem érvényes.'
+
+/** The new password typed twice must match (registration, reset, change). */
+const passwordsMatch = (values: { password: string; passwordConfirmation: string }) =>
+  values.password === values.passwordConfirmation
+const passwordsDiffer = { error: 'A két jelszó nem egyezik.', path: ['passwordConfirmation'] }
+
+/** A code of `length` digits: the e-mailed one or an authenticator app's. */
+const digitCode = (length: number) =>
+  z.object({ code: z.string().regex(new RegExp(`^\\d{${length}}$`), { error: `Írd be mind a ${length} számjegyet.` }) })
+
 export const loginSchema = z.object({
   username: z.string().trim().min(1, { error: 'Add meg a játékosneved.' }),
   password: z.string().min(1, { error: 'Add meg a jelszavad.' }),
@@ -66,10 +82,7 @@ export const registerSchema = z
     /** The hidden bot trap (HoneypotField): only a bot ticks it. */
     newsletter: z.boolean().optional(),
   })
-  .refine((values) => values.password === values.passwordConfirmation, {
-    error: 'A két jelszó nem egyezik.',
-    path: ['passwordConfirmation'],
-  })
+  .refine(passwordsMatch, passwordsDiffer)
 
 export type RegisterValues = z.infer<typeof registerSchema>
 
@@ -82,9 +95,7 @@ export const registerFieldForKey: Partial<Record<string, keyof RegisterValues>> 
   age_confirmed: 'ageConfirmed',
 }
 
-export const codeSchema = z.object({
-  code: z.string().regex(new RegExp(`^\\d{${CODE_LENGTH}}$`), { error: `Írd be mind a ${CODE_LENGTH} számjegyet.` }),
-})
+export const codeSchema = digitCode(CODE_LENGTH)
 
 export type CodeValues = z.infer<typeof codeSchema>
 
@@ -100,10 +111,7 @@ export type ForgotEmailValues = z.infer<typeof forgotEmailSchema>
  */
 export const newPasswordSchema = z
   .object({ password, passwordConfirmation: z.string(), twoFactorCode: z.string().optional() })
-  .refine((values) => values.password === values.passwordConfirmation, {
-    error: 'A két jelszó nem egyezik.',
-    path: ['passwordConfirmation'],
-  })
+  .refine(passwordsMatch, passwordsDiffer)
 
 export type NewPasswordValues = z.infer<typeof newPasswordSchema>
 
@@ -114,10 +122,7 @@ export const changePasswordSchema = z
     password,
     passwordConfirmation: z.string(),
   })
-  .refine((values) => values.password === values.passwordConfirmation, {
-    error: 'A két jelszó nem egyezik.',
-    path: ['passwordConfirmation'],
-  })
+  .refine(passwordsMatch, passwordsDiffer)
   // The backend's `different` rule, with its message.
   .refine((values) => values.password !== values.currentPassword, {
     error: 'Az új jelszó nem lehet ugyanaz, mint a jelenlegi.',
@@ -127,6 +132,4 @@ export const changePasswordSchema = z
 export type ChangePasswordValues = z.infer<typeof changePasswordSchema>
 
 /** An authenticator app's 6-digit code (login step, switching 2FA on and off). Same shape as the e-mail code's form. */
-export const totpSchema = z.object({
-  code: z.string().regex(new RegExp(`^\\d{${TOTP_LENGTH}}$`), { error: `Írd be mind a ${TOTP_LENGTH} számjegyet.` }),
-})
+export const totpSchema = digitCode(TOTP_LENGTH)

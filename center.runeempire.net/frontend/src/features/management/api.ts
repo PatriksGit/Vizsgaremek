@@ -94,7 +94,12 @@ export function useOpenManagement() {
     checking.current = true
     const from = here.current
     try {
-      const me = await client.fetchQuery({ queryKey: ['management', 'me', account?.uuid], queryFn: fetchManagementMe, staleTime: 0, retry: false })
+      const me = await client.fetchQuery({
+        queryKey: ['management', 'me', account?.uuid],
+        queryFn: fetchManagementMe,
+        staleTime: 0,
+        retry: false,
+      })
       if (here.current !== from) return
       if (me.signed_in) navigate('/management')
       else window.location.assign(GOOGLE_REDIRECT_URL)

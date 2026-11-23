@@ -7,6 +7,8 @@ import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
+import { linkButtonClass } from './styles'
+
 type TextFieldProps = Omit<ComponentProps<'input'>, 'id'> & {
   label: string
   /** Shown inside the input, at its left edge. */
@@ -30,6 +32,31 @@ export function HoneypotField(props: Omit<ComponentProps<'input'>, 'type'>) {
         <input type="checkbox" tabIndex={-1} autoComplete="off" {...props} />
       </label>
     </div>
+  )
+}
+
+/**
+ * "Már megkaptad a kódot? Írd be" after the cooldown's 429 (a code went to this
+ * address a moment ago): shown only while the typed address is the one it came for.
+ */
+type CodeMayBeOutHintProps = {
+  /** The address the cooldown's 429 came for; null: no hint. */
+  offeredFor: string | null
+  /** The address in the field now. */
+  typed: string
+  onEnter: (email: string) => void
+}
+
+export function CodeMayBeOutHint({ offeredFor, typed, onEnter }: CodeMayBeOutHintProps) {
+  if (offeredFor === null || offeredFor !== typed.trim().toLowerCase()) return null
+
+  return (
+    <p className="text-sm text-muted-foreground">
+      Már megkaptad a kódot?{' '}
+      <button type="button" onClick={() => onEnter(offeredFor)} className={linkButtonClass}>
+        Írd be
+      </button>
+    </p>
   )
 }
 

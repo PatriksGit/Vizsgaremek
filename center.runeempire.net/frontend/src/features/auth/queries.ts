@@ -19,7 +19,12 @@ export const accountQueryKey = ['account'] as const
 export function useAccount() {
   return useQuery({
     queryKey: accountQueryKey,
-    queryFn: fetchCurrentAccount,
+    queryFn: async () => {
+      const account = await fetchCurrentAccount()
+      // Logged in again, maybe in another tab: the logout is no longer the last word.
+      if (account) loggedOutOnPurpose = false
+      return account
+    },
     // Rechecked when the player comes back to the tab, so an expired session shows.
     staleTime: 60_000,
     // An unreachable backend shows the error page at once instead of after retries.

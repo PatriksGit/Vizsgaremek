@@ -1,19 +1,18 @@
 import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 
 import type { PendingRegistration } from './api'
 import { CodeField } from './CodeField'
-import { applyApiError, formMessage } from './errors'
+import { formMessage } from './errors'
 import { FormAlert } from './FormAlert'
 import { useVerifyRegistration } from './queries'
-import { CODE_LENGTH, codeSchema, type CodeValues } from './schemas'
-import { linkButtonClass } from './styles'
+import { CODE_LENGTH, CODE_RESENT_MESSAGE, codeSchema } from './schemas'
+import { linkButtonClass, submitButtonClass } from './styles'
+import { useCodeForm } from './useCodeForm'
 
 type RegisterCodeStepProps = {
   pending: PendingRegistration
@@ -24,7 +23,16 @@ type RegisterCodeStepProps = {
 
 export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStepProps) {
   const verify = useVerifyRegistration()
-  const form = useForm<CodeValues>({ resolver: zodResolver(codeSchema), defaultValues: { code: '' } })
+  // Sent on the last digit like every other code field (review 2026-11-23 auth K1); a wrong code empties the boxes.
+  const { form, submit } = useCodeForm({
+    schema: codeSchema,
+    // Leaving this step unmounts it, and "Javítsd ki" waits for the answer.
+    active: true,
+    send: async (code) => {
+      // The account exists and the player is logged in: the login page sends them on.
+      await verify.mutateAsync({ email: pending.email, code })
+    },
+  })
   const [resending, setResending] = useState(false)
   const { errors, isSubmitting } = form.formState
   // One action at a time: a resend invalidates the code being verified, and
@@ -36,15 +44,6 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
   const headingRef = useRef<HTMLHeadingElement>(null)
   useEffect(() => headingRef.current?.focus(), [])
 
-  const submit = form.handleSubmit(async ({ code }) => {
-    try {
-      // The account exists and the player is logged in: the login page sends them on.
-      await verify.mutateAsync({ email: pending.email, code })
-    } catch (error) {
-      applyApiError(error, form.setError, { code: 'code' })
-    }
-  })
-
   async function resend() {
     form.clearErrors()
     setResending(true)
@@ -52,7 +51,7 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
       // Refused details took the player back to the details step: no code went out.
       if (!(await onResend())) return
       form.reset({ code: '' })
-      toast.success('Új kódot küldtünk. A korábbi kód már nem érvényes.')
+      toast.success(CODE_RESENT_MESSAGE)
     } catch (error) {
       form.setError('root.server', { message: formMessage(error) })
     } finally {
@@ -61,7 +60,7 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-6">
+    <form onSubmit={(event) => void submit(event)} noValidate className="flex flex-col gap-6">
       <div>
         <h2 ref={headingRef} tabIndex={-1} className="font-heading text-2xl leading-tight text-foreground outline-none">
           Nézd meg az e-mailed
@@ -79,14 +78,16 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
 
       <FormAlert message={errors.root?.server?.message} />
 
-      <CodeField id="registration-code" label="Megerősítő kód" control={form.control} />
+      <CodeField
+        id="registration-code"
+        label="Megerősítő kód"
+        control={form.control}
+        disabled={busy}
+        onComplete={() => void submit()}
+      />
 
       <div className="flex flex-col gap-3">
-        <Button
-          type="submit"
-          disabled={busy}
-          className="h-11 w-full rounded-lg text-base font-semibold md:h-10"
-        >
+        <Button type="submit" disabled={busy} className={submitButtonClass}>
           <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
           {isSubmitting ? 'Fiók létrehozása…' : 'Fiók létrehozása'}
         </Button>

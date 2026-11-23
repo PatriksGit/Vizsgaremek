@@ -8,18 +8,22 @@ import { Link, useLocation } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
 import { ApiError } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
 import { CodeField } from './CodeField'
-import { applyApiError, formMessage } from './errors'
+import { formMessage } from './errors'
 import { PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
+import { useFromState } from './fromState'
 import { useLogin, useLoginWithTwoFactor } from './queries'
-import { loginSchema, TOTP_LENGTH, totpSchema, type CodeValues, type LoginValues } from './schemas'
+import { loginSchema, TOTP_LENGTH, type LoginValues } from './schemas'
+import { quietLinkClass, submitButtonClass } from './styles'
+import { useCodeForm } from './useCodeForm'
 
 /** Router state the forgotten password panel leaves after a reset: the name to log in with. */
 type ResetState = { username?: string } | null
 
-const submitClass = 'mt-2 h-11 w-full rounded-lg text-base font-semibold md:h-10'
+const submitClass = cn('mt-2', submitButtonClass)
 
 export function LoginForm() {
   const login = useLogin()
@@ -28,24 +32,43 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
     defaultValues: { username: '', password: '' },
   })
-  const codeForm = useForm<CodeValues>({ resolver: zodResolver(totpSchema), defaultValues: { code: '' } })
   const { errors, isSubmitting } = form.formState
   // The password of a 2FA account checked out: the authenticator code comes next (2026-11-22).
   const [askingCode, setAskingCode] = useState(false)
-  // Set before a request starts, so the auto-submit and a click in the same moment send one code.
-  const sendingCode = useRef(false)
+  // Leaving the code step (Vissza a jelszóhoz, a reset) drops the answer to a code still on its way (AUTH-2).
+  const { form: codeForm, submit: submitCode } = useCodeForm({
+    active: askingCode,
+    // Logged in: the login page sends the player on to the home page.
+    send: async (code) => {
+      await loginWithTwoFactor.mutateAsync(code)
+    },
+    onRefused: (error) => {
+      if (!(error instanceof ApiError && error.code === 'auth.two_factor_expired')) return false
+      backToPassword(error.message)
+      return true
+    },
+  })
+
+  const fromState = useFromState()
 
   // This form stays mounted behind the other panels, so the name comes in later, not as a default.
   const resetUsername = (useLocation().state as ResetState)?.username
+  // A reset also ends a code step the player left open (the browser's Back from it to the panel).
+  const [lastResetUsername, setLastResetUsername] = useState(resetUsername)
+  if (resetUsername !== lastResetUsername) {
+    setLastResetUsername(resetUsername)
+    if (resetUsername) setAskingCode(false)
+  }
   useEffect(() => {
     if (resetUsername) {
-      // The failed login that sent the player to the reset is over too.
+      // The failed login (or code) that sent the player to the reset is over too.
+      codeForm.reset({ code: '' })
       form.clearErrors()
       form.setValue('username', resetUsername)
       form.setValue('password', '')
       form.setFocus('password')
     }
-  }, [resetUsername, form])
+  }, [resetUsername, form, codeForm])
 
   // Focus moves with the step, once its field is on the page.
   const wasAskingCode = useRef(false)
@@ -74,28 +97,9 @@ export function LoginForm() {
     }
   })
 
-  const onCode = async ({ code }: CodeValues) => {
-    if (sendingCode.current) return
-    sendingCode.current = true
-    try {
-      // Logged in: the login page sends the player on to the home page.
-      await loginWithTwoFactor.mutateAsync(code)
-    } catch (error) {
-      if (error instanceof ApiError && error.code === 'auth.two_factor_expired') {
-        backToPassword(error.message)
-        return
-      }
-      codeForm.reset({ code: '' })
-      applyApiError(error, codeForm.setError, { code: 'code' })
-      codeForm.setFocus('code')
-    } finally {
-      sendingCode.current = false
-    }
-  }
-
   if (askingCode) {
     return (
-      <form onSubmit={(event) => void codeForm.handleSubmit(onCode)(event)} noValidate>
+      <form onSubmit={(event) => void submitCode(event)} noValidate>
         <FieldGroup>
           <div className="flex flex-col gap-1.5">
             <h2 className="font-heading text-xl font-bold text-foreground">Kétlépcsős azonosítás</h2>
@@ -108,7 +112,7 @@ export function LoginForm() {
             length={TOTP_LENGTH}
             control={codeForm.control}
             disabled={codeForm.formState.isSubmitting}
-            onComplete={() => void codeForm.handleSubmit(onCode)()}
+            onComplete={() => void submitCode()}
           />
           <Button type="submit" disabled={codeForm.formState.isSubmitting} className={submitClass}>
             <FontAwesomeIcon icon={faRightToBracket} aria-hidden="true" />
@@ -117,7 +121,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => backToPassword()}
-            className="inline-flex items-center gap-2 self-center rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+            className={cn('inline-flex items-center gap-2 self-center', quietLinkClass)}
           >
             <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" className="size-3" />
             Vissza a jelszóhoz
@@ -148,11 +152,8 @@ export function LoginForm() {
             error={errors.password?.message}
             {...form.register('password')}
           />
-          {/* The panel slides in on the same card, so what was typed here stays. */}
-          <Link
-            to="/forgot-password"
-            className="self-end rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
+          {/* The panel slides in on the same card, so what was typed here stays; the page asked for comes along. */}
+          <Link to="/forgot-password" state={fromState} className={cn('self-end', quietLinkClass)}>
             Elfelejtetted a jelszavad?
           </Link>
         </div>

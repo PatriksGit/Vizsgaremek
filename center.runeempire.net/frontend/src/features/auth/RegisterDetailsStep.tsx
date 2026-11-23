@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field, FieldContent, FieldError, FieldGroup } from '@/components/ui/field'
 import { ApiError } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
 import { applyApiError } from './errors'
-import { HoneypotField, PasswordField, TextField } from './fields'
+import { CodeMayBeOutHint, HoneypotField, PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
 import { LegalDialog } from './LegalDialog'
-import { PASSWORD_MIN_LENGTH, registerFieldForKey, type RegisterValues } from './schemas'
-import { linkButtonClass } from './styles'
+import { PASSWORD_HINT, registerFieldForKey, type RegisterValues } from './schemas'
+import { submitButtonClass } from './styles'
 
 type RegisterDetailsStepProps = {
   /** Sends the details; resolves once the code is on its way. */
@@ -52,14 +53,7 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode 
     <form onSubmit={submit} noValidate>
       <FieldGroup className="gap-4">
         <FormAlert message={errors.root?.server?.message} />
-        {codeMayBeOut !== null && codeMayBeOut === typedEmail.trim().toLowerCase() && (
-          <p className="text-sm text-muted-foreground">
-            Már megkaptad a kódot?{' '}
-            <button type="button" onClick={() => onEnterCode(codeMayBeOut)} className={linkButtonClass}>
-              Írd be
-            </button>
-          </p>
-        )}
+        <CodeMayBeOutHint offeredFor={codeMayBeOut} typed={typedEmail} onEnter={onEnterCode} />
         <TextField
           label="Játékosnév"
           icon={faUser}
@@ -86,7 +80,7 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode 
           <PasswordField
             label="Jelszó"
             autoComplete="new-password"
-            description={`Min. ${PASSWORD_MIN_LENGTH} karakter, szóköz nélkül: magyar vagy angol betűk, számok és alap jelek (pl. ! @ # _ -).`}
+            description={PASSWORD_HINT}
             error={errors.password?.message}
             {...form.register('password')}
           />
@@ -112,11 +106,7 @@ export function RegisterDetailsStep({ onSubmit, focusEmail = false, onEnterCode 
           </ConsentField>
         </div>
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="mt-1 h-11 w-full rounded-lg text-base font-semibold md:h-10"
-        >
+        <Button type="submit" disabled={isSubmitting} className={cn('mt-1', submitButtonClass)}>
           <FontAwesomeIcon icon={faPaperPlane} aria-hidden="true" />
           {isSubmitting ? 'Kód küldése…' : 'Kód küldése'}
         </Button>

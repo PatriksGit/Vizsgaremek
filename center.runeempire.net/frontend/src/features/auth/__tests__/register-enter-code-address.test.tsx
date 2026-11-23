@@ -64,7 +64,8 @@ async function enterMailedCode(verified: string[]) {
   if (!enterCode) return
   fireEvent.click(enterCode)
   fireEvent.change(screen.getByLabelText('Megerősítő kód'), { target: { value: RIGHT_CODE } })
-  fireEvent.click(screen.getByRole('button', { name: 'Fiók létrehozása' }))
+  // The last digit sends the code by itself (auth K1); a click on the button meanwhile adds nothing.
+  fireEvent.click(screen.getByRole('button', { name: /^Fiók létrehozása/ }))
   await waitFor(() => expect(verified.length).toBe(1))
 }
 

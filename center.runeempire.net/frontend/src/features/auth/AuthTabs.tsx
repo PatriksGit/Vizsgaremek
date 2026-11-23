@@ -2,6 +2,8 @@ import { NavLink } from 'react-router'
 
 import { cn } from '@/lib/utils'
 
+import { useFromState } from './fromState'
+
 export type AuthMode = 'login' | 'register' | 'forgot'
 
 const TABS = [
@@ -11,6 +13,9 @@ const TABS = [
 
 /** Segmented switch between the two forms; the highlight slides along with them. */
 export function AuthTabs({ mode }: { mode: AuthMode }) {
+  // The page a guest asked for stays along when they switch to the registration and back (auth K2).
+  const fromState = useFromState()
+
   return (
     <nav aria-label="Fiók" className="relative grid grid-cols-2 rounded-xl border border-white/10 bg-black/40 p-1">
       <span
@@ -25,6 +30,7 @@ export function AuthTabs({ mode }: { mode: AuthMode }) {
         <NavLink
           key={tab.to}
           to={tab.to}
+          state={fromState}
           className={({ isActive }) =>
             cn(
               'relative rounded-lg py-2 text-center font-medium outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',

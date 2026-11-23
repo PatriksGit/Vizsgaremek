@@ -1,4 +1,4 @@
-import { faEnvelope, faKey, faPaperPlane, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { faCircleCheck, faEnvelope, faKey, faPaperPlane, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
@@ -14,28 +14,29 @@ import { ApiError } from '@/lib/api'
 import { resendAtFromError } from './api'
 import { CodeField } from './CodeField'
 import { applyApiError, formMessage } from './errors'
-import { HoneypotField, PasswordField, TextField } from './fields'
+import { CodeMayBeOutHint, HoneypotField, PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
+import { useFromState } from './fromState'
 import { useRequestPasswordReset, useResetPassword, useVerifyResetCode } from './queries'
 import {
+  CODE_RESENT_MESSAGE,
   codeSchema,
   forgotEmailSchema,
   newPasswordSchema,
-  PASSWORD_MIN_LENGTH,
+  PASSWORD_HINT,
   TOTP_LENGTH,
-  type CodeValues,
+  totpSchema,
   type ForgotEmailValues,
   type NewPasswordValues,
 } from './schemas'
-import { linkButtonClass } from './styles'
+import { linkButtonClass, submitButtonClass as submitClass } from './styles'
+import { useCodeForm } from './useCodeForm'
 import { useCountdown } from './useCountdown'
 
 /** The code that went out: to which address, until when it works (unknown after a reload), from when a new one may be asked. */
 type Sent = { email: string; expiresAt: number | null; resendAt: number }
 
 type Step = 'email' | 'code' | 'password'
-
-const submitClass = 'h-11 w-full rounded-lg text-base font-semibold md:h-10'
 
 /**
  * The forgotten password panel: e-mail, then the mailed code, then the new
@@ -50,6 +51,7 @@ export function ForgotPasswordForm() {
   const requestReset = useRequestPasswordReset()
   const verifyCode = useVerifyResetCode()
   const resetPassword = useResetPassword()
+  const fromState = useFromState()
 
   const [step, setStep] = useState<Step>('email')
   const [sent, setSent] = useState<Sent | null>(null)
@@ -60,12 +62,29 @@ export function ForgotPasswordForm() {
   const [twoFactorRequired, setTwoFactorRequired] = useState(false)
   const [resending, setResending] = useState(false)
   // Set before a request starts, so a second submit in the same moment sends nothing.
-  const verifying = useRef(false)
   const saving = useRef(false)
   const secondsLeft = useCountdown(sent?.resendAt ?? null)
 
   const emailForm = useForm<ForgotEmailValues>({ resolver: zodResolver(forgotEmailSchema), defaultValues: { email: '', newsletter: false } })
-  const codeForm = useForm<CodeValues>({ resolver: zodResolver(codeSchema), defaultValues: { code: '' } })
+  // The mailed code, one at a time (useCodeForm); a refused one gives the field focus once it is enabled again.
+  const { form: codeForm, submit: submitCode } = useCodeForm({
+    schema: codeSchema,
+    active: step === 'code',
+    send: async (code) => {
+      // A code typed while a new one is on its way would be checked against the old one and spend a guess.
+      if (resending || !sent) return
+      setChecking(true)
+      try {
+        const verified = await verifyCode.mutateAsync({ email: sent.email, code })
+        setTwoFactorRequired(verified.twoFactorRequired)
+        setStep('password')
+        askFocus('password')
+      } finally {
+        setChecking(false)
+      }
+    },
+    focusCode: () => askFocus('code'),
+  })
   const passwordForm = useForm<NewPasswordValues>({
     resolver: zodResolver(newPasswordSchema),
     defaultValues: { password: '', passwordConfirmation: '', twoFactorCode: '' },
@@ -87,7 +106,7 @@ export function ForgotPasswordForm() {
   const passwordSection = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const section = step === 'code' ? codeSection.current : step === 'password' ? passwordSection.current : null
-    if (isMobile) section?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+    if (isMobile) section?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [step, isMobile])
 
   // The address typed now: "Írd be" only belongs to the address it was offered for.
@@ -140,28 +159,8 @@ export function ForgotPasswordForm() {
     askFocus('email')
   }
 
-  const onCode = async ({ code }: CodeValues) => {
-    // A code typed while a new one is on its way would be checked against the old one and spend a guess.
-    if (verifying.current || resending || !sent) return
-    verifying.current = true
-    setChecking(true)
-    try {
-      const verified = await verifyCode.mutateAsync({ email: sent.email, code })
-      setTwoFactorRequired(verified.twoFactorRequired)
-      setStep('password')
-      askFocus('password')
-    } catch (error) {
-      codeForm.reset({ code: '' })
-      applyApiError(error, codeForm.setError, { code: 'code' })
-      askFocus('code')
-    } finally {
-      verifying.current = false
-      setChecking(false)
-    }
-  }
-
   const resend = async () => {
-    if (!sent || verifying.current) return
+    if (!sent || checking) return
     setResending(true)
     codeForm.clearErrors()
     try {
@@ -170,7 +169,7 @@ export function ForgotPasswordForm() {
       setSent(next)
       codeForm.reset({ code: '' })
       askFocus('code')
-      toast.success('Új kódot küldtünk. A korábbi kód már nem érvényes.')
+      toast.success(CODE_RESENT_MESSAGE)
     } catch (error) {
       // Refused by the cooldown (another tab asked a moment ago): count down again.
       const resendAt = resendAtFromError(error)
@@ -184,7 +183,7 @@ export function ForgotPasswordForm() {
   const onPassword = async (values: NewPasswordValues) => {
     if (saving.current) return
     const twoFactorCode = values.twoFactorCode?.replace(/\s/g, '') ?? ''
-    if (twoFactorRequired && !new RegExp(`^\\d{${TOTP_LENGTH}}$`).test(twoFactorCode)) {
+    if (twoFactorRequired && !totpSchema.safeParse({ code: twoFactorCode }).success) {
       passwordForm.setError('twoFactorCode', { message: `Írd be a hitelesítő alkalmazásban látható ${TOTP_LENGTH} jegyű kódot.` })
       return
     }
@@ -199,7 +198,8 @@ export function ForgotPasswordForm() {
       startOver()
       toast.success('Megváltozott a jelszavad, most már beléphetsz.')
       // Logged out (the reset ended this account's session, or nobody was logged in): log in with the new one.
-      navigate(account ? '/' : '/login', { state: account ? null : { username } })
+      // A guest keeps the page they asked for before the login (auth K2).
+      navigate(account ? '/' : '/login', { state: account ? null : { ...fromState, username } })
     } catch (error) {
       if (error instanceof ApiError && error.code === 'auth.reset_expired') {
         // The permission ran out: start again from the address.
@@ -248,17 +248,12 @@ export function ForgotPasswordForm() {
             {...emailForm.register('email')}
           />
           <HoneypotField {...emailForm.register('newsletter')} />
-          {codeMayBeOut && !emailLocked && codeMayBeOut.email === typedEmail.trim().toLowerCase() && (
-            <p className="text-sm text-muted-foreground">
-              Már megkaptad a kódot?{' '}
-              <button
-                type="button"
-                className={linkButtonClass}
-                onClick={() => toCodeStep({ email: codeMayBeOut.email, expiresAt: null, resendAt: codeMayBeOut.resendAt })}
-              >
-                Írd be
-              </button>
-            </p>
+          {codeMayBeOut && (
+            <CodeMayBeOutHint
+              offeredFor={emailLocked ? null : codeMayBeOut.email}
+              typed={typedEmail}
+              onEnter={(email) => toCodeStep({ email, expiresAt: null, resendAt: codeMayBeOut.resendAt })}
+            />
           )}
           {emailLocked && sent ? (
             <p className="text-sm text-pretty text-muted-foreground">
@@ -280,7 +275,7 @@ export function ForgotPasswordForm() {
 
       {emailLocked && sent && (
         <Reveal ref={codeSection}>
-          <form onSubmit={(event) => void codeForm.handleSubmit(onCode)(event)} noValidate>
+          <form onSubmit={(event) => void submitCode(event)} noValidate>
             <FieldGroup className="gap-4">
               <FormAlert message={codeForm.formState.errors.root?.server?.message} />
               <CodeField
@@ -289,12 +284,12 @@ export function ForgotPasswordForm() {
                 control={codeForm.control}
                 disabled={checking || resending}
                 success={verified}
-                onComplete={() => void codeForm.handleSubmit(onCode)()}
+                onComplete={() => void submitCode()}
               />
               {!verified && (
                 <div className="flex flex-col gap-3">
                   <Button type="submit" disabled={checking || resending} className={submitClass}>
-                    <FontAwesomeIcon icon={faKey} aria-hidden="true" />
+                    <FontAwesomeIcon icon={faCircleCheck} aria-hidden="true" />
                     Kód ellenőrzése
                   </Button>
                   <Button
@@ -321,7 +316,7 @@ export function ForgotPasswordForm() {
               <PasswordField
                 label="Új jelszó"
                 autoComplete="new-password"
-                description={`Min. ${PASSWORD_MIN_LENGTH} karakter, szóköz nélkül: magyar vagy angol betűk, számok és alap jelek (pl. ! @ # _ -).`}
+                description={PASSWORD_HINT}
                 error={passwordForm.formState.errors.password?.message}
                 {...passwordForm.register('password')}
               />
@@ -345,6 +340,7 @@ export function ForgotPasswordForm() {
                 />
               )}
               <Button type="submit" disabled={passwordForm.formState.isSubmitting} className={submitClass}>
+                <FontAwesomeIcon icon={faKey} aria-hidden="true" />
                 {passwordForm.formState.isSubmitting ? 'Mentés…' : 'Jelszó mentése'}
               </Button>
             </FieldGroup>

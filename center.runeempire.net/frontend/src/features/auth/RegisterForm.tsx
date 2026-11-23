@@ -41,7 +41,9 @@ export function RegisterForm() {
     const details = JSON.stringify(values)
     // Back to look and sent unchanged: the code in the mailbox is still the one.
     if (!fresh && sent.current?.details === details && Date.now() < sent.current.until) {
-      setPending(sent.current.pending)
+      // The minutes left now, not the ones the code had when it was mailed.
+      const minutesLeft = Math.max(1, Math.round((sent.current.until - Date.now()) / 60_000))
+      setPending({ ...sent.current.pending, expiresInMinutes: minutesLeft })
       return
     }
 

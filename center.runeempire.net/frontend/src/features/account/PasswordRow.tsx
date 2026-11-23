@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
-import { changePassword } from '@/features/auth/api'
+import { changePassword } from '@/features/account/api'
 import { applyApiError } from '@/features/auth/errors'
 import { PasswordField } from '@/features/auth/fields'
 import { FormAlert } from '@/features/auth/FormAlert'

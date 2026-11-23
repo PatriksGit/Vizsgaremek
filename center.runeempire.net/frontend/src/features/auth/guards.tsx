@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react'
 import { matchPath, Navigate, useLocation } from 'react-router'
 
+import type { FromState } from './fromState'
 import { endedByLogout, useAccount } from './queries'
-
-/** The page a guest asked for when RequireAccount sent them to log in, in the router's location state. */
-type FromState = { from?: string } | null
 
 /**
  * Only for logged-in players; guests are sent to the login page, remembering

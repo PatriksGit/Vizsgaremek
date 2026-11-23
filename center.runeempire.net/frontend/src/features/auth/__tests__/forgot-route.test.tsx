@@ -42,7 +42,7 @@ describe('the forgotten password address', { timeout: 15_000 }, () => {
 
     expect(await forgotPanelIsActive()).toBe(true)
     expect(document.title).toBe('Elfelejtett jelszó | RuneEmpire')
-    expect(screen.getByRole('link', { name: '← Vissza a belépéshez' }).getAttribute('href')).toBe('/login')
+    expect(screen.getByRole('link', { name: 'Vissza a belépéshez' }).getAttribute('href')).toBe('/login')
   })
 
   it('the login card\'s link opens it', async () => {
@@ -62,7 +62,7 @@ describe('the forgotten password address', { timeout: 15_000 }, () => {
     await open('/forgot-password', ACCOUNT)
 
     expect(await forgotPanelIsActive()).toBe(true)
-    expect(screen.getByRole('link', { name: '← Vissza' }).getAttribute('href')).toBe('/beallitasok')
+    expect(screen.getByRole('link', { name: 'Vissza' }).getAttribute('href')).toBe('/beallitasok')
   })
 
   it('control: a logged-in visitor on the login page is still sent on', async () => {

@@ -2,23 +2,22 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faApple, faGooglePlay } from '@fortawesome/free-brands-svg-icons'
 import { faArrowLeft, faArrowRight, faCheck, faCopy, faMobileScreen, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import QRCode from 'qrcode'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useForm } from 'react-hook-form'
 
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { enableTwoFactor, startTwoFactorSetup } from '@/features/auth/api'
 import { CodeField } from '@/features/auth/CodeField'
-import { applyApiError, formMessage } from '@/features/auth/errors'
+import { formMessage } from '@/features/auth/errors'
 import { FormAlert } from '@/features/auth/FormAlert'
-import { TOTP_LENGTH, totpSchema, type CodeValues } from '@/features/auth/schemas'
+import { TOTP_LENGTH } from '@/features/auth/schemas'
+import { useCodeForm } from '@/features/auth/useCodeForm'
 import { ApiError } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
+import { enableTwoFactor, startTwoFactorSetup } from './api'
 import { AUTHENTICATOR_APPS, groupedKey, useSetTwoFactorEnabled } from './twoFactor'
 
 type Step = 1 | 2 | 3
@@ -153,13 +152,28 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
   const setup = useMutation({ mutationFn: startTwoFactorSetup })
   // A mutation, so a 401 reaches the MutationCache and forgets the account (src/queryClient.ts).
   const enable = useMutation({ mutationFn: enableTwoFactor })
-  const codeForm = useForm<CodeValues>({ resolver: zodResolver(totpSchema), defaultValues: { code: '' } })
   const [step, setStep] = useState<Step>(1)
   const [done, setDone] = useState(false)
   const [copied, setCopied] = useState(false)
-  const sending = useRef(false)
-  // Bumped on every close: an answer that arrives after the dialog closed belongs to no opening.
-  const opening = useRef(0)
+  // Closing (Mégse, Esc, X) ends this opening at once: a late answer shows nothing and asks no new secret.
+  const { form: codeForm, submit: submitCode } = useCodeForm({
+    active: open,
+    send: async (code, isCurrent) => {
+      await enable.mutateAsync(code)
+      // Switched on at the server either way; the success screen only for the opening that asked.
+      setTwoFactorEnabled(true)
+      if (isCurrent()) setDone(true)
+    },
+    onRefused: (error, form) => {
+      if (!(error instanceof ApiError && error.code === 'auth.two_factor_expired')) return false
+      // The 15 minutes ran out: a new secret, to be scanned again.
+      setup.mutate()
+      setCopied(false)
+      setStep(2)
+      form.setError('root.server', { message: `${error.message} Olvasd be az új QR-kódot.` })
+      return true
+    },
+  })
   const titleRef = useRef<HTMLHeadingElement>(null)
 
   // Each opening starts a fresh setup (a new secret); the last one is forgotten on close.
@@ -174,7 +188,6 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
   }, [step, codeForm])
 
   const reset = () => {
-    opening.current += 1
     setup.reset()
     codeForm.reset({ code: '' })
     setStep(1)
@@ -188,33 +201,6 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
       setCopied(true)
     } catch {
       // No clipboard (an old browser, no permission): the key is on screen to type.
-    }
-  }
-
-  const onCode = async ({ code }: CodeValues) => {
-    if (sending.current) return
-    sending.current = true
-    const mine = opening.current
-    try {
-      await enable.mutateAsync(code)
-      // Switched on at the server either way; the success screen only for the opening that asked.
-      setTwoFactorEnabled(true)
-      if (mine === opening.current) setDone(true)
-    } catch (error) {
-      if (mine !== opening.current) return
-      codeForm.reset({ code: '' })
-      if (error instanceof ApiError && error.code === 'auth.two_factor_expired') {
-        // The 15 minutes ran out: a new secret, to be scanned again.
-        setup.mutate()
-        setCopied(false)
-        setStep(2)
-        codeForm.setError('root.server', { message: `${error.message} Olvasd be az új QR-kódot.` })
-        return
-      }
-      applyApiError(error, codeForm.setError, { code: 'code' })
-      codeForm.setFocus('code')
-    } finally {
-      sending.current = false
     }
   }
 
@@ -242,7 +228,7 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
             </Button>
           </div>
         ) : (
-          <form onSubmit={(event) => void codeForm.handleSubmit(onCode)(event)} noValidate className="flex flex-col gap-7">
+          <form onSubmit={(event) => void submitCode(event)} noValidate className="flex flex-col gap-7">
             <div className="flex flex-col gap-5">
               <DialogTitle ref={titleRef} tabIndex={-1} className="pr-10 font-heading text-2xl leading-tight font-bold outline-none md:text-[28px]">
                 Kétlépcsős azonosítás bekapcsolása
@@ -321,7 +307,7 @@ export function TwoFactorSetupDialog({ open, onClose }: { open: boolean; onClose
                       length={TOTP_LENGTH}
                       control={codeForm.control}
                       disabled={!data || isSubmitting}
-                      onComplete={() => void codeForm.handleSubmit(onCode)()}
+                      onComplete={() => void submitCode()}
                     />
                   </div>
                 </div>

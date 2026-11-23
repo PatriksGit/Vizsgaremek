@@ -1,3 +1,5 @@
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { ReactNode } from 'react'
 import { Link, matchPath, useLocation } from 'react-router'
 
@@ -9,9 +11,11 @@ import { cn } from '@/lib/utils'
 import { AuthShowcase } from './AuthShowcase'
 import { AuthTabs, type AuthMode } from './AuthTabs'
 import { ForgotPasswordForm } from './ForgotPasswordForm'
+import { useFromState } from './fromState'
 import { LoginForm } from './LoginForm'
 import { useAccount } from './queries'
 import { RegisterForm } from './RegisterForm'
+import { quietLinkClass } from './styles'
 
 const TITLES: Record<AuthMode, string> = { login: 'Belépés', register: 'Regisztráció', forgot: 'Elfelejtett jelszó' }
 
@@ -95,16 +99,22 @@ function FormSlide({ mode, active, from, header, children }: FormSlideProps) {
   )
 }
 
-/** Back from the forgotten password panel: to the login, or for a logged-in player to the settings. */
+/**
+ * Back from the forgotten password panel: to the login (with the page a guest asked for, auth K2),
+ * or for a logged-in player to the settings.
+ */
 function BackLink() {
   const { data: account } = useAccount()
+  const fromState = useFromState()
 
   return (
     <Link
       to={account ? '/beallitasok' : '/login'}
-      className="self-start rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+      state={account ? null : fromState}
+      className={cn('inline-flex items-center gap-2 self-start', quietLinkClass)}
     >
-      {account ? '← Vissza' : '← Vissza a belépéshez'}
+      <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" className="size-3" />
+      {account ? 'Vissza' : 'Vissza a belépéshez'}
     </Link>
   )
 }
