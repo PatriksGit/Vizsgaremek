@@ -2,7 +2,7 @@
  * The Management menu item and the /management page (owner, 2026-11-23): no
  * login card. The menu goes straight to the backend's Google redirect, which
  * skips Google when the grant is still live; a signed-out /management forwards
- * there at once, and only a failed sign-in (?error=) stops on an error screen.
+ * there at once, and a failed sign-in (?error=) toasts the reason and goes home.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -118,40 +118,42 @@ it('signed out without an error forwards to the Google redirect at once, with no
   expect(document.title).toBe('Management | RuneEmpire')
 })
 
-it('a failed sign-in shows the error screen with a retry link and no redirect', async () => {
-  renderAt('/management?error=management.google_failed', ACCOUNT)
-  expect(await screen.findByText('A Google-belépés most nem sikerült, próbáld újra.')).toBeTruthy()
-  expect(screen.getByRole('heading', { name: 'Management belépés' })).toBeTruthy()
-  expect(screen.getByRole('link', { name: 'Újrapróbálás' }).getAttribute('href')).toBe(GOOGLE)
-  expect(screen.getByRole('link', { name: 'Vissza a főoldalra' }).getAttribute('href')).toBe('/')
+async function expectToastAndHome(text: string, description?: string) {
+  expect(await screen.findByRole('heading', { name: 'Főoldal' })).toBeTruthy()
+  expect(toastMock.error).toHaveBeenCalledTimes(1)
+  expect(toastMock.error).toHaveBeenCalledWith(text, { id: 'management-sign-in', description })
   expect(replace).not.toHaveBeenCalled()
+}
+
+it('a failed sign-in toasts the reason and goes home, with no error page and no redirect', async () => {
+  renderAt('/management?error=management.google_failed', ACCOUNT)
+  await expectToastAndHome('A Google-belépés most nem sikerült, próbáld újra.')
+  expect(screen.queryByText('Management belépés')).toBeNull()
 })
 
-it('an unknown or empty error code shows the generic text, never the raw parameter, and never redirects', async () => {
+it('an unknown or empty error code toasts the generic text, never the raw parameter', async () => {
   renderAt('/management?error=<script>', ACCOUNT)
-  expect(await screen.findByText('A belépés nem sikerült.')).toBeTruthy()
-  expect(document.body.innerHTML).not.toContain('script')
+  await expectToastAndHome('A belépés nem sikerült.')
   cleanup()
+  vi.clearAllMocks()
 
   renderAt('/management?error=', ACCOUNT)
-  expect(await screen.findByText('A belépés nem sikerült.')).toBeTruthy()
-  expect(replace).not.toHaveBeenCalled()
+  await expectToastAndHome('A belépés nem sikerült.')
 })
 
 it('the throttle error uses the backend text', async () => {
   renderAt('/management?error=too_many_requests', ACCOUNT)
-  expect(await screen.findByText('Túl sok próbálkozás, próbáld újra később.')).toBeTruthy()
+  await expectToastAndHome('Túl sok próbálkozás, próbáld újra később.')
 })
 
-it('not_allowed shows the address Google returned, but only when it is an address', async () => {
+it('not_allowed names the address Google returned, but only when it is an address', async () => {
   renderAt('/management?error=management.not_allowed&email=stranger%40example.com', ACCOUNT)
-  expect(await screen.findByText('Ez az e-mail cím nem jogosult a belépésre.')).toBeTruthy()
-  expect(screen.getByText('Ezzel a címmel próbáltad: stranger@example.com')).toBeTruthy()
+  await expectToastAndHome('Ez az e-mail cím nem jogosult a belépésre.', 'Ezzel a címmel próbáltad: stranger@example.com')
   cleanup()
+  vi.clearAllMocks()
 
   renderAt('/management?error=management.not_allowed&email=Hívj%20fel%20a%20%2B36...', ACCOUNT)
-  expect(await screen.findByText('Ez az e-mail cím nem jogosult a belépésre.')).toBeTruthy()
-  expect(screen.queryByText(/Ezzel a címmel próbáltad/)).toBeNull()
+  await expectToastAndHome('Ez az e-mail cím nem jogosult a belépésre.')
 })
 
 it('signed in shows the address and the placeholder; Kilépés calls the logout and goes home, not to Google', async () => {

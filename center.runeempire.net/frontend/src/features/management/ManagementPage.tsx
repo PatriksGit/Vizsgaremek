@@ -1,16 +1,15 @@
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useRef } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 
 import { Panel } from '@/components/app/Panel'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { site } from '@/config/site'
 import { formMessage } from '@/features/auth/errors'
 import { ApiError } from '@/lib/api'
 import { enterAfter } from '@/lib/motion'
-import { cn } from '@/lib/utils'
 
 import { GOOGLE_REDIRECT_URL, useManagementLogout, useManagementMe } from './api'
 import { errorText, isEmailAddress } from './wording'
@@ -20,8 +19,8 @@ import { errorText, isEmailAddress } from './wording'
  * backend's Google redirect, which comes back here straight away when the grant
  * is still live. Signed in: the dashboard. Signed out: on to Google at once.
  * After a failed sign-in the backend adds ?error=<code> (and ?email= for a
- * refused address): an error screen, never an automatic redirect, so a refusal
- * cannot loop.
+ * refused address): a toast and back home, never an automatic redirect, so a
+ * refusal cannot loop.
  */
 export function ManagementPage() {
   const me = useManagementMe()
@@ -66,29 +65,27 @@ function ToGoogle() {
   )
 }
 
+/**
+ * A failed sign-in (owner, 2026-11-23: no error page): a toast with the reason,
+ * then home. Never an automatic retry, so a refusal cannot loop.
+ */
 function SignInError({ errorCode, email }: { errorCode: string | null; email: string | null }) {
-  const address = errorCode === 'management.not_allowed' && email !== null && isEmailAddress(email) ? email : null
+  const navigate = useNavigate()
+  // StrictMode runs the effect twice in development: one toast, one navigation.
+  const shown = useRef(false)
 
-  return (
-    <>
-      <h1 className="sr-only">Management</h1>
-      <Panel as="section" aria-labelledby="management-login" style={enterAfter(50)} className="content-in flex flex-col gap-5">
-        <h2 id="management-login" className="font-heading text-2xl font-bold text-foreground">
-          Management belépés
-        </h2>
-        <ErrorNote text={errorText(errorCode)} detail={address} />
-        <div className="flex flex-wrap items-center gap-3">
-          {/* A plain link, not a Base UI Button: the sign-in is a full-page navigation to the backend. */}
-          <a href={GOOGLE_REDIRECT_URL} className={cn(buttonVariants({ size: 'lg' }), 'h-11 px-4')}>
-            Újrapróbálás
-          </a>
-          <Link to="/" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-11 px-4')}>
-            Vissza a főoldalra
-          </Link>
-        </div>
-      </Panel>
-    </>
-  )
+  useEffect(() => {
+    if (shown.current) return
+    shown.current = true
+    const address = errorCode === 'management.not_allowed' && email !== null && isEmailAddress(email) ? email : null
+    toast.error(errorText(errorCode), {
+      id: 'management-sign-in',
+      description: address ? `Ezzel a címmel próbáltad: ${address}` : undefined,
+    })
+    navigate('/', { replace: true })
+  }, [errorCode, email, navigate])
+
+  return null
 }
 
 function ErrorNote({ text, detail }: { text: string; detail: string | null }) {
