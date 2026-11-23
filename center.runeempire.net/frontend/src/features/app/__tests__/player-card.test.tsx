@@ -3,8 +3,7 @@
  * (Beállítások, Kijelentkezés) wherever it is clicked, not only on the gear
  * (owner, 2026-11-13).
  *
- * Harness only: a matchMedia stub (jsdom has none; SidebarProvider and
- * useIsMobile read it).
+ * Harness only: stubBrowserApis (jsdom has no matchMedia or ResizeObserver).
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'

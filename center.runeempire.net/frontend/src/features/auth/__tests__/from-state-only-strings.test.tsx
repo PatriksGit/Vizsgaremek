@@ -3,7 +3,9 @@
  * travels in the router state, which is the browser's history entry. Only a string `from` is
  * passed on across the login card (fromState.ts useFromState) or followed after a login
  * (GuestOnly); anything else is dropped. Before, any `from` value was forwarded, and GuestOnly
- * called startsWith on it, so a number crashed the login page.
+ * called startsWith on it, so a number crashed the login page. GuestOnly also followed a `from`
+ * starting with "/\" (react-router reads it as another site's address, like "//"); it now uses the
+ * one same-site check of lib/sitePath.ts (Phase 4 review carry-over).
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
@@ -67,4 +69,16 @@ it('control: a logged-in player with a string from goes back to that page', asyn
   renderLogin({ from: '/jatekosok' }, ACCOUNT)
 
   expect(await screen.findByText('JÁTÉKOSOK')).toBeTruthy()
+})
+
+it('a logged-in player with a from starting with /\\ goes home, not to another site', async () => {
+  renderLogin({ from: '/\\evil.example/jatekosok' }, ACCOUNT)
+
+  expect(await screen.findByText('FŐOLDAL')).toBeTruthy()
+})
+
+it('a logged-in player with a from starting with // goes home', async () => {
+  renderLogin({ from: '//evil.example/jatekosok' }, ACCOUNT)
+
+  expect(await screen.findByText('FŐOLDAL')).toBeTruthy()
 })

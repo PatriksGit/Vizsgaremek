@@ -1,5 +1,5 @@
 import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
+import { CircleCheckIcon, OctagonXIcon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
@@ -13,17 +13,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
         success: (
           <CircleCheckIcon className="size-4" />
         ),
-        info: (
-          <InfoIcon className="size-4" />
-        ),
-        warning: (
-          <TriangleAlertIcon className="size-4" />
-        ),
         error: (
           <OctagonXIcon className="size-4" />
-        ),
-        loading: (
-          <Loader2Icon className="size-4 animate-spin" />
         ),
       }}
       // Coloured error and success toasts (owner, 2026-11-23: a red, well-rounded error toast), in the site's status colours.

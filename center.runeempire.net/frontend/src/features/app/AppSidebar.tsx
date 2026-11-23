@@ -5,8 +5,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 
 import { focusRing } from '@/components/app/interactive'
+import { Pill } from '@/components/app/Pill'
 import { PlayerHead } from '@/components/app/PlayerHead'
-import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
@@ -69,10 +69,7 @@ function IconTile({ icon, state }: { icon: IconDefinition; state: TileState }) {
  */
 export function AppSidebar() {
   return (
-    <Sidebar
-      collapsible="none"
-      className="sticky top-0 hidden h-svh shrink-0 gap-4 border-r border-sidebar-border px-4 py-5 md:flex"
-    >
+    <Sidebar className="sticky top-0 hidden h-svh shrink-0 gap-4 border-r border-sidebar-border px-4 py-5 md:flex">
       <SidebarHeader className="gap-4 p-0">
         <Link to="/" onClick={blurAfterPointerClick} className={cn('flex items-center gap-3 rounded-lg px-2.5 py-1', focusRing)}>
           <img src={site.logoUrl} alt="" width={44} height={44} className="size-11 object-contain" />
@@ -170,9 +167,9 @@ function SubLink({ item }: { item: NavLinkItem }) {
     return (
       <span aria-disabled="true" className={cn(subRow, 'cursor-not-allowed text-muted-foreground')}>
         <span className="flex-1">{item.label}</span>
-        <Badge variant="secondary" className="bg-raised text-[11px] font-bold text-muted-foreground">
+        <Pill tone="quiet" className="h-5 shrink-0 border border-transparent px-2 py-0.5 text-[11px] whitespace-nowrap">
           Hamarosan
-        </Badge>
+        </Pill>
       </span>
     )
   }

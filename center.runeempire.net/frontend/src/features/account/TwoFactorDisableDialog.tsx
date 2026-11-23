@@ -40,7 +40,7 @@ export function TwoFactorDisableDialog({ open, onClose }: { open: boolean; onClo
       onOpenChange={(next) => !next && onClose()}
       onOpenChangeComplete={(next) => !next && codeForm.reset({ code: '' })}
     >
-      <AlertDialogContent className="max-h-[calc(100svh-2rem)] gap-4.5 overflow-y-auto rounded-2xl border border-line bg-card p-6 text-left ring-0 data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-115">
+      <AlertDialogContent className="max-h-[calc(100svh-2rem)] gap-4.5 overflow-y-auto rounded-2xl border border-line bg-card p-6 text-left ring-0 max-w-[calc(100%-2rem)] sm:max-w-115">
         <form onSubmit={(event) => void submitCode(event)} noValidate className="flex flex-col gap-4.5">
           <AlertDialogTitle className="font-heading text-2xl leading-tight font-bold">Kétlépcsős azonosítás kikapcsolása</AlertDialogTitle>
           <AlertDialogDescription className="flex gap-3 rounded-xl border border-danger/30 bg-danger/8 px-4 py-3.5 text-[13px] leading-relaxed text-danger">

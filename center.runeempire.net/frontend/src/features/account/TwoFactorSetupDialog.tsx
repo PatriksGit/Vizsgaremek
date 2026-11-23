@@ -105,7 +105,7 @@ function StoreLink({ href, icon, label, appName }: { href: string; icon: IconDef
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${appName} letöltése: ${label}`}
-      className="flex h-9 items-center justify-center gap-1.5 rounded-full border border-line text-xs font-bold text-soft transition-colors hover:border-primary/50 hover:text-foreground"
+      className="flex h-9 items-center justify-center gap-1.5 rounded-full border border-line text-xs font-bold text-soft transition-colors hover:border-primary/50 hover:text-foreground max-md:h-11"
     >
       <FontAwesomeIcon icon={icon} aria-hidden="true" className="size-3.5" />
       {label}

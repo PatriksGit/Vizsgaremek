@@ -86,7 +86,7 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
         onComplete={() => void submit()}
       />
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 max-md:gap-6">
         <Button type="submit" disabled={busy} className={submitButtonClass}>
           <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
           {isSubmitting ? 'Fiók létrehozása…' : 'Fiók létrehozása'}

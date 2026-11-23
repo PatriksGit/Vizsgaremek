@@ -167,7 +167,7 @@ export function PasswordRow({ username }: { username: string }) {
                 {/* Beside the label, outside it, so the label stays the field's whole name. */}
                 <Link
                   to="/forgot-password"
-                  className="absolute top-0 right-0 text-xs font-bold text-primary hover:text-primary/80"
+                  className="absolute top-0 right-0 text-xs font-bold text-primary hover:text-primary/80 max-md:-top-4.5 max-md:-right-2 max-md:px-2 max-md:pt-4.5 max-md:pb-2.5"
                 >
                   Elfelejtetted?
                 </Link>

@@ -29,9 +29,7 @@
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
     --color-bedrock: var(--bedrock);
     --color-xp: var(--xp);
     --color-redstone: var(--redstone);
@@ -40,8 +38,6 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
     --color-muted: var(--muted);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -87,8 +83,6 @@
     --secondary-foreground: #f2ede4;
     --muted: #1e1b15;
     --muted-foreground: #a39c8f;
-    --accent: #1a1813;
-    --accent-foreground: #f2ede4;
     --destructive: #e5675a;
     --border: #221e18;
     --input: #2a251d;
@@ -106,9 +100,7 @@
     --sidebar: #100f0c;
     --sidebar-foreground: #c9c2b5;
     --sidebar-accent: #1a1813;
-    --sidebar-accent-foreground: #f2ede4;
     --sidebar-border: #221e18;
-    --sidebar-ring: #e9b44c;
     --bedrock: #090806;
     --xp: #7ed957;
     --redstone: #ff5e57;

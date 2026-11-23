@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 
 import { playerCardHover, playerHeadGrow } from '@/components/app/interactive'
 import { panelLook } from '@/components/app/Panel'
+import { Pill } from '@/components/app/Pill'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Skeleton } from '@/components/ui/skeleton'
 import { type ProfileBack, profilePath } from '@/features/players/links'
@@ -134,8 +135,9 @@ function FriendRow({ friend }: { friend: Friend }) {
         {friend.name}
       </span>
       {friend.rank && (
-        <span
-          className={cn('ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-bold', !friend.rank.color && 'bg-raised text-soft')}
+        <Pill
+          tone={friend.rank.color ? undefined : 'neutral'}
+          className="ml-auto shrink-0 px-2 py-0.5"
           style={
             friend.rank.color
               ? { color: friend.rank.color, backgroundColor: `color-mix(in srgb, ${friend.rank.color} 14%, transparent)` }
@@ -143,7 +145,7 @@ function FriendRow({ friend }: { friend: Friend }) {
           }
         >
           {friend.rank.name}
-        </span>
+        </Pill>
       )}
       <span className="sr-only">{friend.online ? 'Online' : 'Offline'}</span>
     </>

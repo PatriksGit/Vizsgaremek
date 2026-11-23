@@ -35,7 +35,7 @@ function Profile({ name }: { name: string }) {
       to={back.to}
       // Back to a profile: with its own back link, so the chain still ends at the search it started from (K2).
       state={back.back && { back: back.back }}
-      className="content-in inline-flex items-center gap-2 self-start rounded-md text-sm font-semibold text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-primary/30"
+      className="content-in inline-flex items-center gap-2 self-start rounded-md text-sm font-semibold text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-primary/30 max-md:-my-3 max-md:min-h-11"
       style={enterAfter(100)}
     >
       <FontAwesomeIcon icon={faArrowLeft} className="size-3.5" aria-hidden="true" />

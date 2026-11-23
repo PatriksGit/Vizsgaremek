@@ -9,6 +9,9 @@
  * __cf_bm.
  *
  * Happens when: a logged-in player presses Ctrl+B (Firefox: bookmarks sidebar).
+ *
+ * Since review 2026-11-23 (ui K2) SidebarProvider is a plain frame with no state at all; this test keeps a later
+ * `shadcn add` from bringing the shortcut or the cookie back.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'

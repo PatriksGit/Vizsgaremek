@@ -77,7 +77,7 @@ export function PurchaseDialog({
     >
       <AlertDialogContent
         finalFocus={finalFocus}
-        className="max-h-[calc(100svh-2rem)] justify-items-center gap-5 overflow-y-auto rounded-2xl border border-line bg-card px-6 pt-8 pb-6 text-center ring-0 data-[size=default]:max-w-[calc(100%-2rem)] data-[size=default]:sm:max-w-100"
+        className="max-h-[calc(100svh-2rem)] justify-items-center gap-5 overflow-y-auto rounded-2xl border border-line bg-card px-6 pt-8 pb-6 text-center ring-0 max-w-[calc(100%-2rem)] sm:max-w-100"
       >
         {rank &&
           (seasonOver(rank, now) ? (

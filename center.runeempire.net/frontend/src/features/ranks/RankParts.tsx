@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { useId, useState } from 'react'
 
+import { Pill } from '@/components/app/Pill'
 import { budapestDay, countFormat, DAY_MS } from '@/lib/budapest'
 import { cn } from '@/lib/utils'
 
@@ -98,7 +99,7 @@ export function BuyBox({ rank, owned, onBuy }: { rank: Rank; owned: boolean; onB
             return (
               <label
                 key={option.days}
-                className="relative flex min-h-10 cursor-pointer items-center justify-center rounded-lg text-sm font-extrabold text-soft transition-colors select-none hover:text-foreground has-checked:bg-(--c) has-checked:text-(--on-c) has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--c)"
+                className="relative flex min-h-10 cursor-pointer items-center justify-center rounded-lg text-sm font-extrabold text-soft transition-colors select-none hover:text-foreground has-checked:bg-(--c) has-checked:text-(--on-c) has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--c) max-md:min-h-11"
               >
                 <input
                   type="radio"
@@ -111,10 +112,10 @@ export function BuyBox({ rank, owned, onBuy }: { rank: Rank; owned: boolean; onB
                 {owned ? '+' : ''}
                 {option.days} nap
                 {off > 0 && (
-                  <span className="absolute -top-2 -right-1 rounded-full bg-ok px-1.5 py-px text-[10px] leading-tight font-extrabold text-background">
+                  <Pill className="absolute -top-2 -right-1 bg-ok px-1.5 py-px text-[10px] leading-tight font-extrabold text-background">
                     {` -${off}%`}
                     <span className="sr-only"> kedvezmény</span>
-                  </span>
+                  </Pill>
                 )}
               </label>
             )

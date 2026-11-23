@@ -9,7 +9,7 @@ function subscribe(onChange: () => void) {
   return () => mql.removeEventListener("change", onChange)
 }
 
-/** Whether the window is narrower than Tailwind's md breakpoint (the shadcn sidebar's phone mode). */
+/** Whether the window is narrower than Tailwind's md breakpoint (phones: the tab bar instead of the sidebar). */
 export function useIsMobile() {
   return useSyncExternalStore(subscribe, () => window.matchMedia(QUERY).matches)
 }

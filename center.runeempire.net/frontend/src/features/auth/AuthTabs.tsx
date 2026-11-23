@@ -33,7 +33,7 @@ export function AuthTabs({ mode }: { mode: AuthMode }) {
           state={fromState}
           className={({ isActive }) =>
             cn(
-              'relative rounded-lg py-2 text-center font-medium outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
+              'relative rounded-lg py-2 text-center font-medium outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 max-md:py-2.5',
               isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
             )
           }

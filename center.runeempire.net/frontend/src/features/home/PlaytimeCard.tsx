@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 
 import { DAY_NAMES, DAY_SHORT, NO_DATA, serverTodayIndex } from './stats'
 
-const chartConfig = { minutes: { label: 'Játékidő', color: 'var(--primary)' } } satisfies ChartConfig
+const chartConfig = { minutes: { color: 'var(--primary)' } } satisfies ChartConfig
 
 /** "1 ó 30 p", "2 ó", "45 p". */
 function duration(minutes: number) {

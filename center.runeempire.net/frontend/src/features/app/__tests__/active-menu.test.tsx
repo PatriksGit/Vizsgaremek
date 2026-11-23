@@ -7,8 +7,8 @@
  *
  * Happens when: the player opens /rangok/ (a link pasted with a trailing slash).
  *
- * Harness only: a matchMedia stub (jsdom has none; SidebarProvider and
- * useIsMobile read it). The routes are App.tsx's: the layout route with a
+ * Harness only: stubBrowserApis (jsdom has no matchMedia or ResizeObserver).
+ * The routes are App.tsx's: the layout route with a
  * menu page as its child.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

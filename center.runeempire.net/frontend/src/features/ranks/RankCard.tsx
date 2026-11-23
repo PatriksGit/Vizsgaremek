@@ -1,6 +1,7 @@
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
+import { Pill } from '@/components/app/Pill'
 import { rankColor } from '@/features/home/stats'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -57,9 +58,9 @@ export function RankCard({
       {/* The GIF on a strip tinted with the rank colour. */}
       <div className="relative border-b border-border bg-[color:color-mix(in_oklab,var(--c)_12%,var(--background))] p-2">
         {rank.seasonEndsAt && (
-          <span className="absolute top-2 left-2 z-1 inline-flex h-5.5 items-center rounded-full border border-primary/35 bg-primary/15 px-2.5 text-xs font-extrabold text-primary">
+          <Pill tone="gold" className="absolute top-2 left-2 z-1 h-5.5 border border-primary/35 bg-primary/15 font-extrabold">
             Szezonális
-          </span>
+          </Pill>
         )}
         <RankBanner rank={rank} className="min-h-0 border-b-0 bg-transparent p-0" />
       </div>

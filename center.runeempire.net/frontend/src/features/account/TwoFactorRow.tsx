@@ -2,8 +2,8 @@ import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
 
+import { Pill } from '@/components/app/Pill'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 import { SettingsRow } from './SettingsRow'
 import { TwoFactorDisableDialog } from './TwoFactorDisableDialog'
@@ -19,15 +19,10 @@ export function TwoFactorRow({ enabled }: { enabled: boolean }) {
       icon={faShieldHalved}
       title="Kétlépcsős azonosítás"
       badge={
-        <span
-          className={cn(
-            'inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-extrabold',
-            enabled ? 'bg-ok/12 text-ok' : 'bg-raised text-muted-foreground',
-          )}
-        >
+        <Pill tone={enabled ? 'ok' : 'quiet'} className="h-6 font-extrabold">
           <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
           {enabled ? 'Bekapcsolva' : 'Kikapcsolva'}
-        </span>
+        </Pill>
       }
       description={
         enabled

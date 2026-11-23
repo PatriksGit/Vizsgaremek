@@ -16,7 +16,7 @@ export function SiteFooter() {
                 <a
                   href={link.href}
                   aria-label={link.label}
-                  className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/3 text-muted-foreground outline-none transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/3 text-muted-foreground outline-none transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50 max-md:size-11"
                 >
                   <FontAwesomeIcon icon={link.icon} className="size-4" aria-hidden="true" />
                 </a>
@@ -28,12 +28,12 @@ export function SiteFooter() {
         {site.footerLinks.map((column) => (
           <nav key={column.title} aria-label={column.title}>
             <h2 className="mb-4 font-medium text-foreground">{column.title}</h2>
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col gap-1 max-md:gap-0">
               {column.links.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="group inline-flex items-center gap-2.5 rounded-sm py-2 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className="group inline-flex items-center gap-2.5 rounded-sm py-2 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 max-md:min-h-11"
                   >
                     <FontAwesomeIcon
                       icon={link.icon}

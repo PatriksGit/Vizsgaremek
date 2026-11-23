@@ -1,6 +1,7 @@
 import { Clock } from 'lucide-react'
 
 import { FitLine } from '@/components/app/FitLine'
+import { Pill } from '@/components/app/Pill'
 import { enterAfter } from '@/lib/motion'
 
 import { joinedDay } from './registration'
@@ -66,12 +67,12 @@ export function HeroCard({
               Csatlakozott: <strong className="whitespace-nowrap text-foreground">{joinedDay(registeredAt)}</strong>
             </p>
             {/* At most one break, between the label and the date (a narrow column at 768 px), and it grows with it (V1). */}
-            <p className="mt-2 hidden min-h-7 items-center gap-1.5 self-start rounded-full bg-raised px-2.5 py-1 text-xs font-semibold text-soft md:inline-flex">
+            <Pill tone="neutral" className="mt-2 hidden min-h-7 self-start py-1 font-semibold md:inline-flex">
               <Clock className="size-3.25 shrink-0" aria-hidden="true" />
               <span>
                 Csatlakozott: <span className="whitespace-nowrap">{joinedDay(registeredAt)}</span>
               </span>
-            </p>
+            </Pill>
           </>
         )}
       </div>

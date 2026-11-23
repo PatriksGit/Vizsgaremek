@@ -68,7 +68,7 @@ function MobileTopBar() {
       <Link
         to="/"
         onClick={blurAfterPointerClick}
-        className={cn('flex items-center gap-2.5 rounded-lg', focusRing)}
+        className={cn('flex min-h-11 items-center gap-2.5 rounded-lg', focusRing)}
       >
         <img src={site.logoUrl} alt="" width={34} height={34} className="size-8.5 object-contain" />
         <span className="font-heading text-lg font-bold text-foreground">{site.name}</span>

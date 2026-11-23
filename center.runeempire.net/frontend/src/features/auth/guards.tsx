@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { matchPath, Navigate, useLocation } from 'react-router'
 
+import { isSitePath } from '@/lib/sitePath'
+
 import type { FromState } from './fromState'
 import { endedByLogout, useAccount } from './queries'
 
@@ -25,7 +27,7 @@ export function RequireAccount({ children }: { children: ReactNode }) {
 /**
  * Only for guests; a logged-in player is sent to the page they asked for
  * before logging in (owner, 2026-11-13), or home. A path starting with "//"
- * would be another site's address, so it leads home instead. The forgotten
+ * or "/\" would be another site's address (isSitePath), so it leads home instead. The forgotten
  * password panel is the exception: a logged-in player may reset too.
  */
 export function GuestOnly({ children }: { children: ReactNode }) {
@@ -35,7 +37,7 @@ export function GuestOnly({ children }: { children: ReactNode }) {
 
   if (!isFetched) return null
   if (account && !matchPath('/forgot-password', location.pathname)) {
-    return <Navigate to={typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />
+    return <Navigate to={isSitePath(from) ? from : '/'} replace />
   }
   return children
 }

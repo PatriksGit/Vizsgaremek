@@ -2,6 +2,7 @@ import { faClock, faCoins, faHatWizard } from '@fortawesome/free-solid-svg-icons
 import { Clock } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import { Pill } from '@/components/app/Pill'
 import type { ProfileBack } from '@/features/players/links'
 
 import { countFormat } from '@/lib/budapest'
@@ -94,10 +95,10 @@ export function Dashboard({ wording, name, registeredAt, stats: statsQuery, frie
           style={enterAfter(680)}
         >
           {stats?.rank?.expires_at && (
-            <span className="inline-flex h-6.5 items-center gap-1.5 self-start rounded-full bg-primary/10 px-2.5 text-xs font-bold text-primary">
+            <Pill tone="gold" className="h-6.5 self-start">
               <Clock className="size-3.25" aria-hidden="true" />
               Lejár: {shortDate(stats.rank.expires_at)}
-            </span>
+            </Pill>
           )}
         </StatCard>
         <PunishmentCard

@@ -21,7 +21,8 @@ export function LegalDialog({ title, children }: { title: string; children: Reac
       <DialogTrigger className="rounded-sm font-medium text-primary underline underline-offset-4 outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50">
         {children}
       </DialogTrigger>
-      <DialogContent className="gap-5 rounded-md p-6 sm:max-w-lg">
+      {/* One "Bezárás" for a screen reader: the bottom button, no corner X (review 2026-11-23 ui K4). */}
+      <DialogContent showCloseButton={false} className="gap-5 rounded-md p-6 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold">{title}</DialogTitle>
           <DialogDescription>A dokumentum szövege hamarosan felkerül ide.</DialogDescription>

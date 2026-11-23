@@ -1,3 +1,5 @@
+import { isSitePath } from '@/lib/sitePath'
+
 /**
  * Where a profile's back link leads, and what it says. Sent as router state by the link that opened the profile; `back`
  * is that page's own back link when it is a profile too, so a chain of friends leads back to the search with its ?q=
@@ -20,12 +22,6 @@ const MAX_BACK_STEPS = 20
 export function profileBack(state: unknown): ProfileBack {
   return sameSiteBack((state as { back?: unknown } | null)?.back, MAX_BACK_STEPS) ?? TO_SEARCH
 }
-
-/**
- * A path on this site: "//host" and "/\host" would leave it (react-router reads both as an absolute URL, like the
- * browser does).
- */
-const isSitePath = (to: string) => to.startsWith('/') && !/^\/[\\/]/.test(to)
 
 /** A back link whose every step (at most `steps`) is a same-site path, or null. */
 function sameSiteBack(value: unknown, steps: number): ProfileBack | null {
