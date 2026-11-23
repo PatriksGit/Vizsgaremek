@@ -23,12 +23,12 @@ async function fetchManagementMe(): Promise<ManagementMe> {
  * refetch on focus: every call slides the backend's 30-minute grant, so
  * polling would keep it alive forever.
  */
-export function useManagementMe() {
+export function useManagementMe({ enabled = true }: { enabled?: boolean } = {}) {
   const account = useAccount().data
   return useQuery({
     queryKey: ['management', 'me', account?.uuid],
     queryFn: fetchManagementMe,
-    enabled: Boolean(account?.can_manage),
+    enabled: enabled && Boolean(account?.can_manage),
     retry: false,
     retryOnMount: false,
     refetchOnWindowFocus: false,

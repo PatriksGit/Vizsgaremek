@@ -342,6 +342,14 @@
     animation: popup-icon 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s both;
 }
 
+/* A page reached with router state {quiet: true} (AppLayout data-quiet): no build-up, e.g. home after a refused management sign-in. */
+[data-quiet] .backdrop-reveal,
+[data-quiet] .card-rise,
+[data-quiet] .content-in,
+[data-quiet] .rank-reveal {
+    animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .backdrop-reveal,
     .card-rise,

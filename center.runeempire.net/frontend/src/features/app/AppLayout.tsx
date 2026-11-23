@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { Link, Outlet } from 'react-router'
+import { Link, Outlet, useLocation } from 'react-router'
 
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { site } from '@/config/site'
@@ -15,9 +15,14 @@ import { MobileTabBar } from './MobileTabBar'
  * at the bottom. The footer closes every page.
  */
 export function AppLayout() {
+  // A page reached with router state {quiet: true} skips the page-load build-up (index.css [data-quiet]):
+  // e.g. home after a refused management sign-in, so it does not look like a fresh login.
+  const { state } = useLocation()
+  const quiet = isQuiet(state)
+
   return (
     // 248 px wide, as in the design.
-    <SidebarProvider style={{ '--sidebar-width': '15.5rem' } as CSSProperties}>
+    <SidebarProvider style={{ '--sidebar-width': '15.5rem' } as CSSProperties} data-quiet={quiet || undefined}>
       {/* The first Tab stop: past the menu straight to the page. */}
       <a
         href="#tartalom"
@@ -41,6 +46,10 @@ export function AppLayout() {
       <MobileTabBar />
     </SidebarProvider>
   )
+}
+
+function isQuiet(state: unknown): boolean {
+  return typeof state === 'object' && state !== null && 'quiet' in state && state.quiet === true
 }
 
 /** Phones: the logo and the name, leading to the overview. */

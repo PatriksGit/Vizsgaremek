@@ -23,8 +23,12 @@ import { errorText, isEmailAddress } from './wording'
  * refusal cannot loop.
  */
 export function ManagementPage() {
-  const me = useManagementMe()
   const [params] = useSearchParams()
+  // A refused sign-in never shows this page: no /me request, no "Betöltés…", straight home with a toast (owner, 2026-11-23).
+  const refused = params.has('error')
+  const me = useManagementMe({ enabled: !refused })
+
+  if (refused) return <SignInError errorCode={params.get('error')} email={params.get('email')} />
 
   return (
     <div className="mx-auto flex w-full max-w-220 flex-col gap-6 lg:mt-4">
@@ -38,8 +42,6 @@ export function ManagementPage() {
         <FailedCard error={me.error} />
       ) : me.data.signed_in ? (
         <SignedIn email={me.data.email} />
-      ) : params.has('error') ? (
-        <SignInError errorCode={params.get('error')} email={params.get('email')} />
       ) : (
         <ToGoogle />
       )}
@@ -82,7 +84,8 @@ function SignInError({ errorCode, email }: { errorCode: string | null; email: st
       id: 'management-sign-in',
       description: address ? `Ezzel a címmel próbáltad: ${address}` : undefined,
     })
-    navigate('/', { replace: true })
+    // quiet: home without the page-load build-up, so a refusal does not look like a fresh login (owner, 2026-11-23).
+    navigate('/', { replace: true, state: { quiet: true } })
   }, [errorCode, email, navigate])
 
   return null

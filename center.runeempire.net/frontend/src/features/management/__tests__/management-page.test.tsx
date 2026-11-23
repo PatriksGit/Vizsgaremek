@@ -47,6 +47,9 @@ afterEach(() => {
 const SIGNED_OUT = { status: 200, data: { data: { signed_in: false } } }
 const SIGNED_IN = { status: 200, data: { data: { signed_in: true, email: 'admin@example.com', expires_at: '2026-11-23T12:30:00Z' } } }
 
+let lastCalls: string[] = []
+const meCalls = () => lastCalls.filter((call) => call === 'GET /management/me').length
+
 function renderAt(path: string, account: Account, me: Handler = () => SIGNED_OUT, logout: Handler = () => ({ status: 204 })) {
   const calls = installFakeBackend({
     'GET /auth/me': () => ({ status: 200, data: { data: account } }),
@@ -55,6 +58,7 @@ function renderAt(path: string, account: Account, me: Handler = () => SIGNED_OUT
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   client.setQueryData(['account'], account)
+  lastCalls = calls
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[path]}>
@@ -107,6 +111,7 @@ it('/management without can_manage goes home', async () => {
   const calls = renderAt('/management', { ...ACCOUNT, can_manage: false })
   expect(await screen.findByRole('heading', { name: 'Főoldal' })).toBeTruthy()
   expect(calls).not.toContain('GET /management/me')
+  expect(document.querySelector('[data-quiet]')).toBeNull()
 })
 
 it('signed out without an error forwards to the Google redirect at once, with no login card', async () => {
@@ -123,6 +128,10 @@ async function expectToastAndHome(text: string, description?: string) {
   expect(toastMock.error).toHaveBeenCalledTimes(1)
   expect(toastMock.error).toHaveBeenCalledWith(text, { id: 'management-sign-in', description })
   expect(replace).not.toHaveBeenCalled()
+  // Home without the page-load build-up (AppLayout data-quiet), so it does not look like a fresh login.
+  expect(document.querySelector('[data-quiet]')).not.toBeNull()
+  // The management page itself never loads: no /me request.
+  expect(meCalls()).toBe(0)
 }
 
 it('a failed sign-in toasts the reason and goes home, with no error page and no redirect', async () => {
