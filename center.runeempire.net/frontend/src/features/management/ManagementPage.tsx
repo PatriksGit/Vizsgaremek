@@ -15,9 +15,9 @@ import { GOOGLE_REDIRECT_URL, useManagementLogout, useManagementMe } from './api
 import { errorText, isEmailAddress } from './wording'
 
 /**
- * /management (owner, 2026-11-23: no login card). The menu links to the
- * backend's Google redirect, which comes back here straight away when the grant
- * is still live. Signed in: the dashboard. Signed out: on to Google at once.
+ * /management (owner, 2026-11-23: no login card, and no full reload like the
+ * other pages). The menu is a router link to here. Signed in: the dashboard
+ * at once. Signed out: on to Google (the only full-page navigation).
  * After a failed sign-in the backend adds ?error=<code> (and ?email= for a
  * refused address): a toast and back home, never an automatic redirect, so a
  * refusal cannot loop.
@@ -33,11 +33,13 @@ export function ManagementPage() {
   return (
     <div className="mx-auto flex w-full max-w-220 flex-col gap-6 lg:mt-4">
       <title>{`Management | ${site.name}`}</title>
-      {/* Gated on isFetched, never isPending (see the Queries rule). */}
-      {!me.isFetched ? (
-        <p role="status" className="text-muted-foreground">
-          Betöltés…
-        </p>
+      {/*
+       * Gated on isFetchedAfterMount, never isPending (see the Queries rule): a cached answer from an
+       * earlier visit (e.g. before "Kilépés a managementből", or a grant that ran out) must not show the
+       * dashboard for a moment before this visit's answer forwards to Google (owner, 2026-11-23).
+       */}
+      {!(me.isFetchedAfterMount || (me.data !== undefined && !me.isStale)) ? (
+        <Loading />
       ) : !me.data ? (
         <FailedCard error={me.error} />
       ) : me.data.signed_in ? (
@@ -47,6 +49,15 @@ export function ManagementPage() {
       )}
     </div>
   )
+}
+
+/**
+ * While /me answers on a direct load (a bookmark, a refresh): nothing yet, not even skeletons -- the
+ * page appears only once it is sure there is a grant; without one the browser goes to Google (owner,
+ * 2026-11-23). From the menu the answer is already there (useOpenManagement).
+ */
+function Loading() {
+  return <span role="status" className="sr-only">Betöltés…</span>
 }
 
 /** Signed out without an error: on to the Google redirect. replace: the back button does not land here again. */

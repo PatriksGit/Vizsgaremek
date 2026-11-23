@@ -31,12 +31,13 @@ const ACCOUNT: Account = {
   registered_at: '2026-01-01T00:00:00Z',
 }
 
-// The page leaves the SPA with location.replace: jsdom cannot navigate, so every test gets a stub.
+// The page leaves the SPA with location.replace / assign: jsdom cannot navigate, so every test gets stubs.
 const replace = vi.fn()
+const assign = vi.fn()
 
 beforeAll(stubBrowserApis)
 beforeEach(() => {
-  vi.stubGlobal('location', { ...window.location, replace })
+  vi.stubGlobal('location', { ...window.location, replace, assign })
 })
 afterEach(() => {
   cleanup()
@@ -82,12 +83,15 @@ function renderAt(path: string, account: Account, me: Handler = () => SIGNED_OUT
   return calls
 }
 
-it('the Management menu item is a full-page link to the Google redirect, only with can_manage', async () => {
-  renderAt('/', ACCOUNT)
+it('the Management menu item checks first: a live grant opens the dashboard inside the app, only with can_manage', async () => {
+  renderAt('/', ACCOUNT, () => SIGNED_IN)
   fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
   const item = await screen.findByRole('menuitem', { name: 'Management' })
-  expect(item.tagName).toBe('A')
-  expect(item.getAttribute('href')).toBe(GOOGLE)
+  expect(item.getAttribute('href')).toBe('/management')
+  fireEvent.click(item)
+  expect(await screen.findByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(assign).not.toHaveBeenCalled()
+  expect(replace).not.toHaveBeenCalled()
   cleanup()
 
   renderAt('/', { ...ACCOUNT, can_manage: false })
@@ -96,10 +100,22 @@ it('the Management menu item is a full-page link to the Google redirect, only wi
   expect(screen.queryByRole('menuitem', { name: 'Management' })).toBeNull()
 })
 
-it('the settings page has a Management row linking to the Google redirect, only with can_manage', async () => {
+it('without a live grant the menu item goes straight to Google: the management page never starts loading', async () => {
+  const calls = renderAt('/', ACCOUNT, () => SIGNED_OUT)
+  fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Management' }))
+  await waitFor(() => expect(assign).toHaveBeenCalledWith(GOOGLE))
+  expect(screen.getByRole('heading', { name: 'Főoldal' })).toBeTruthy()
+  expect(screen.queryByText('Átirányítás a Google-belépéshez…')).toBeNull()
+  expect(calls.filter((call) => call === 'GET /management/me')).toHaveLength(1)
+})
+
+it('the settings page has a Management row linking to /management, only with can_manage', async () => {
   renderAt('/beallitasok', ACCOUNT)
   const link = await screen.findByRole('link', { name: 'Megnyitás' })
-  expect(link.getAttribute('href')).toBe(GOOGLE)
+  expect(link.getAttribute('href')).toBe('/management')
+  fireEvent.click(link)
+  await waitFor(() => expect(assign).toHaveBeenCalledWith(GOOGLE))
   cleanup()
 
   renderAt('/beallitasok', { ...ACCOUNT, can_manage: false })
@@ -177,6 +193,24 @@ it('signed in shows the address and the placeholder; Kilépés calls the logout 
   expect(calls).toContain('POST /management/logout')
   expect(calls.filter((call) => call === 'GET /management/me')).toHaveLength(1)
   expect(replace).not.toHaveBeenCalled()
+})
+
+it('after Kilépés, opening Management again never shows the old dashboard before going to Google', async () => {
+  let signedIn = true
+  renderAt('/management', ACCOUNT, () => (signedIn ? SIGNED_IN : SIGNED_OUT), () => {
+    signedIn = false
+    return { status: 204 }
+  })
+  fireEvent.click(await screen.findByRole('button', { name: 'Kilépés a managementből' }))
+  expect(await screen.findByRole('heading', { name: 'Főoldal' })).toBeTruthy()
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Management' }))
+  // The cached signed-in answer is not shown: the menu asks first and goes straight to Google.
+  expect(screen.queryByText('Bejelentkezve: admin@example.com')).toBeNull()
+  await waitFor(() => expect(assign).toHaveBeenCalledWith(GOOGLE))
+  expect(screen.queryByText('Bejelentkezve: admin@example.com')).toBeNull()
+  expect(screen.getByRole('heading', { name: 'Főoldal' })).toBeTruthy()
 })
 
 it('a failed logout toasts the error and stays signed in', async () => {

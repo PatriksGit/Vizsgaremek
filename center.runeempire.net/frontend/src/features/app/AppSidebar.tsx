@@ -1,6 +1,6 @@
 import { Menu as MenuPrimitive } from '@base-ui/react/menu'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faChevronRight, faGear, faRightFromBracket, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight, faGear, faRightFromBracket, faUserTie } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 import { toast } from 'sonner'
@@ -23,10 +23,10 @@ import {
 import { site } from '@/config/site'
 import { formMessage } from '@/features/auth/errors'
 import { useAccount, useLogout } from '@/features/auth/queries'
-import { GOOGLE_REDIRECT_URL } from '@/features/management/api'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
+import { useOpenManagement } from '@/features/management/api'
 import { ACCOUNT_NAV, isActive, isPage, NAV, type NavItem, type NavLinkItem } from './nav'
 
 /** Keyboard focus only: a mouse click lets go of the focus (blurAfterPointerClick), so no ring stays behind. */
@@ -205,6 +205,7 @@ function PlayerCard() {
   const { data: account } = useAccount()
   const { pathname } = useLocation()
   const logout = useLogout()
+  const openManagement = useOpenManagement()
   const current = isPage(ACCOUNT_NAV.to, pathname)
 
   return (
@@ -244,11 +245,13 @@ function PlayerCard() {
         {account?.can_manage && (
           <MenuPrimitive.LinkItem
             closeOnClick
-            // A full-page link, not the router's: the backend skips Google when the grant is still live.
-            render={<a href={GOOGLE_REDIRECT_URL} aria-current={isPage('/management', pathname) ? 'page' : undefined} />}
+            // The router's link, like every other page (owner, 2026-11-23: no full reload); /management
+            // itself forwards to Google only when there is no live grant.
+            onClick={openManagement}
+            render={<Link to="/management" aria-current={isPage('/management', pathname) ? 'page' : undefined} />}
             className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
           >
-            <FontAwesomeIcon icon={faShieldHalved} className="size-3.75 text-muted-foreground" aria-hidden="true" />
+            <FontAwesomeIcon icon={faUserTie} className="size-3.75 text-muted-foreground" aria-hidden="true" />
             Management
           </MenuPrimitive.LinkItem>
         )}

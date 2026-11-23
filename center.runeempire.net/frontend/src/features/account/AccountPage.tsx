@@ -1,5 +1,6 @@
-import { faRightFromBracket, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { faRightFromBracket, faUserTie } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Link } from 'react-router'
 import { toast } from 'sonner'
 
 import { panelLook } from '@/components/app/Panel'
@@ -9,8 +10,8 @@ import { site } from '@/config/site'
 import type { Account } from '@/features/auth/api'
 import { formMessage } from '@/features/auth/errors'
 import { useAccount, useLogout } from '@/features/auth/queries'
-import { GOOGLE_REDIRECT_URL } from '@/features/management/api'
 import { NO_DATA } from '@/features/home/stats'
+import { useOpenManagement } from '@/features/management/api'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +26,7 @@ import { TwoFactorRow } from './TwoFactorRow'
 export function AccountPage() {
   // RequireAccount renders this page only for a logged-in player.
   const account = useAccount().data!
+  const openManagement = useOpenManagement()
 
   return (
     <div className="mx-auto flex w-full max-w-220 flex-col gap-6 lg:mt-4">
@@ -47,14 +49,14 @@ export function AccountPage() {
             <div className="md:hidden">
               <SettingsRow
                 id="management-title"
-                icon={faShieldHalved}
+                icon={faUserTie}
                 title="Management"
                 description="A szerver kezelőfelülete, Google-fiókkal léphetsz be."
                 action={
-                  // A full-page link, like the sidebar's: the backend's Google redirect.
-                  <a href={GOOGLE_REDIRECT_URL} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+                  // The router's link, like the sidebar's: /management forwards to Google only without a live grant.
+                  <Link to="/management" onClick={openManagement} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
                     Megnyitás
-                  </a>
+                  </Link>
                 }
               />
             </div>
