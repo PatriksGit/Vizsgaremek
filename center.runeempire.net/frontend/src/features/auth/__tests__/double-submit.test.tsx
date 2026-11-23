@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
@@ -55,7 +55,9 @@ describe('double submits', () => {
     await screen.findByText('Nézd meg az e-mailed')
 
     fireEvent.change(screen.getByLabelText('Megerősítő kód'), { target: { value: '123456' } })
-    // The last digit already sent the code (auth K1): the button reads "Fiók létrehozása…" now.
+    // The last digit already sent the code (auth K1), before any click: the button reads "Fiók létrehozása…" now.
+    const verifies = () => calls.filter((call) => call === 'POST /auth/register/verify')
+    await waitFor(() => expect(verifies()).toHaveLength(1))
     const create = screen.getByRole('button', { name: /^Fiók létrehozása/ })
     fireEvent.click(create)
     await wait(10)
@@ -64,7 +66,7 @@ describe('double submits', () => {
     fireEvent.click(create)
     fireEvent.click(screen.getByRole('button', { name: 'Új kódot kérek' }))
     await wait(300)
-    expect(calls.filter((call) => call === 'POST /auth/register/verify')).toHaveLength(1)
+    expect(verifies()).toHaveLength(1)
     expect(calls.filter((call) => call === 'POST /auth/register')).toHaveLength(1)
     expect(await screen.findByText('A kód érvénytelen vagy lejárt.')).toBeTruthy()
   })

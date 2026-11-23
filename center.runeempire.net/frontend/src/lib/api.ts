@@ -9,6 +9,14 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 export const GENERIC_ERROR = 'Váratlan hiba történt, próbáld újra később.'
 
+/**
+ * The statuses a proxy or a maintenance answers with: the server is not there, rather than broken.
+ * Shared by the toasts (toApiError) and the error page. Production sits behind a Cloudflare Tunnel,
+ * where a stopped backend answers 502 and a stopped tunnel 530; Cloudflare's 520-523 come only from
+ * a proxied origin without a tunnel (review 2026-11-23 app-shell K1).
+ */
+export const SERVER_DOWN_STATUSES = [502, 503, 504, 530]
+
 /** A failed API call, with the backend's per-field messages when it sent any (422). */
 export class ApiError extends Error {
   readonly status: number
@@ -33,6 +41,14 @@ export class ApiError extends Error {
     this.details = details
     this.retryAfter = retryAfter
   }
+}
+
+/**
+ * What to tell the player about a failed call: an ApiError's message (already Hungarian, see toApiError),
+ * anything else (a crash in our own code) the fallback. The one "error to text" step of the whole app.
+ */
+export function formMessage(error: unknown, fallback = GENERIC_ERROR): string {
+  return error instanceof ApiError ? error.message : fallback
 }
 
 export const http = axios.create({
@@ -112,7 +128,7 @@ function toApiError(error: AxiosError): ApiError {
   }
 
   // A proxy (Vite in dev, Cloudflare in production) answering for a backend that is down.
-  if (!backendMessage && [502, 503, 504, 530].includes(response.status)) {
+  if (!backendMessage && SERVER_DOWN_STATUSES.includes(response.status)) {
     return new ApiError(response.status, 'A szerver most nem érhető el, próbáld újra később.', {}, extra)
   }
 

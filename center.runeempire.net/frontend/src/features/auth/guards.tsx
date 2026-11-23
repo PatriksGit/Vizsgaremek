@@ -31,11 +31,11 @@ export function RequireAccount({ children }: { children: ReactNode }) {
 export function GuestOnly({ children }: { children: ReactNode }) {
   const { data: account, isFetched } = useAccount()
   const location = useLocation()
-  const from = (location.state as FromState)?.from
+  const from: unknown = (location.state as { from?: unknown } | null)?.from
 
   if (!isFetched) return null
   if (account && !matchPath('/forgot-password', location.pathname)) {
-    return <Navigate to={from?.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />
+    return <Navigate to={typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />
   }
   return children
 }

@@ -1,10 +1,10 @@
 import { Menu as MenuPrimitive } from '@base-ui/react/menu'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faChevronRight, faGear, faRightFromBracket, faUserTie } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
-import { toast } from 'sonner'
 
+import { focusRing } from '@/components/app/interactive'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -21,16 +21,12 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { site } from '@/config/site'
-import { formMessage } from '@/features/auth/errors'
 import { useAccount, useLogout } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
 import { useOpenManagement } from '@/features/management/api'
-import { ACCOUNT_NAV, isActive, isPage, NAV, type NavItem, type NavLinkItem } from './nav'
-
-/** Keyboard focus only: a mouse click lets go of the focus (blurAfterPointerClick), so no ring stays behind. */
-const focusRing = 'outline-none focus-visible:ring-2 focus-visible:ring-primary/60'
+import { ACCOUNT_NAV, isAccountArea, isActive, isPage, MANAGEMENT_NAV, NAV, type NavItem, type NavLinkItem } from './nav'
 
 /** A top-level row: the icon on its tile and the label, 44 px tall. */
 const row = cn(
@@ -206,7 +202,9 @@ function PlayerCard() {
   const { pathname } = useLocation()
   const logout = useLogout()
   const openManagement = useOpenManagement()
-  const current = isPage(ACCOUNT_NAV.to, pathname)
+  // The gear is gold on every page of this menu (Management too, review 2026-11-23 app-shell K3);
+  // each row in it marks only its own page.
+  const inAccountArea = isAccountArea(pathname)
 
   return (
     <DropdownMenu>
@@ -225,7 +223,7 @@ function PlayerCard() {
           aria-hidden="true"
           className={cn(
             'grid size-10 shrink-0 place-items-center rounded-lg transition-colors',
-            current ? 'bg-primary/10 text-primary' : 'text-muted-foreground group-hover/card:text-foreground',
+            inAccountArea ? 'bg-primary/10 text-primary' : 'text-muted-foreground group-hover/card:text-foreground',
             'group-data-popup-open/card:text-foreground',
           )}
         >
@@ -248,16 +246,16 @@ function PlayerCard() {
             // The router's link, like every other page (owner, 2026-11-23: no full reload); the click
             // asks first (useOpenManagement) and goes to Google only when there is no live grant.
             onClick={openManagement}
-            render={<Link to="/management" aria-current={isPage('/management', pathname) ? 'page' : undefined} />}
+            render={<Link to={MANAGEMENT_NAV.to} aria-current={isPage(MANAGEMENT_NAV.to, pathname) ? 'page' : undefined} />}
             className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
           >
-            <FontAwesomeIcon icon={faUserTie} className="size-3.75 text-muted-foreground" aria-hidden="true" />
-            Management
+            <FontAwesomeIcon icon={MANAGEMENT_NAV.icon} className="size-3.75 text-muted-foreground" aria-hidden="true" />
+            {MANAGEMENT_NAV.label}
           </MenuPrimitive.LinkItem>
         )}
         <MenuPrimitive.LinkItem
           closeOnClick
-          render={<Link to={ACCOUNT_NAV.to} aria-current={current ? 'page' : undefined} />}
+          render={<Link to={ACCOUNT_NAV.to} aria-current={isPage(ACCOUNT_NAV.to, pathname) ? 'page' : undefined} />}
           className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
         >
           <FontAwesomeIcon icon={faGear} className="size-3.75 text-muted-foreground" aria-hidden="true" />
@@ -265,11 +263,7 @@ function PlayerCard() {
         </MenuPrimitive.LinkItem>
         {/* Logged out: the guard sends the player to the login page. */}
         <MenuPrimitive.Item
-          onClick={() =>
-            logout.mutate(undefined, {
-              onError: (error) => toast.error(formMessage(error)),
-            })
-          }
+          onClick={() => logout.mutate()}
           disabled={logout.isPending}
           className={cn(
             menuRow,

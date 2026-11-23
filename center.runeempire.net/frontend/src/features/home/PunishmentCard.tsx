@@ -1,6 +1,7 @@
 import { faGavel } from '@fortawesome/free-solid-svg-icons'
 import { type CSSProperties, useRef, useState } from 'react'
 
+import { focusRing } from '@/components/app/interactive'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { budapestDayAndTime } from '@/lib/budapest'
 import { cn } from '@/lib/utils'
@@ -75,7 +76,7 @@ export function PunishmentCard({ punishment, unavailable = false, label, classNa
                     pressedWith.current = null
                     setDetailsOpen((open) => (tap ? !open : true))
                   }}
-                  className="cursor-help self-start rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                  className={cn('cursor-help self-start rounded-sm text-left', focusRing)}
                 />
               }
             >

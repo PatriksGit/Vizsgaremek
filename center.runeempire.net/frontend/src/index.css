@@ -28,8 +28,6 @@
     --color-lock: var(--lock);
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
     --color-sidebar-accent: var(--sidebar-accent);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
@@ -52,7 +50,6 @@
     --color-primary: var(--primary);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
@@ -82,7 +79,6 @@
     --background: #0c0b09;
     --foreground: #f2ede4;
     --card: #15130f;
-    --card-foreground: #f2ede4;
     --popover: #1f1c16;
     --popover-foreground: #f2ede4;
     --primary: #e9b44c;
@@ -109,8 +105,6 @@
     --lock: #ff3b3b;
     --sidebar: #100f0c;
     --sidebar-foreground: #c9c2b5;
-    --sidebar-primary: #e9b44c;
-    --sidebar-primary-foreground: #2b1d05;
     --sidebar-accent: #1a1813;
     --sidebar-accent-foreground: #f2ede4;
     --sidebar-border: #221e18;
@@ -135,7 +129,7 @@
 }
 
 
-/* The black glass of the login card and the error page. */
+/* The black glass of the login card. */
 @utility glass {
     @apply rounded-3xl border border-white/10 bg-black/55 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl;
 }
@@ -343,7 +337,6 @@
 }
 
 /* A page reached with router state {quiet: true} (AppLayout data-quiet): no build-up, e.g. home after a refused management sign-in. */
-[data-quiet] .backdrop-reveal,
 [data-quiet] .card-rise,
 [data-quiet] .content-in,
 [data-quiet] .rank-reveal {

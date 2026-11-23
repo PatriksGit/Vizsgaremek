@@ -1,11 +1,6 @@
 import type { FieldValues, Path, UseFormSetError } from 'react-hook-form'
 
-import { ApiError, GENERIC_ERROR } from '@/lib/api'
-
-/** The message for the form as a whole; the backend's messages are already in Hungarian. */
-export function formMessage(error: unknown): string {
-  return error instanceof ApiError ? error.message : GENERIC_ERROR
-}
+import { ApiError, formMessage } from '@/lib/api'
 
 /**
  * Puts a failed request's messages on the form: each backend key on its form

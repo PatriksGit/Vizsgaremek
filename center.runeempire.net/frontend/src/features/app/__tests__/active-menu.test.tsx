@@ -103,3 +103,27 @@ it('the ranks have the wizard hat icon in the menu', async () => {
   const rankLinks = screen.getAllByText('Rangok').map((label) => label.closest('a')!)
   expect(rankLinks.map((link) => link.querySelector('svg')?.getAttribute('data-icon'))).toEqual(['hat-wizard', 'hat-wizard'])
 })
+
+// review 2026-11-23 app-shell K3: phones open Management from Beállítások, so the Fiók tab and the sidebar's gear stay marked.
+const gearIsGold = () => screen.getByRole('button', { name: 'Fiók menü' }).querySelector('.text-primary') !== null
+
+it('Management marks the Fiók tab and the gold gear, like Beállítások', async () => {
+  renderMenuOn('/management', 'management')
+
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  expect(currentLinks()).toEqual(['Fiók'])
+  expect(gearIsGold()).toBe(true)
+})
+
+it('control: Beállítások marks the Fiók tab and the gear; another page neither', async () => {
+  renderMenuOn('/beallitasok', 'beallitasok')
+
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  expect(currentLinks()).toEqual(['Fiók'])
+  expect(gearIsGold()).toBe(true)
+
+  cleanup()
+  renderMenuOn('/rangok', 'rangok')
+  expect(await screen.findByText('Megnyitott oldal')).toBeTruthy()
+  expect(gearIsGold()).toBe(false)
+})

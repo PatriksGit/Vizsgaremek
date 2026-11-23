@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useRef, type BaseSyntheticEvent } from 'react'
+import { useLayoutEffect, useRef, type BaseSyntheticEvent } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 
 import { applyApiError } from './errors'
@@ -35,7 +35,8 @@ export function useCodeForm({ schema = totpSchema, active, send, onRefused, focu
   // Counts up whenever the step is left: an answer to a code from an earlier opening belongs to none.
   const opening = useRef(0)
 
-  useEffect(() => {
+  // A layout effect: counted in the same commit that hides the step, before any later answer can run.
+  useLayoutEffect(() => {
     if (active) return
     opening.current += 1
     sending.current = false

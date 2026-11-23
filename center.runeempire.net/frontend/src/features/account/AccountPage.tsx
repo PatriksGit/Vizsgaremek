@@ -1,14 +1,13 @@
-import { faRightFromBracket, faUserTie } from '@fortawesome/free-solid-svg-icons'
+import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link } from 'react-router'
-import { toast } from 'sonner'
 
 import { panelLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { site } from '@/config/site'
+import { MANAGEMENT_NAV } from '@/features/app/nav'
 import type { Account } from '@/features/auth/api'
-import { formMessage } from '@/features/auth/errors'
 import { useAccount, useLogout } from '@/features/auth/queries'
 import { NO_DATA } from '@/features/home/stats'
 import { useOpenManagement } from '@/features/management/api'
@@ -49,12 +48,16 @@ export function AccountPage() {
             <div className="md:hidden">
               <SettingsRow
                 id="management-title"
-                icon={faUserTie}
-                title="Management"
+                icon={MANAGEMENT_NAV.icon}
+                title={MANAGEMENT_NAV.label}
                 description="A szerver kezelőfelülete, Google-fiókkal léphetsz be."
                 action={
                   // The router's link, like the sidebar's: the click asks first and goes to Google only without a live grant.
-                  <Link to="/management" onClick={openManagement} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+                  <Link
+                    to={MANAGEMENT_NAV.to}
+                    onClick={openManagement}
+                    className={buttonVariants({ variant: 'outline', size: 'lg' })}
+                  >
                     Megnyitás
                   </Link>
                 }
@@ -93,7 +96,7 @@ function LogoutButton() {
       variant="outline"
       size="lg"
       // Logged out: the guard sends the player to the login page.
-      onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
+      onClick={() => logout.mutate()}
       disabled={logout.isPending}
       style={enterAfter(300)}
       className="content-in h-11 self-start px-4 hover:border-redstone/40 hover:bg-redstone/10 hover:text-redstone md:hidden"

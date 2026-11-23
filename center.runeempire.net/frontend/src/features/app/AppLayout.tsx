@@ -1,9 +1,11 @@
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { Link, Outlet, useLocation } from 'react-router'
 
+import { focusRing } from '@/components/app/interactive'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { site } from '@/config/site'
 import { blurAfterPointerClick } from '@/lib/focus'
+import { cn } from '@/lib/utils'
 
 import { AppFooter } from './AppFooter'
 import { AppSidebar } from './AppSidebar'
@@ -17,8 +19,12 @@ import { MobileTabBar } from './MobileTabBar'
 export function AppLayout() {
   // A page reached with router state {quiet: true} skips the page-load build-up (index.css [data-quiet]):
   // e.g. home after a refused management sign-in, so it does not look like a fresh login.
-  const { state } = useLocation()
-  const quiet = isQuiet(state)
+  // Decided once per page: a later entry of the same page (its own menu link, the skip link's #tartalom)
+  // has no state, and dropping data-quiet then would replay the build-up on a page already shown.
+  const { pathname, state } = useLocation()
+  const [arrival, setArrival] = useState({ pathname, quiet: isQuiet(state) })
+  if (arrival.pathname !== pathname) setArrival({ pathname, quiet: isQuiet(state) })
+  const quiet = arrival.pathname === pathname ? arrival.quiet : isQuiet(state)
 
   return (
     // 248 px wide, as in the design.
@@ -39,8 +45,11 @@ export function AppLayout() {
           <Outlet />
           <AppFooter />
         </div>
-        {/* Phones: room under the footer as tall as the tab bar, so it never covers the last line. */}
-        <div aria-hidden="true" className="h-[calc(4.75rem+env(safe-area-inset-bottom))] md:hidden" />
+        {/*
+         * Phones: room under the footer exactly as tall as the tab bar (its 1 px border, pt-2 + h-13 = 3.75rem and
+         * pb max(1rem, inset)), so it never covers the last line and leaves no extra gap (review 2026-11-23 AS-N2).
+         */}
+        <div aria-hidden="true" className="h-[calc(3.75rem+1px+max(1rem,env(safe-area-inset-bottom)))] md:hidden" />
       </SidebarInset>
 
       <MobileTabBar />
@@ -59,7 +68,7 @@ function MobileTopBar() {
       <Link
         to="/"
         onClick={blurAfterPointerClick}
-        className="flex items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+        className={cn('flex items-center gap-2.5 rounded-lg', focusRing)}
       >
         <img src={site.logoUrl} alt="" width={34} height={34} className="size-8.5 object-contain" />
         <span className="font-heading text-lg font-bold text-foreground">{site.name}</span>

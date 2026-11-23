@@ -1,11 +1,11 @@
 import { isCancelledError, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, type MouseEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { toast } from 'sonner'
 
-import { formMessage } from '@/features/auth/errors'
+import { MANAGEMENT_NAV } from '@/features/app/nav'
 import { useAccount } from '@/features/auth/queries'
 import { http } from '@/lib/api'
+import { toastError } from '@/lib/toastError'
 
 /** GET /api/management/me: whether this browser holds the Google-confirmed management grant. */
 type ManagementMe = { signed_in: false } | { signed_in: true; email: string; expires_at: string }
@@ -54,7 +54,7 @@ async function logoutManagement(): Promise<void> {
  * signed-out /management forwards to Google at once, so the page must be left
  * first. replace: the back button cannot bring the ended dashboard back.
  * The logout route is behind the website login only, so it never answers
- * management.sign_in_required; a failure stays on the page (the caller toasts).
+ * management.sign_in_required; a failure stays on the page with a toast, like the website's logout.
  */
 export function useManagementLogout() {
   const navigate = useNavigate()
@@ -62,6 +62,7 @@ export function useManagementLogout() {
   return useMutation({
     mutationFn: logoutManagement,
     onSuccess: () => navigate('/', { replace: true }),
+    onError: toastError,
   })
 }
 
@@ -101,12 +102,12 @@ export function useOpenManagement() {
         retry: false,
       })
       if (here.current !== from) return
-      if (me.signed_in) navigate('/management')
+      if (me.signed_in) navigate(MANAGEMENT_NAV.to)
       else window.location.assign(GOOGLE_REDIRECT_URL)
     } catch (error) {
       // Cancelled by a login or logout meanwhile (setAccount cancels every query): nothing to say.
       if (isCancelledError(error)) return
-      toast.error(formMessage(error))
+      toastError(error)
     } finally {
       checking.current = false
     }

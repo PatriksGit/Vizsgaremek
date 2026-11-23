@@ -12,6 +12,16 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 /**
+ * The legal pages: their own list, not looked up by the footer column's visible title,
+ * so renaming "Jogi" cannot drop them from the logged-in footer (review 2026-11-23 app-shell K7).
+ */
+const legalLinks = [
+  { label: 'ÁSZF', href: '#', icon: faFileContract },
+  { label: 'Adatkezelési tájékoztató', href: '#', icon: faUserLock },
+  { label: 'Impresszum', href: '#', icon: faCircleInfo },
+]
+
+/**
  * Site-wide content: server info, footer links and the auth background.
  * Placeholder values until the backend serves them; links are '#' until
  * their pages exist.
@@ -68,15 +78,11 @@ export const site = {
         { label: 'Szabályzat', href: '#', icon: faScroll },
       ],
     },
-    {
-      title: 'Jogi',
-      links: [
-        { label: 'ÁSZF', href: '#', icon: faFileContract },
-        { label: 'Adatkezelési tájékoztató', href: '#', icon: faUserLock },
-        { label: 'Impresszum', href: '#', icon: faCircleInfo },
-      ],
-    },
+    { title: 'Jogi', links: legalLinks },
   ],
+
+  /** The legal pages: the guest footer's Jogi column and the logged-in footer's line. */
+  legalLinks,
 
   socialLinks: [
     { label: 'Discord', href: '#', icon: faDiscord },

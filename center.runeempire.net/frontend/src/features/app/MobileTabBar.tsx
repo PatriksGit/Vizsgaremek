@@ -6,7 +6,7 @@ import { useAccount } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
-import { ACCOUNT_NAV, isActive, TAB_NAV } from './nav'
+import { ACCOUNT_NAV, isAccountArea, isActive, TAB_NAV } from './nav'
 
 const tabBase = 'flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[11px] leading-none'
 
@@ -27,7 +27,7 @@ export function MobileTabBar() {
       aria-label="Főmenü"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-sidebar-border bg-sidebar px-2 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
     >
-      {/* h-13 plus the padding: AppLayout keeps the same room free under the footer. */}
+      {/* The border, pt-2, h-13 and the bottom padding: AppLayout's spacer under the footer is the same height. */}
       <ul className="grid h-13 grid-cols-5">
         {TAB_NAV.map((item) => {
           const icon =
@@ -37,7 +37,8 @@ export function MobileTabBar() {
               <FontAwesomeIcon icon={item.icon} className="size-4.75" aria-hidden="true" />
             )
 
-          const current = isActive(item, pathname)
+          // The Fiók tab stays marked on Management too: phones open it from Beállítások.
+          const current = item.to === ACCOUNT_NAV.to ? isAccountArea(pathname) : isActive(item, pathname)
           return (
             <li key={item.label}>
               <Link

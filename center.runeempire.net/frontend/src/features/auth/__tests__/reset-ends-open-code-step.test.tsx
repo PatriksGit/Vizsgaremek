@@ -28,7 +28,9 @@ function codeSent(email: string): Reply {
   return {
     status: 202,
     headers: { date: new Date(now).toUTCString() },
-    data: { data: { email, expires_at: new Date(now + 15 * 60_000).toISOString(), resend_at: new Date(now + 600_000).toISOString() } },
+    data: {
+      data: { email, expires_at: new Date(now + 15 * 60_000).toISOString(), resend_at: new Date(now + 600_000).toISOString() },
+    },
   }
 }
 
@@ -53,6 +55,8 @@ const loginSlide = () => {
   const name = screen.getAllByLabelText('Játékosnév').find((input) => input.closest('[inert]') === null)
   return name ? within(name.closest('form')!) : null
 }
+/** The name field of the login slide, once it is on screen. */
+const loginName = () => loginSlide()?.getByLabelText('Játékosnév') as HTMLInputElement | undefined
 const forgotPanel = () => within(screen.getByRole('region', { name: 'Elfelejtett jelszó' }))
 
 async function resetPassword() {
@@ -72,7 +76,9 @@ async function toLoginFromForgot() {
   await waitFor(() => expect(loginSlide()).not.toBeNull())
 }
 
-it('repro: Back from the 2FA code step to the panel, reset: the login card still asks for the code', { timeout: 15_000 }, async () => {
+it('repro: Back from the 2FA code step to the panel, reset: the login card still asks for the code', {
+  timeout: 15_000,
+}, async () => {
   await renderApp()
   await toLoginFromForgot()
   fireEvent.change(loginSlide()!.getByLabelText('Játékosnév'), { target: { value: 'Steve_01' } })
@@ -84,7 +90,7 @@ it('repro: Back from the 2FA code step to the panel, reset: the login card still
   window.history.back()
   await resetPassword()
 
-  await waitFor(() => expect((loginSlide()?.getByLabelText('Játékosnév') as HTMLInputElement | undefined)?.value).toBe('Steve_01'))
+  await waitFor(() => expect(loginName()?.value).toBe('Steve_01'))
 })
 
 it('control: from the password step, reset: the login card has the name filled in', { timeout: 15_000 }, async () => {
@@ -94,5 +100,5 @@ it('control: from the password step, reset: the login card has the name filled i
   window.history.back()
   await resetPassword()
 
-  await waitFor(() => expect((loginSlide()?.getByLabelText('Játékosnév') as HTMLInputElement | undefined)?.value).toBe('Steve_01'))
+  await waitFor(() => expect(loginName()?.value).toBe('Steve_01'))
 })

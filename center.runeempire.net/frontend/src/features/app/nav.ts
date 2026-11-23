@@ -7,6 +7,7 @@ import {
   faRightLeft,
   faUser,
   faUsers,
+  faUserTie,
 } from '@fortawesome/free-solid-svg-icons'
 import { matchPath } from 'react-router'
 
@@ -28,6 +29,12 @@ export type NavItem = NavLinkItem & {
 
 /** The account settings: in the menu of the player card at the bottom of the sidebar, on phones the tab bar's last tab. */
 export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faUser, to: '/beallitasok', comingSoon: false }
+
+/**
+ * The management page (owner, 2026-11-23: faUserTie): only for can_manage, in the sidebar's account menu
+ * above Beállítások, on phones a row on Beállítások. Both links ask first (management/api.ts useOpenManagement).
+ */
+export const MANAGEMENT_NAV: NavLinkItem = { label: 'Management', icon: faUserTie, to: '/management', comingSoon: false }
 
 /**
  * The logged-in pages: the one list the sidebar and the phone tab bar are
@@ -68,11 +75,19 @@ export function isPage(to: string, pathname: string) {
 }
 
 /** Whether the address is a page under this one, such as a player's profile under /jatekosok. The overview has none. */
-export function isUnder(to: string, pathname: string) {
+function isUnder(to: string, pathname: string) {
   return to !== '/' && matchPath({ path: to, end: false }, pathname) !== null
 }
 
-/** Whether the current page is this item, one of the pages in its group, or a page under it. */
+/** Whether the current page is this item or a page under it (a group's pages live under the group's path). */
 export function isActive(item: NavItem, pathname: string) {
-  return isPage(item.to, pathname) || isUnder(item.to, pathname) || (item.children?.some((child) => isPage(child.to, pathname)) ?? false)
+  return isPage(item.to, pathname) || isUnder(item.to, pathname)
+}
+
+/**
+ * Whether the page is one the account menu leads to: Beállítások, or Management, which phones reach
+ * from Beállítások. Marks the sidebar's gear and the phone Fiók tab (review 2026-11-23 app-shell K3).
+ */
+export function isAccountArea(pathname: string) {
+  return isPage(ACCOUNT_NAV.to, pathname) || isPage(MANAGEMENT_NAV.to, pathname)
 }

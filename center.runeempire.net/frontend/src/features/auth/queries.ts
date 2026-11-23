@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
+import { toastError } from '@/lib/toastError'
+
 import {
   fetchCurrentAccount,
   login,
@@ -19,10 +21,12 @@ export const accountQueryKey = ['account'] as const
 export function useAccount() {
   return useQuery({
     queryKey: accountQueryKey,
-    queryFn: async () => {
+    queryFn: async (context) => {
       const account = await fetchCurrentAccount()
-      // Logged in again, maybe in another tab: the logout is no longer the last word.
-      if (account) loggedOutOnPurpose = false
+      // Logged in again, maybe in another tab: the logout is no longer the last word. Not an answer
+      // that setAccount cancelled (a logout meanwhile): it speaks for the session that just ended.
+      // The signal is read only after the answer, so an unmount never cancels the check itself.
+      if (account && !context.signal.aborted) loggedOutOnPurpose = false
       return account
     },
     // Rechecked when the player comes back to the tab, so an expired session shows.
@@ -86,6 +90,8 @@ export function useLogout() {
   return useMutation({
     mutationFn: logout,
     onSuccess: () => setAccount(queryClient, null, true),
+    // Every logout button (the sidebar's menu, Beállítások on phones) shows a failure the same way.
+    onError: toastError,
   })
 }
 

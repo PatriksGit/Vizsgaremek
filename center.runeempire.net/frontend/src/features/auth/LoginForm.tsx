@@ -7,11 +7,10 @@ import { Link, useLocation } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
-import { ApiError } from '@/lib/api'
+import { ApiError, formMessage } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 import { CodeField } from './CodeField'
-import { formMessage } from './errors'
 import { PasswordField, TextField } from './fields'
 import { FormAlert } from './FormAlert'
 import { useFromState } from './fromState'

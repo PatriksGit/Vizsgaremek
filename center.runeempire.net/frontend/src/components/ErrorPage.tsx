@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Logo } from '@/components/Logo'
 import { buttonVariants } from '@/components/ui/button'
 import { site } from '@/config/site'
+import { SERVER_DOWN_STATUSES } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 type ErrorPageProps = {
@@ -15,15 +16,12 @@ type ErrorPageProps = {
   status?: number
 }
 
-/** The statuses a proxy or a maintenance answers with: the server is not there, rather than broken. */
-const UNAVAILABLE = [502, 503, 504, 530]
-
 /** What the page says for a status, and the code it shows large on top (none without a status). */
 function describe(status: number | undefined): { title: string; text: string; code: number | null } {
   if (status === 0) {
     return { title: 'Nem sikerült csatlakozni', text: 'Ellenőrizd az internetkapcsolatod, aztán frissítsd az oldalt.', code: null }
   }
-  if (status !== undefined && UNAVAILABLE.includes(status)) {
+  if (status !== undefined && SERVER_DOWN_STATUSES.includes(status)) {
     return { title: 'A szerver most nem érhető el', text: 'Karbantartás vagy átmeneti kiesés. Frissítsd az oldalt pár perc múlva.', code: status }
   }
   return { title: 'Valami hiba történt', text: 'Frissítsd az oldalt pár perc múlva, vagy szólj nekünk Discordon.', code: status ?? null }

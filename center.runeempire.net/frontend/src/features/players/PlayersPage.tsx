@@ -8,7 +8,7 @@ import { panelLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Skeleton } from '@/components/ui/skeleton'
 import { site } from '@/config/site'
-import { ApiError } from '@/lib/api'
+import { formMessage } from '@/lib/api'
 import { countFormat } from '@/lib/budapest'
 import { enterAfter, staggerDelay } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -138,7 +138,7 @@ function Results({ query, search }: ResultsProps) {
   if (search.error && !search.isFetching && !shown?.exact) {
     return (
       <p role="alert" className="content-in text-center text-muted-foreground">
-        {search.error instanceof ApiError ? search.error.message : 'A keresés most nem sikerült, próbáld újra.'}
+        {formMessage(search.error, 'A keresés most nem sikerült, próbáld újra.')}
       </p>
     )
   }

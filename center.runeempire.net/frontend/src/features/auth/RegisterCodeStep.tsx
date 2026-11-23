@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { formMessage } from '@/lib/api'
 
 import type { PendingRegistration } from './api'
 import { CodeField } from './CodeField'
-import { formMessage } from './errors'
 import { FormAlert } from './FormAlert'
 import { useVerifyRegistration } from './queries'
 import { CODE_LENGTH, CODE_RESENT_MESSAGE, codeSchema } from './schemas'

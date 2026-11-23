@@ -7,8 +7,7 @@ import { toast } from 'sonner'
 import { Panel } from '@/components/app/Panel'
 import { Button } from '@/components/ui/button'
 import { site } from '@/config/site'
-import { formMessage } from '@/features/auth/errors'
-import { ApiError } from '@/lib/api'
+import { ApiError, formMessage } from '@/lib/api'
 import { enterAfter } from '@/lib/motion'
 
 import { GOOGLE_REDIRECT_URL, useManagementLogout, useManagementMe } from './api'
@@ -136,7 +135,7 @@ function SignedIn({ email }: { email: string }) {
         <Button
           variant="outline"
           size="lg"
-          onClick={() => logout.mutate(undefined, { onError: (error) => toast.error(formMessage(error)) })}
+          onClick={() => logout.mutate()}
           disabled={logout.isPending}
           className="h-11 px-4"
         >

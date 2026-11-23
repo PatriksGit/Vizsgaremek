@@ -1,3 +1,6 @@
+/** Keyboard focus only: a mouse click lets go of the focus (lib/focus.ts blurAfterPointerClick), so no ring stays behind. */
+export const focusRing = 'outline-none focus-visible:ring-2 focus-visible:ring-primary/60'
+
 /**
  * A card that opens a player's profile (search results, friends): on hover
  * it lifts 2 px, its edge turns gold and a soft gold glow falls under it, the

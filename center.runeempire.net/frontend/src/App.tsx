@@ -8,8 +8,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { Toaster } from '@/components/ui/sonner'
 import { AccountPage } from '@/features/account/AccountPage'
 import { AppLayout } from '@/features/app/AppLayout'
-import { NAV, type NavItem } from '@/features/app/nav'
-import { PagePlaceholder } from '@/features/app/PagePlaceholder'
+import { MANAGEMENT_NAV, NAV } from '@/features/app/nav'
 import { SectionPage } from '@/features/app/SectionPage'
 import { AuthPage } from '@/features/auth/AuthPage'
 import { GuestOnly, RequireAccount } from '@/features/auth/guards'
@@ -45,28 +44,16 @@ function RootLayout() {
   return <Outlet />
 }
 
-/**
- * The menu's pages that have no content of their own yet, so their links do
- * not fall through to the overview: a group's page lists its pages,
- * the rest say they are on the way. Pages marked coming soon get no route.
- */
-const menuPages = NAV.flatMap((item): NavItem[] => [item, ...(item.children ?? [])])
-  .filter((item) => !['/', '/rangok', '/jatekosok'].includes(item.to) && !item.comingSoon)
-  .map((item) => ({
-    path: item.to.slice(1),
-    element: item.children ? (
-      <SectionPage item={item} />
-    ) : (
-      <PagePlaceholder title={item.label}>
-        <p className="text-muted-foreground">Ez az oldal hamarosan elkészül.</p>
-      </PagePlaceholder>
-    ),
-  }))
+/** The menu's groups: each one's page lists its pages (Rúnák on phones, where the tab bar has no groups). */
+const groupPages = NAV.filter((item) => item.children).map((item) => ({
+  path: item.to.slice(1),
+  element: <SectionPage item={item} />,
+}))
 
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
-    // A page that crashes shows this instead of a blank screen; the button reloads.
+    // A page that crashes shows this instead of a blank screen; a page refresh asks again.
     errorElement: <ErrorPage />,
     children: [
       {
@@ -80,7 +67,7 @@ const router = createBrowserRouter([
           { index: true, element: <HomePage /> },
           { path: 'beallitasok', element: <AccountPage /> },
           {
-            path: 'management',
+            path: MANAGEMENT_NAV.to.slice(1),
             element: (
               <RequireManager>
                 <ManagementPage />
@@ -90,7 +77,7 @@ const router = createBrowserRouter([
           { path: 'rangok', element: <RanksPage /> },
           { path: 'jatekosok', element: <PlayersPage /> },
           { path: 'jatekosok/:name', element: <PlayerProfilePage /> },
-          ...menuPages,
+          ...groupPages,
         ],
       },
       {
