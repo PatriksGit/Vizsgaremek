@@ -9,11 +9,11 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { runeCountFormat } from '@/features/home/stats'
+import { budapestDay, countFormat } from '@/lib/budapest'
 import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
-import { addDays, budapestDay, seasonOver } from './dates'
+import { addDays, seasonOver } from './dates'
 
 type PurchaseDialogProps = {
   /** The rank being bought; null keeps the dialog shut. */
@@ -93,8 +93,8 @@ export function PurchaseDialog({
               title={`Nincs elég rúnád a rang ${extending ? 'meghosszabbításához' : 'megvásárlásához'}.`}
               body={
                 <>
-                  <span>{`${rank.name} · ${days} nap · ${runeCountFormat.format(price)} rúna`}</span>
-                  <span className="font-semibold text-danger">Még {runeCountFormat.format(missing)} rúna hiányzik.</span>
+                  <span>{`${rank.name} · ${days} nap · ${countFormat.format(price)} rúna`}</span>
+                  <span className="font-semibold text-danger">Még {countFormat.format(missing)} rúna hiányzik.</span>
                 </>
               }
             >
@@ -110,7 +110,7 @@ export function PurchaseDialog({
               body={
                 <>
                   <span>{`${rank.name} · ${days} nap`}</span>
-                  <span className="text-2xl font-extrabold text-foreground">{runeCountFormat.format(price)} rúna</span>
+                  <span className="text-2xl font-extrabold text-foreground">{countFormat.format(price)} rúna</span>
                   <span>
                     {extending ? 'Új lejárat' : 'Lejárat'}:{' '}
                     <strong className="text-foreground">{budapestDay(addDays(ownedUntil ?? now, days))}</strong>

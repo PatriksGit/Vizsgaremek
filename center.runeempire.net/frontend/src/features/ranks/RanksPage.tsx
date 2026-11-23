@@ -4,6 +4,7 @@ import { Panel } from '@/components/app/Panel'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { site } from '@/config/site'
+import { staggerDelay } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { useMyStats } from '@/features/home/stats'
 
@@ -20,7 +21,7 @@ import { useNow } from './useNow'
  * loading skeletons (a delay before the first would leave the area blank);
  * the stagger stops after six, so nobody waits.
  */
-const cardEnterDelay = (index: number) => Math.min(index, 6) * 70
+const CARD_STEP = 70
 
 /**
  * The cards wrap by the room they have (owner, 2026-11-17): one column on a
@@ -35,6 +36,14 @@ const listClass = '@container'
 const rowClass = 'flex flex-wrap justify-center gap-5'
 const cellClass =
   'w-full @min-[40rem]:w-[calc((100%-1.25rem)/2)] @min-[40rem]:max-w-[21rem] @min-[58rem]:w-[calc((100%-2.5rem)/3)] @min-[78rem]:w-[calc((100%-3.75rem)/4)]'
+
+/** The value, or the last non-null one before it: what a closing dialog still shows once its rank is gone. */
+function useLastShown<T>(value: T | null) {
+  const [last, setLast] = useState(value)
+  // Adjusting state while rendering (React's "storing information from previous renders"), not a ref read in render.
+  if (value !== null && value !== last) setLast(value)
+  return value ?? last
+}
 
 /**
  * The rank shop (owner's design, Claude Design "Asztali – Rangok"): every rank
@@ -55,8 +64,15 @@ export function RanksPage() {
   // keeps its group until its exit animation ends, so it never fades out empty (UI-N2).
   const [shownDetails, setShownDetails] = useState<{ group: string; open: boolean } | null>(null)
   const [buying, setBuying] = useState<{ group: string; days: number; open: boolean } | null>(null)
-  const details = ranks?.find((rank) => rank.group === shownDetails?.group) ?? null
-  const buyingRank = ranks?.find((rank) => rank.group === buying?.group) ?? null
+  const liveDetails = ranks?.find((rank) => rank.group === shownDetails?.group) ?? null
+  // A duration taken off sale closes the purchase like a removed rank (its price would read 0).
+  const liveBuying =
+    ranks?.find((rank) => rank.group === buying?.group && rank.prices.some((price) => price.days === buying.days)) ?? null
+  // A dialog whose rank (or duration) a refetch took off sale closes showing the last one it had, not an empty frame (V3).
+  const lastDetails = useLastShown(liveDetails)
+  const lastBuying = useLastShown(liveBuying)
+  const details = shownDetails ? lastDetails : null
+  const buyingRank = buying ? lastBuying : null
   // The "Mit kapsz?" button that opened the details, and where the purchase's
   // focus goes back to: a purchase started in the details returns to that
   // button, since the one that opened it is gone by then (review 2026-11-17,
@@ -94,7 +110,7 @@ export function RanksPage() {
             {ranks.map((rank, index) => (
               <li key={rank.group} className={cn(cellClass, 'flex')}>
                 <RankCard
-                  enterDelay={cardEnterDelay(index)}
+                  enterDelay={staggerDelay(index, CARD_STEP)}
                   rank={rank}
                   statusRow={statusRow}
                   ownedUntil={until(rank)}
@@ -132,7 +148,7 @@ export function RanksPage() {
         ownedUntil={until(details)}
         balance={balance}
         now={now}
-        open={shownDetails?.open === true && details !== null}
+        open={shownDetails?.open === true && liveDetails !== null}
         onClose={() => setShownDetails((shown) => shown && { ...shown, open: false })}
         onClosed={() => setShownDetails(null)}
         onBuy={(days) => details && buy(details, days, true)}
@@ -143,7 +159,7 @@ export function RanksPage() {
         ownedUntil={until(buyingRank)}
         balance={balance}
         now={now}
-        open={buying?.open === true && buyingRank !== null}
+        open={buying?.open === true && liveBuying !== null}
         onClose={() => setBuying((shown) => shown && { ...shown, open: false })}
         onClosed={() => setBuying(null)}
         finalFocus={() => purchaseReturn.current ?? true}

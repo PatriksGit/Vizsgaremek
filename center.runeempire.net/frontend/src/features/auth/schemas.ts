@@ -26,9 +26,15 @@ export const CODE_LENGTH = 6
 /** An authenticator app's code: always 6 digits (the TOTP contract with RuneAuth), whatever the e-mail codes are. */
 export const TOTP_LENGTH = 6
 
+/**
+ * The allowed symbols' example in every password text (the field hints, the Beállítások checklist, the error), with
+ * no-break spaces: it broke into "(pl. ! @ #" / "_ -)" on phones (review 2026-11-23, V7).
+ */
+export const PASSWORD_EXAMPLE = '(pl.\u00a0!\u00a0@\u00a0#\u00a0_\u00a0-)'
+
 /** The new-password field's hint (registration, forgotten password). */
 export const PASSWORD_HINT =
-  `Min. ${PASSWORD_MIN_LENGTH} karakter, szóköz nélkül: magyar vagy angol betűk, számok és alap jelek (pl. ! @ # _ -).`
+  `Min. ${PASSWORD_MIN_LENGTH} karakter, szóköz nélkül: magyar vagy angol betűk, számok és alap jelek ${PASSWORD_EXAMPLE}.`
 
 /** The resend toast (registration, forgotten password). */
 export const CODE_RESENT_MESSAGE = 'Új kódot küldtünk. A korábbi kód már nem érvényes.'
@@ -53,7 +59,7 @@ const password = z
   .string()
   .min(1, { error: 'Adj meg egy jelszót.' })
   .refine((value) => ALLOWED_PASSWORD_PATTERN.test(value), {
-    error: 'Csak magyar vagy angol betűket, számokat és alap jeleket (pl. ! @ # _ -) tartalmazhat, szóközt nem.',
+    error: `Csak magyar vagy angol betűket, számokat és alap jeleket ${PASSWORD_EXAMPLE} tartalmazhat, szóközt nem.`,
   })
   // Every allowed character is one UTF-16 unit, so .length counts characters like the backend.
   .refine((value) => value.length >= PASSWORD_MIN_LENGTH, { error: `Legalább ${PASSWORD_MIN_LENGTH} karakter legyen.` })

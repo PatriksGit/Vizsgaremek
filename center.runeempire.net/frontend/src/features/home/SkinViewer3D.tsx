@@ -50,13 +50,18 @@ export default function SkinViewer3D({ url, width, height, onError }: SkinViewer
       viewer.autoRotateSpeed = 0.6
     }
 
+    // A replaced viewer (a new size or name) may still get its skin answer: it must not touch the new one.
+    let current = true
     viewer
       .loadSkin(url, { model: 'auto-detect' })
-      .then(() => setShownKey(`${url} ${width}x${height}`))
-      .catch(() => fail())
+      .then(() => current && setShownKey(`${url} ${width}x${height}`))
+      .catch(() => current && fail())
 
     // StrictMode mounts twice in development: every viewer frees its WebGL context.
-    return () => viewer.dispose()
+    return () => {
+      current = false
+      viewer.dispose()
+    }
   }, [url, width, height])
 
   return (

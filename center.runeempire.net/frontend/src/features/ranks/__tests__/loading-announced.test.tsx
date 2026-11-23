@@ -20,6 +20,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { StatCard } from '@/features/home/StatCard'
 import { StreakPanel } from '@/features/home/StreakPanel'
+import { OWN_WORDING } from '@/features/home/wording'
 import { RanksPage } from '@/features/ranks/RanksPage'
 import { stubBrowserApis } from '@/test/fakeBackend'
 
@@ -54,7 +55,7 @@ it('the balance and the streak say "betöltés…" while the stats load', async 
       <MemoryRouter initialEntries={['/rangok']}>
         <RanksPage />
         <div data-testid="streak">
-          <StreakPanel streak={undefined} />
+          <StreakPanel streak={undefined} text={OWN_WORDING.streak} />
         </div>
       </MemoryRouter>
     </QueryClientProvider>,

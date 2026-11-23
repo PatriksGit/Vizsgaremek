@@ -33,6 +33,8 @@ function Profile({ name }: { name: string }) {
   const backLink = (
     <Link
       to={back.to}
+      // Back to a profile: with its own back link, so the chain still ends at the search it started from (K2).
+      state={back.back && { back: back.back }}
       className="content-in inline-flex items-center gap-2 self-start rounded-md text-sm font-semibold text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-primary/30"
       style={enterAfter(100)}
     >
@@ -66,7 +68,7 @@ function Profile({ name }: { name: string }) {
         registeredAt={profile.data?.registered_at}
         stats={profile}
         friends={friends}
-        friendBack={{ to: pathname, label: `Vissza: ${shownName}` }}
+        friendBack={{ to: pathname, label: `Vissza: ${shownName}`, back }}
       />
     </div>
   )

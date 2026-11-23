@@ -1,14 +1,14 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
 import type { Friend } from '@/features/home/FriendsCard'
-import type { MyStats } from '@/features/home/stats'
+import { answeredAt, type MyStats, type StatsAnswer } from '@/features/home/stats'
 import { ApiError, http } from '@/lib/api'
 
 /** A whole Minecraft name: 3-16 letters, digits or underscores (the backend's Account::NAME_PATTERN). */
 export const PLAYER_NAME = /^[A-Za-z0-9_]{3,16}$/
 
 /** What the search may start with: the characters a name can have, at most a whole name. */
-export const NAME_START = /^[A-Za-z0-9_]{1,16}$/
+const NAME_START = /^[A-Za-z0-9_]{1,16}$/
 
 /** The search asks from this many letters on; one letter would list too many players. */
 export const SEARCH_MIN_LENGTH = 2
@@ -17,7 +17,7 @@ export const SEARCH_MIN_LENGTH = 2
  * GET /api/players?q=: at most 30 players by name, and how many more match
  * (counted up to 1000), with the query they answer.
  */
-export type PlayerSearch = { query: string; players: { name: string }[]; more: number }
+type PlayerSearch = { query: string; players: { name: string }[]; more: number }
 
 async function searchPlayers(query: string): Promise<PlayerSearch> {
   const response = await http.get<{ data: { name: string }[]; meta: { more: number } }>('/players', { params: { q: query } })
@@ -66,7 +66,7 @@ export function usePlayerSearch(query: string) {
 }
 
 /** GET /api/players/{name}/stats: the same numbers as the overview's, plus the name and the registration day. */
-export type PlayerProfile = MyStats & { name: string; registered_at: string | null }
+type PlayerProfile = MyStats & { name: string; registered_at: string | null }
 
 /** The backend has no such player (players.not_found). */
 export const isMissingPlayer = (error: unknown) => error instanceof ApiError && error.status === 404
@@ -82,7 +82,10 @@ const everyMinuteUnlessMissing = ({ state }: { state: { error: unknown } }) => (
 export function usePlayerProfile(name: string) {
   return useQuery({
     queryKey: ['player', name.toLowerCase(), 'stats'],
-    queryFn: async () => (await http.get<{ data: PlayerProfile }>(`/players/${encodeURIComponent(name)}/stats`)).data.data,
+    queryFn: async (): Promise<StatsAnswer<PlayerProfile>> => {
+      const response = await http.get<{ data: PlayerProfile }>(`/players/${encodeURIComponent(name)}/stats`)
+      return { ...response.data.data, answeredAt: answeredAt(response.headers?.date) }
+    },
     enabled: PLAYER_NAME.test(name),
     retry: retryUnlessMissing,
     staleTime: 60_000,

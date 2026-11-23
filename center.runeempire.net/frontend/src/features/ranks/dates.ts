@@ -1,20 +1,7 @@
-import type { MyStats } from '@/features/home/stats'
+import { dateOrDash, type MyStats } from '@/features/home/stats'
+import { budapestClock, budapestDay, DAY_MS } from '@/lib/budapest'
 
 import type { Rank } from './api'
-
-const DAY_MS = 86_400_000
-
-const budapestParts = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Europe/Budapest',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
-
-/** The Budapest day of a moment, as the game and the overview count days: "2026.11.20.". */
-export function budapestDay(date: Date) {
-  return budapestParts.format(date).replaceAll('-', '.') + '.'
-}
 
 export function addDays(from: Date, days: number) {
   return new Date(from.getTime() + days * DAY_MS)
@@ -43,18 +30,17 @@ export function ownedUntil(rank: Rank, stats: MyStats | undefined, now: Date): D
   return until > now ? until : null
 }
 
-const budapestClock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Budapest', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
-
 /**
  * Until when a seasonal rank sells, as a fixed date: "2026.12.26-ig" when it
  * ends at Budapest midnight (the day before is the last full day), otherwise
- * "2026.12.27. 18:00-ig".
+ * "2026.12.27. 18:00-ig". A date that cannot be read is the dash, never a RangeError (review 2026-11-23, like K4).
  */
 export function seasonEndText(endsAt: string) {
-  const end = new Date(endsAt)
-  const clock = budapestClock.format(end)
-  if (clock === '00:00') return `${budapestDay(new Date(end.getTime() - 1000)).slice(0, -1)}-ig`
-  return `${budapestDay(end)} ${clock}-ig`
+  return dateOrDash(endsAt, (end) => {
+    const clock = budapestClock(end)
+    if (clock === '00:00') return `${budapestDay(new Date(end.getTime() - 1000)).slice(0, -1)}-ig`
+    return `${budapestDay(end)} ${clock}-ig`
+  })
 }
 
 /** Whether a seasonal rank's buying time is over. */

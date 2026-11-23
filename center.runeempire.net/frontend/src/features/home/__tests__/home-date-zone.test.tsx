@@ -1,14 +1,14 @@
 /**
  * Regression test (review 2026-11-17, home H1). The bug it guards against: the overview writes the rank's "Lejár:" day, the punishment's end day
  * and "Csatlakozott" in the BROWSER's zone, while the streak, the week and the rank shop
- * (features/ranks/dates.ts budapestDay: "as the game and the overview count days") use
+ * (src/lib/budapest.ts budapestDay: "as the game and the overview count days") use
  * Budapest days. A player whose browser is in another zone reads another day.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
-import { budapestDay } from '@/features/ranks/dates'
+import { budapestDay } from '@/lib/budapest'
 import { stubBrowserApis } from '@/test/fakeBackend'
 
 const getMock = vi.hoisted(() => vi.fn())

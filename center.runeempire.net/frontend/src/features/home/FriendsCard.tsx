@@ -5,6 +5,7 @@ import { panelLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Skeleton } from '@/components/ui/skeleton'
 import { type ProfileBack, profilePath } from '@/features/players/links'
+import { countFormat } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
@@ -20,8 +21,6 @@ export type Friend = {
   rank: { name: string; color: string | null } | null
 }
 
-const countFormat = new Intl.NumberFormat('hu-HU')
-
 /**
  * The player's friends from the game: their heads with a green dot while
  * online, the online ones first (the server's order, like /fr in game). Each
@@ -36,21 +35,19 @@ export function FriendsCard({
   title,
   emptyText,
   back,
-  className,
 }: {
   friends?: Friend[] | null
   /** From wording.ts: "Barátaid" on the overview, "Barátai" on a profile; so is the empty line. */
   title: string
   emptyText: string
   back?: ProfileBack
-  className?: string
 }) {
   const online = friends?.filter((friend) => friend.online).length ?? 0
 
   return (
     <section
       aria-labelledby="friends-title"
-      className={cn(panelLook, 'content-in flex flex-col gap-3 p-5 md:gap-4 md:p-6', className)}
+      className={cn(panelLook, 'content-in flex flex-col gap-3 p-5 md:gap-4 md:p-6')}
       style={enterAfter(1060)}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">

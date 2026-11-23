@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 
 import { useAccount } from '@/features/auth/queries'
 import { http } from '@/lib/api'
+import { budapestDay, serverToday } from '@/lib/budapest'
 
 import type { Friend } from './FriendsCard'
 import type { Punishment } from './PunishmentCard'
@@ -43,25 +44,11 @@ export type MyStats = {
   unavailable: StatPart[]
 }
 
-/**
- * The zone RuneActivity counts its days in (the backend's runeactivity.timezone):
- * the stats' week and today are Budapest's, whatever zone the browser is in.
- */
-const SERVER_ZONE = 'Europe/Budapest'
-
-const serverDate = new Intl.DateTimeFormat('en-CA', { timeZone: SERVER_ZONE, year: 'numeric', month: 'numeric', day: 'numeric' })
-
-/** Today in the server's zone, as a local-midnight Date with that year, month and day. */
-export function serverToday(now = new Date()) {
-  const part = (type: 'year' | 'month' | 'day') => Number(serverDate.formatToParts(now).find((entry) => entry.type === type)?.value)
-  return new Date(part('year'), part('month') - 1, part('day'))
-}
-
 /** The week's days, Monday first: short for the streak boxes and the chart, whole for screen readers and the tooltip. */
 export const DAY_SHORT = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V']
 export const DAY_NAMES = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
 
-/** Today's place in the stats' week, Monday first (0-6). */
+/** Today's place in the stats' week (Budapest days, like RuneActivity's), Monday first (0-6). */
 export function serverTodayIndex(now = new Date()) {
   return (serverToday(now).getDay() + 6) % 7
 }
@@ -69,9 +56,18 @@ export function serverTodayIndex(now = new Date()) {
 /** What the overview writes where a number could not be loaded. */
 export const NO_DATA = '—'
 
-async function fetchMyStats(): Promise<MyStats> {
+/** The stats with the server's moment of the answer (epoch ms): the day their week and today are for. */
+export type StatsAnswer<T = MyStats> = T & { answeredAt: number }
+
+/** The server's clock in a response's Date header, else the visitor's: the visitor's clock can be a day off. */
+export function answeredAt(dateHeader: unknown) {
+  const moment = Date.parse(String(dateHeader))
+  return Number.isNaN(moment) ? Date.now() : moment
+}
+
+async function fetchMyStats(): Promise<StatsAnswer> {
   const response = await http.get<{ data: MyStats }>('/me/stats')
-  return response.data.data
+  return { ...response.data.data, answeredAt: answeredAt(response.headers?.date) }
 }
 
 /**
@@ -122,17 +118,19 @@ export function toPunishment(punishment: MyStats['punishment']): Punishment | nu
   }
 }
 
-export const runeCountFormat = new Intl.NumberFormat('hu-HU')
-
 /** Hours with at most one decimal ("2,5"). */
 export const hoursFormat = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 1 })
 
-const serverDay = new Intl.DateTimeFormat('en-CA', { timeZone: SERVER_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' })
+/**
+ * An API date written by `format` (lib/budapest), or the dash when it cannot be read: Intl throws a RangeError on an
+ * invalid date (a year after 9999, which Carbon writes without its sign), which would crash the whole page.
+ */
+export function dateOrDash(iso: string, format: (date: Date) => string) {
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? NO_DATA : format(date)
+}
 
 /** "2026.11.20.", the Budapest day like the streak and the rank shop: fits a pill on one line. */
 export function shortDate(iso: string) {
-  const date = new Date(iso)
-  // Intl throws on an invalid date (a year after 9999, which Carbon writes without its sign): a dash, not a crashed page.
-  if (Number.isNaN(date.getTime())) return NO_DATA
-  return `${serverDay.format(date).replaceAll('-', '.')}.`
+  return dateOrDash(iso, budapestDay)
 }

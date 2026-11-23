@@ -3,15 +3,6 @@ import type { CSSProperties } from 'react'
 import type { RankPrice } from './api'
 
 /**
- * How much a one-line row must shrink to fit its box: 1 when it fits (it never
- * grows), and 1 while either width is unknown (not laid out yet).
- */
-export function fitScale(natural: number, available: number): number {
-  if (natural <= 0 || available <= 0) return 1
-  return Math.min(1, available / natural)
-}
-
-/**
  * A duration's real per-day saving against the shortest duration, in whole
  * percent; 0 when there is none. Computed from the prices, never typed in
  * (owner, 2026-11-17: "adjustable later"), so changing the 90-day price in

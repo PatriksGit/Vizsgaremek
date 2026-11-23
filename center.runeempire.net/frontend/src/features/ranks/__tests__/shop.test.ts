@@ -4,7 +4,8 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { accentVars, discountPercent, fitScale } from '@/features/ranks/shop'
+import { fitScale } from '@/lib/fitScale'
+import { accentVars, discountPercent } from '@/features/ranks/shop'
 
 /** The in-game look stays on one line (owner, 2026-11-17): it shrinks to fit instead of wrapping. */
 describe('fitScale', () => {

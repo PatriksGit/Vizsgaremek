@@ -1,4 +1,4 @@
-import { TrendingUp } from 'lucide-react'
+import { Hourglass } from 'lucide-react'
 import { Area, AreaChart, CartesianGrid, ReferenceArea, XAxis, YAxis } from 'recharts'
 
 import { panelLook } from '@/components/app/Panel'
@@ -181,7 +181,7 @@ function WeekChart({ week, total, todayIndex, emptyText }: { week: number[]; tot
 
       {total === 0 && (
         <div className="absolute top-[45%] left-1/2 flex -translate-1/2 items-center gap-2.5 rounded-xl border border-line bg-sunken px-4 py-3 text-center text-sm font-bold text-foreground max-sm:w-[85%]">
-          <TrendingUp className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <Hourglass className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
           {emptyText}
         </div>
       )}

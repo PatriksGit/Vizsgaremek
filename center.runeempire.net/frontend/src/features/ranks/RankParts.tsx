@@ -1,36 +1,32 @@
-import { faCalendarDays, faCheck, faClock, faCoins, faImage } from '@fortawesome/free-solid-svg-icons'
+import { faCalendarDays, faCheck, faClock, faCoins } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { useId, useState } from 'react'
 
-import { runeCountFormat } from '@/features/home/stats'
+import { budapestDay, countFormat, DAY_MS } from '@/lib/budapest'
 import { cn } from '@/lib/utils'
 
 import type { Rank } from './api'
-import { budapestDay, seasonEndText, timeLeft } from './dates'
+import { seasonEndText, timeLeft } from './dates'
 import { discountPercent } from './shop'
 
-/** The rank's animated banner, 5:2 with a small inset; a dashed box until it has one. */
+/**
+ * The rank's animated banner, 5:2 with a small inset. Without a GIF the strip stays, empty (its tint only), so the
+ * cards keep their shape: no "the GIF goes here" placeholder for players (review 2026-11-23, ranks-players K3).
+ */
 export function RankBanner({ rank, className }: { rank: Rank; className?: string }) {
   return (
     <div
       className={cn('flex aspect-5/2 items-center justify-center border-b border-border bg-background p-2', className)}
     >
-      {rank.gifUrl ? (
+      {rank.gifUrl && (
         <img src={rank.gifUrl} alt={`${rank.name} rang animációja`} className="rank-reveal size-full object-contain" />
-      ) : (
-        <span className="flex size-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line text-faint">
-          <FontAwesomeIcon icon={faImage} aria-hidden="true" className="size-5" />
-          <span className="text-xs font-bold">A rang GIF-je ide kerül</span>
-        </span>
       )}
     </div>
   )
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
-
-const DAY_MS = 86_400_000
 
 /**
  * Until when a seasonal rank sells: a fixed date ("Még vásárolható:
@@ -128,7 +124,7 @@ export function BuyBox({ rank, owned, onBuy }: { rank: Rank; owned: boolean; onB
 
       <p className="flex items-center justify-center gap-1.5 text-xl font-extrabold text-foreground tabular-nums">
         <FontAwesomeIcon icon={faCoins} aria-hidden="true" className="size-4 text-primary" />
-        {runeCountFormat.format(chosen.runes)} rúna
+        {countFormat.format(chosen.runes)} rúna
       </p>
 
       <button
@@ -156,14 +152,11 @@ export function OwnedUntil({ until }: { until: Date }) {
 }
 
 /** In place of the buy button once a seasonal rank's time is over. */
-export function NoLongerSold({ className }: { className?: string }) {
+export function NoLongerSold() {
   return (
     <span
       aria-disabled="true"
-      className={cn(
-        'flex min-h-12 w-full items-center justify-center rounded-xl border border-line bg-sunken text-[15px] font-bold text-faint',
-        className,
-      )}
+      className="flex min-h-12 w-full items-center justify-center rounded-xl border border-line bg-sunken text-[15px] font-bold text-faint"
     >
       Már nem vásárolható
     </span>

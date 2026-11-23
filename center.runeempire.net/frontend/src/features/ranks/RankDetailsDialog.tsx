@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { rankColor, runeCountFormat } from '@/features/home/stats'
+import { rankColor } from '@/features/home/stats'
+import { countFormat } from '@/lib/budapest'
 
 import type { Rank } from './api'
 import { seasonOver } from './dates'
@@ -16,13 +17,10 @@ type RankDetailsDialogProps = {
   balance: number | null | undefined
   now: Date
   onClose: () => void
-  /**
-   * Open or closing. The rank stays while it closes, so the exit animation shows its content, not an
-   * empty frame (review 2026-11-17, UI-N2); without it, open while there is a rank.
-   */
-  open?: boolean
+  /** Open or closing. The rank stays while it closes, so the exit animation shows its content, not an empty frame (UI-N2). */
+  open: boolean
   /** The exit animation has finished: the rank can go. */
-  onClosed?: () => void
+  onClosed: () => void
   /** Opens the purchase on this many days. */
   onBuy: (days: number) => void
 }
@@ -40,7 +38,7 @@ export function RankDetailsDialog({
   balance,
   now,
   onClose,
-  open = rank !== null,
+  open,
   onClosed,
   onBuy,
 }: RankDetailsDialogProps) {
@@ -48,7 +46,7 @@ export function RankDetailsDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => !next && onClose()}
-      onOpenChangeComplete={(next) => !next && onClosed?.()}
+      onOpenChangeComplete={(next) => !next && onClosed()}
     >
       <DialogContent
         style={accentVars(rank?.color ?? null)}
@@ -75,7 +73,7 @@ export function RankDetailsDialog({
             <div className="flex flex-col gap-2.5 border-t border-border p-4 sm:px-6">
               {typeof balance === 'number' && (
                 <span className="text-center text-xs font-semibold text-muted-foreground">
-                  Egyenleged: <strong className="text-foreground">{runeCountFormat.format(balance)} rúna</strong>
+                  Egyenleged: <strong className="text-foreground">{countFormat.format(balance)} rúna</strong>
                 </span>
               )}
               {seasonOver(rank, now) ? (

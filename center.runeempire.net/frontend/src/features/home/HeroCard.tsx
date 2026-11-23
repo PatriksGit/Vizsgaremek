@@ -1,10 +1,11 @@
 import { Clock } from 'lucide-react'
 
+import { FitLine } from '@/components/app/FitLine'
 import { enterAfter } from '@/lib/motion'
 
-import { registrationDate } from './registration'
+import { joinedDay } from './registration'
 import { SkinFigure } from './SkinFigure'
-import { type Streak, StreakPanel } from './StreakPanel'
+import { type Streak, StreakPanel, type StreakText } from './StreakPanel'
 
 /**
  * The top of the overview, on a banner of the server's spawn: the greeting,
@@ -20,6 +21,7 @@ export function HeroCard({
   name,
   registeredAt,
   streak,
+  streakText,
   asOf,
 }: {
   /** The card's name for screen readers (wording.ts). */
@@ -29,6 +31,8 @@ export function HeroCard({
   name?: string
   registeredAt?: string | null
   streak?: Streak | null
+  /** The streak boxes' words to or about the player (wording.ts). */
+  streakText: StreakText
   asOf?: Date
 }) {
   return (
@@ -51,18 +55,22 @@ export function HeroCard({
 
       <div className="content-in flex min-w-0 flex-[1_1_0] flex-col gap-1 md:gap-2 xl:flex-none" style={enterAfter(400)}>
         <p className="text-[13px] font-semibold text-muted-foreground">{greeting}</p>
-        <h1 className="font-heading text-4xl leading-[1.05] font-bold tracking-tight wrap-break-word text-foreground md:text-[52px]">
-          {name}
+        {/* A Minecraft name is one word: never broken mid-word ("ClaudeTes / zt"), it shrinks to the column (V1). */}
+        <h1 className="font-heading text-4xl leading-[1.05] font-bold tracking-tight text-foreground md:text-[52px]">
+          <FitLine>{name}</FitLine>
         </h1>
         {registeredAt && (
           <>
             {/* Phones: a plain line. */}
             <p className="text-xs text-muted-foreground md:hidden">
-              Csatlakozott: <strong className="text-foreground">{registrationDate.format(new Date(registeredAt))}</strong>
+              Csatlakozott: <strong className="whitespace-nowrap text-foreground">{joinedDay(registeredAt)}</strong>
             </p>
-            <p className="mt-2 hidden h-7 items-center gap-1.5 self-start rounded-full bg-raised px-2.5 text-xs font-semibold text-soft md:inline-flex">
-              <Clock className="size-3.25" aria-hidden="true" />
-              Csatlakozott: {registrationDate.format(new Date(registeredAt))}
+            {/* At most one break, between the label and the date (a narrow column at 768 px), and it grows with it (V1). */}
+            <p className="mt-2 hidden min-h-7 items-center gap-1.5 self-start rounded-full bg-raised px-2.5 py-1 text-xs font-semibold text-soft md:inline-flex">
+              <Clock className="size-3.25 shrink-0" aria-hidden="true" />
+              <span>
+                Csatlakozott: <span className="whitespace-nowrap">{joinedDay(registeredAt)}</span>
+              </span>
             </p>
           </>
         )}
@@ -72,6 +80,7 @@ export function HeroCard({
 
       <StreakPanel
         streak={streak}
+        text={streakText}
         asOf={asOf}
         className="content-in basis-full rounded-xl border border-line bg-background/65 p-4 backdrop-blur-sm xl:shrink-0 xl:basis-96"
       />

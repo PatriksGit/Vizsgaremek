@@ -2,6 +2,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { CSSProperties, ReactNode } from 'react'
 
+import { FitLine } from '@/components/app/FitLine'
 import { panelLook } from '@/components/app/Panel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -37,9 +38,12 @@ export function StatCard({ label, icon, value, unit, children, className, style 
             <span className="sr-only"> (most nem érhető el)</span>
           </p>
         ) : value !== undefined ? (
+          // One line beside the icon tile, the unit with it: a long number shrinks instead of running under the tile (V2).
           <p className="text-2xl leading-none font-extrabold text-foreground md:text-3xl">
-            {value}
-            {unit && <span className="text-sm font-bold text-muted-foreground md:text-base"> {unit}</span>}
+            <FitLine>
+              {value}
+              {unit && <span className="text-sm font-bold text-muted-foreground md:text-base"> {unit}</span>}
+            </FitLine>
           </p>
         ) : (
           <>
@@ -55,7 +59,7 @@ export function StatCard({ label, icon, value, unit, children, className, style 
 }
 
 /** The same quiet tile on every card: colour is kept for the values that carry a status. */
-export function StatIcon({ icon }: { icon: IconDefinition }) {
+function StatIcon({ icon }: { icon: IconDefinition }) {
   return (
     <span
       aria-hidden="true"

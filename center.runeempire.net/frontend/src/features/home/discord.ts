@@ -6,7 +6,6 @@ import { http } from '@/lib/api'
 export type DiscordWidget = {
   presence_count: number
   instant_invite: string | null
-  channels: { id: string; name: string }[]
   members: DiscordMember[]
 }
 
@@ -14,8 +13,6 @@ export type DiscordMember = {
   username: string
   avatar_url: string | null
   status: string
-  /** The voice channel the member sits in, if any. */
-  channel_id: string | null
 }
 
 async function fetchDiscordWidget(): Promise<DiscordWidget> {

@@ -9,7 +9,8 @@ import { PlayerHead } from '@/components/app/PlayerHead'
 import { Skeleton } from '@/components/ui/skeleton'
 import { site } from '@/config/site'
 import { ApiError } from '@/lib/api'
-import { enterAfter } from '@/lib/motion'
+import { countFormat } from '@/lib/budapest'
+import { enterAfter, staggerDelay } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 import { resultsFor, searchable, SEARCH_MIN_LENGTH, usePlayerSearch } from './api'
@@ -20,8 +21,6 @@ const DEBOUNCE_MS = 250
 
 /** Above this, the "more" card says "999+": the backend stops counting at 1000. */
 const MORE_SHOWN_UP_TO = 999
-
-const countFormat = new Intl.NumberFormat('hu-HU')
 
 const cardClass = cn(panelLook, 'flex min-h-16 items-center gap-3 px-4 py-3')
 
@@ -35,7 +34,7 @@ const cardClass = cn(panelLook, 'flex min-h-16 items-center gap-3 px-4 py-3')
 const TITLE_DELAY = 100
 const SEARCH_DELAY = 200
 const BELOW_DELAY = 300
-const cardEnterDelay = (index: number) => Math.min(index, 6) * 50
+const CARD_STEP = 50
 
 /**
  * The Játékosok page: a search box at the top centre; typing lists the
@@ -50,11 +49,27 @@ export function PlayersPage() {
   const asked = params.get('q') ?? ''
   const [text, setText] = useState(asked)
   const query = text.trim()
+  // When the address changes by anything but the box's own write (the menu's Játékosok link on this page, Back), the box
+  // follows it; else the debounce wrote the old text back (ranks-players K1). `followed`: the address last seen;
+  // `written`: the query the box last wrote -- why not compare with the text: a key pressed while that write is on its
+  // way would be undone.
+  const [followed, setFollowed] = useState(asked)
+  const [written, setWritten] = useState(asked)
+  if (asked !== followed) {
+    setFollowed(asked)
+    if (asked !== written) {
+      setWritten(asked)
+      setText(asked)
+    }
+  }
 
   // Write the query to the address once typing pauses; the search follows the address.
   useEffect(() => {
     if (query === asked) return
-    const timer = setTimeout(() => setParams(query ? { q: query } : {}, { replace: true }), DEBOUNCE_MS)
+    const timer = setTimeout(() => {
+      setWritten(query)
+      setParams(query ? { q: query } : {}, { replace: true })
+    }, DEBOUNCE_MS)
     return () => clearTimeout(timer)
   }, [query, asked, setParams])
 
@@ -119,7 +134,8 @@ function Results({ query, search }: ResultsProps) {
     )
   }
 
-  if (search.error && !search.isFetching) {
+  // A failed background refresh keeps this query's own answer on screen (like the overview's cards).
+  if (search.error && !search.isFetching && !shown?.exact) {
     return (
       <p role="alert" className="content-in text-center text-muted-foreground">
         {search.error instanceof ApiError ? search.error.message : 'A keresés most nem sikerült, próbáld újra.'}
@@ -153,7 +169,7 @@ function Results({ query, search }: ResultsProps) {
       )}
       <ul aria-label="Találatok" className={cn('grid gap-3 transition-opacity sm:grid-cols-2 lg:grid-cols-3', !shown.exact && 'opacity-70')}>
         {shown.players.map((player, index) => (
-          <li key={player.name} className="content-in" style={enterAfter(cardEnterDelay(index))}>
+          <li key={player.name} className="content-in" style={enterAfter(staggerDelay(index, CARD_STEP))}>
             <Link
               to={profilePath(player.name)}
               state={{ back: { to: `/jatekosok?q=${encodeURIComponent(query)}`, label: 'Vissza a kereséshez' } }}
@@ -167,7 +183,7 @@ function Results({ query, search }: ResultsProps) {
         {shown.more > 0 && (
           <li
             className={cn(cardClass, 'content-in justify-center border-dashed text-center text-sm text-muted-foreground')}
-            style={enterAfter(cardEnterDelay(shown.players.length))}
+            style={enterAfter(staggerDelay(shown.players.length, CARD_STEP))}
           >
             Még {shown.more > MORE_SHOWN_UP_TO ? `${MORE_SHOWN_UP_TO}+` : countFormat.format(shown.more)} játékos – írj be többet a
             névből

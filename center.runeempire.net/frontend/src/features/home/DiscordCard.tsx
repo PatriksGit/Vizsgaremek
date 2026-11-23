@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { site } from '@/config/site'
+import { countFormat } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
@@ -17,8 +18,6 @@ const DEFAULT_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png'
 
 /** How many online members the card lists before the rest become "+N további". */
 const MEMBERS_SHOWN = 5
-
-const countFormat = new Intl.NumberFormat('hu-HU')
 
 /** The dot on a member's picture, in Discord's own meaning. */
 const STATUS: Record<string, { dot: string; label: string }> = {

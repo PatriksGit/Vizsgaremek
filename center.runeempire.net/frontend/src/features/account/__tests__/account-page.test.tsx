@@ -8,6 +8,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeAll, expect, it, vi } from 'vitest'
 
 import { AccountPage } from '@/features/account/AccountPage'
+import { PASSWORD_EXAMPLE } from '@/features/auth/schemas'
 import { installFakeBackend, stubBrowserApis, type Handler } from '@/test/fakeBackend'
 
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
@@ -102,12 +103,12 @@ it('ticks the site\'s real password rules while typing, read with the field', ()
   const hint = document.getElementById(rules)!.textContent
   expect(hint).toContain('8–64 karakter – teljesül')
   expect(hint).toContain('Szóköz nélkül – még nem teljesül')
-  expect(hint).toContain('Magyar vagy angol betűk, számok, alap jelek (pl. ! @ # _ -) – teljesül')
+  expect(hint).toContain(`Magyar vagy angol betűk, számok, alap jelek ${PASSWORD_EXAMPLE} – teljesül`)
   // What saving does to the other devices is said there too (owner, 2026-11-22: not in a footer).
   expect(hint).toContain('Mentés után kijelentkeztetünk a többi eszközről.')
 
   type('Új jelszó', 'jelszó€12')
-  expect(document.getElementById(rules)!.textContent).toContain('alap jelek (pl. ! @ # _ -) – még nem teljesül')
+  expect(document.getElementById(rules)!.textContent).toContain(`alap jelek ${PASSWORD_EXAMPLE} – még nem teljesül`)
 })
 
 it('sends the passwords, then closes the form and says the other devices were logged out', async () => {

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 
 import type { ProfileBack } from '@/features/players/links'
 
+import { countFormat } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
 
 import { DiscordCard } from './DiscordCard'
@@ -12,17 +13,17 @@ import { HeroCard } from './HeroCard'
 import { PlaytimeCard } from './PlaytimeCard'
 import { PunishmentCard } from './PunishmentCard'
 import { StatCard } from './StatCard'
-import { hoursFormat, type MyStats, rankColor, runeCountFormat, shortDate, type StatPart, toPunishment } from './stats'
+import { hoursFormat, type MyStats, rankColor, shortDate, type StatPart, type StatsAnswer, toPunishment } from './stats'
 import type { DashboardWording } from './wording'
 
 /** The part of a query result the dashboard reads. */
-type Loaded<T> = { data?: T; isFetched: boolean; dataUpdatedAt?: number }
+type Loaded<T> = { data?: T; isFetched: boolean }
 
 type DashboardProps = {
   wording: DashboardWording
   name?: string
   registeredAt?: string | null
-  stats: Loaded<MyStats>
+  stats: Loaded<StatsAnswer>
   friends: Loaded<Friend[]>
   /** Where a friend's profile, opened from this page, leads back to. */
   friendBack: ProfileBack
@@ -41,8 +42,8 @@ export function Dashboard({ wording, name, registeredAt, stats: statsQuery, frie
   // Failed = answered without data. Not isError: TanStack v5 makes a refetch of a failed query without data
   // pending again, so the dash would flip to a skeleton on every retry (review 2026-11-17).
   const statsFailed = !stats && statsQuery.isFetched
-  /** The moment the numbers are from: their week and today are that moment's, also when a later refresh fails. */
-  const asOf = statsQuery.dataUpdatedAt ? new Date(statsQuery.dataUpdatedAt) : new Date()
+  /** The server's moment of the numbers: their week and today are that moment's, also when a later refresh fails. */
+  const asOf = stats ? new Date(stats.answeredAt) : new Date()
   const friends = friendsQuery.data
   const friendsFailed = !friends && friendsQuery.isFetched
 
@@ -60,6 +61,7 @@ export function Dashboard({ wording, name, registeredAt, stats: statsQuery, frie
         name={name}
         registeredAt={registeredAt}
         streak={shown('streak', (loaded) => loaded.streak)}
+        streakText={wording.streak}
         asOf={asOf}
       />
 
@@ -69,7 +71,7 @@ export function Dashboard({ wording, name, registeredAt, stats: statsQuery, frie
         <StatCard
           label={wording.runes}
           icon={faCoins}
-          value={shown('runes', (loaded) => (loaded.runes === null ? null : runeCountFormat.format(loaded.runes)))}
+          value={shown('runes', (loaded) => (loaded.runes === null ? null : countFormat.format(loaded.runes)))}
           unit="rúna"
           className="content-in"
           style={enterAfter(560)}

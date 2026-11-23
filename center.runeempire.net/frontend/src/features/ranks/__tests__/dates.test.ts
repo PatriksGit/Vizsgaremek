@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { addDays, budapestDay, ownedUntil, seasonEndText, seasonOver, timeLeft } from '@/features/ranks/dates'
+import { addDays, ownedUntil, seasonEndText, seasonOver, timeLeft } from '@/features/ranks/dates'
+import { budapestDay } from '@/lib/budapest'
 import type { Rank } from '@/features/ranks/api'
 import type { MyStats } from '@/features/home/stats'
 
@@ -43,6 +44,11 @@ describe('rank shop dates', () => {
     expect(seasonEndText('2026-12-26T23:00:00Z')).toBe('2026.12.26-ig')
     // 18:00 Budapest.
     expect(seasonEndText('2026-12-27T17:00:00Z')).toBe('2026.12.27. 18:00-ig')
+  })
+
+  // Review 2026-11-23 (like home K4): Intl threw a RangeError on it, which took the whole rank page to the error page.
+  it('writes the dash for a season end that cannot be read (a year after 9999, as Carbon writes it)', () => {
+    expect(seasonEndText('10000-01-01T00:00:00+00:00')).toBe('—')
   })
 
   it('only a seasonal rank past its end is over', () => {

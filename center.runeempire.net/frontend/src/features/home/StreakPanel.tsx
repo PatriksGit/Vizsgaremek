@@ -1,9 +1,10 @@
 import { Check, Clock, Flame, X } from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
+import { serverToday } from '@/lib/budapest'
 import { cn } from '@/lib/utils'
 
-import { DAY_NAMES, DAY_SHORT, NO_DATA, serverToday, serverTodayIndex } from './stats'
+import { DAY_NAMES, DAY_SHORT, NO_DATA, serverTodayIndex } from './stats'
 
 /** One day of this week's login streak, as GET /api/me/stats sends it. */
 export type StreakDayStatus = 'done' | 'missed' | 'pending' | 'future' | 'before'
@@ -16,10 +17,11 @@ export type Streak = {
   week: StreakDayStatus[]
 }
 
-const LOOK: Record<StreakDayStatus, { box: string; date: string; text: string }> = {
-  done: { box: 'border border-ok/35 bg-ok/12', date: 'text-[#A9D9B5]', text: 'beléptél' },
+/** Each day's look and its screen-reader text; done and pending come from wording.ts (StreakText). */
+const LOOK: Record<StreakDayStatus, { box: string; date: string; text?: string }> = {
+  done: { box: 'border border-ok/35 bg-ok/12', date: 'text-[#A9D9B5]' },
   missed: { box: 'border border-danger/35 bg-danger/10', date: 'text-[#E8A49B]', text: 'kimaradt' },
-  pending: { box: 'today-pulse border-2 border-primary bg-primary/8', date: 'text-primary', text: 'még nem léptél be' },
+  pending: { box: 'today-pulse border-2 border-primary bg-primary/8', date: 'text-primary' },
   future: { box: 'border border-line bg-sunken', date: 'text-faint', text: 'még hátravan' },
   before: { box: 'border border-dashed border-line', date: 'text-faint', text: 'regisztráció előtt' },
 }
@@ -32,14 +34,18 @@ function monthDay(date: Date) {
 }
 
 /** The dates of the server's week, Monday first, at local midnight. */
-function thisWeek(today = serverToday()) {
+function thisWeek(today: Date) {
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7))
   return Array.from({ length: 7 }, (_, index) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + index))
 }
 
+/** The words that speak to the player on the overview and about them on a profile (wording.ts). */
+export type StreakText = { done: string; pending: string }
+
 type StreakPanelProps = {
   /** Left out while the stats load (skeletons); null when it could not be loaded (a dash, plain boxes). */
   streak?: Streak | null
+  text: StreakText
   /** The moment the streak is from (default now). */
   asOf?: Date
   className?: string
@@ -50,9 +56,10 @@ type StreakPanelProps = {
  * record on top, then seven boxes (a check for a day logged in, a cross for
  * a missed one, today pulsing gold with a clock until the login).
  */
-export function StreakPanel({ streak, asOf = new Date(), className }: StreakPanelProps) {
+export function StreakPanel({ streak, text, asOf = new Date(), className }: StreakPanelProps) {
   const todayIndex = serverTodayIndex(asOf)
   const dates = thisWeek(serverToday(asOf))
+  const dayText = (status: StreakDayStatus) => (status === 'done' || status === 'pending' ? text[status] : LOOK[status].text)
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
@@ -115,7 +122,7 @@ export function StreakPanel({ streak, asOf = new Date(), className }: StreakPane
               <span aria-hidden="true" className={cn('text-[11px]', today ? 'font-extrabold text-primary' : 'font-semibold text-faint')}>
                 {today ? 'Ma' : DAY_SHORT[index]}
               </span>
-              {status && <span className="sr-only">{`${DAY_NAMES[index]} (${monthDay(date)}): ${LOOK[status].text}`}</span>}
+              {status && <span className="sr-only">{`${DAY_NAMES[index]} (${monthDay(date)}): ${dayText(status)}`}</span>}
             </li>
           )
         })}

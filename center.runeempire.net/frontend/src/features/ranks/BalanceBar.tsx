@@ -3,7 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { panelLook } from '@/components/app/Panel'
 import { Skeleton } from '@/components/ui/skeleton'
-import { NO_DATA, runeCountFormat } from '@/features/home/stats'
+import { NO_DATA } from '@/features/home/stats'
+import { countFormat } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
@@ -39,7 +40,7 @@ export function BalanceBar({ balance }: { balance: number | null | undefined }) 
               <span className="sr-only"> (most nem érhető el)</span>
             </span>
           ) : (
-            <span className="text-lg leading-tight font-extrabold text-foreground">{runeCountFormat.format(balance)} rúna</span>
+            <span className="text-lg leading-tight font-extrabold text-foreground">{countFormat.format(balance)} rúna</span>
           )}
         </div>
       </div>

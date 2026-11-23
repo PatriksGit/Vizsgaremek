@@ -16,6 +16,7 @@ import { FormAlert } from '@/features/auth/FormAlert'
 import {
   ALLOWED_PASSWORD_PATTERN,
   changePasswordSchema,
+  PASSWORD_EXAMPLE,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   type ChangePasswordValues,
@@ -40,8 +41,7 @@ function passwordRules(value: string) {
     { label: 'Szóköz nélkül', ok: typed && !/\s/.test(value) },
     {
       label: 'Magyar vagy angol betűk, számok, alap jelek',
-      // Kept on one line: the examples broke apart at the column's edge.
-      example: '(pl. ! @ # _ -)',
+      example: PASSWORD_EXAMPLE,
       ok: typed && (withoutSpaces === '' || ALLOWED_PASSWORD_PATTERN.test(withoutSpaces)),
     },
   ]
@@ -69,7 +69,7 @@ function PasswordRules({ value }: { value: string }) {
           )}
           <span>
             {rule.label}
-            {'example' in rule && <span className="whitespace-nowrap"> {rule.example}</span>}
+            {'example' in rule && ` ${rule.example}`}
           </span>
           <span className="sr-only">{rule.ok ? ' – teljesül' : ' – még nem teljesül'}</span>
         </span>
