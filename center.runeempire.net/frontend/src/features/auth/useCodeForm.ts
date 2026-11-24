@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useLayoutEffect, useRef, type BaseSyntheticEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type BaseSyntheticEvent } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 
 import { applyApiError } from './errors'
@@ -18,7 +18,7 @@ type CodeFormOptions = {
   send: (code: string, isCurrent: () => boolean) => Promise<void>
   /** A refusal the caller answers its own way (e.g. auth.two_factor_expired); true when handled. The boxes are empty by then. */
   onRefused?: (error: unknown, form: UseFormReturn<CodeValues>) => boolean
-  /** Gives the field the keyboard back after a refusal; form.setFocus('code') by default. */
+  /** Gives the field the keyboard back after a refusal; by default the code field, once it is enabled again. */
   focusCode?: () => void
 }
 
@@ -42,6 +42,19 @@ export function useCodeForm({ schema = totpSchema, active, send, onRefused, focu
     sending.current = false
   }, [active])
 
+  // A refused code takes the keyboard back only once the field is enabled again: every caller disables it while
+  // isSubmitting, which is still true inside onCode, and a browser refuses focus on a disabled input (final review
+  // 2026-11-23 Minor 6: the caret was gone and a phone's keyboard closed).
+  const [refocus, setRefocus] = useState(0)
+  const refocused = useRef(0)
+  const { isSubmitting } = form.formState
+  useEffect(() => {
+    // Each request once: a later submit ending (a right code) must not pull the focus back.
+    if (refocus === refocused.current || isSubmitting) return
+    refocused.current = refocus
+    form.setFocus('code')
+  }, [refocus, isSubmitting, form])
+
   const onCode = async ({ code }: CodeValues) => {
     if (sending.current) return
     sending.current = true
@@ -55,7 +68,7 @@ export function useCodeForm({ schema = totpSchema, active, send, onRefused, focu
       if (onRefused?.(error, form)) return
       applyApiError(error, form.setError, { code: 'code' })
       if (focusCode) focusCode()
-      else form.setFocus('code')
+      else setRefocus((count) => count + 1)
     } finally {
       if (isCurrent()) sending.current = false
     }

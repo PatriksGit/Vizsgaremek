@@ -76,7 +76,7 @@ export function PunishmentCard({ punishment, unavailable = false, label, classNa
                     pressedWith.current = null
                     setDetailsOpen((open) => (tap ? !open : true))
                   }}
-                  className={cn('cursor-help self-start rounded-sm text-left max-md:-my-3 max-md:min-h-11', focusRing)}
+                  className={cn('cursor-help rounded-sm max-md:-my-3 max-md:min-h-11', focusRing)}
                 />
               }
             >
