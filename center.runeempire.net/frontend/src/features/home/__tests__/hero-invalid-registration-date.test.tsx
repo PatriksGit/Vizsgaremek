@@ -27,6 +27,7 @@ function joinedShown(registeredAt: string) {
       registeredAt={registeredAt}
       streak={undefined}
       streakText={OWN_WORDING.streak}
+      asOf={new Date()}
     />,
   )
   return screen.getAllByText(/^Csatlakozott:/).map((line) => line.textContent?.replace(/\s/g, ' '))

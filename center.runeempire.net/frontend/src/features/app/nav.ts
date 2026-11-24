@@ -2,10 +2,10 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
   faClockRotateLeft,
   faCoins,
+  faGear,
   faHatWizard,
   faHouse,
   faRightLeft,
-  faUser,
   faUsers,
   faUserTie,
 } from '@fortawesome/free-solid-svg-icons'
@@ -18,8 +18,8 @@ export type NavLinkItem = {
   to: string
   /** The faint line under the label on its group's page (SectionPage). */
   description?: string
-  /** Not built yet: shown faded, not clickable, marked "Hamarosan". */
-  comingSoon: boolean
+  /** Not built yet: shown faded, not clickable, marked "Hamarosan" (only a group's pages use it). */
+  comingSoon?: true
 }
 
 export type NavItem = NavLinkItem & {
@@ -27,14 +27,17 @@ export type NavItem = NavLinkItem & {
   children?: NavLinkItem[]
 }
 
-/** The account settings: in the menu of the player card at the bottom of the sidebar, on phones the tab bar's last tab. */
-export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faUser, to: '/beallitasok', comingSoon: false }
+/**
+ * The account settings: in the menu of the player card at the bottom of the sidebar (with the gear), on phones the tab
+ * bar's last tab (with the player's head, not the icon).
+ */
+export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faGear, to: '/beallitasok' }
 
 /**
  * The management page (owner, 2026-11-23: faUserTie): only for can_manage, in the sidebar's account menu
  * above Beállítások, on phones a row on Beállítások. Both links ask first (management/api.ts useOpenManagement).
  */
-export const MANAGEMENT_NAV: NavLinkItem = { label: 'Management', icon: faUserTie, to: '/management', comingSoon: false }
+export const MANAGEMENT_NAV: NavLinkItem = { label: 'Management', icon: faUserTie, to: '/management' }
 
 /**
  * The logged-in pages: the one list the sidebar and the phone tab bar are
@@ -44,13 +47,12 @@ export const MANAGEMENT_NAV: NavLinkItem = { label: 'Management', icon: faUserTi
  * hidden until then.
  */
 export const NAV: NavItem[] = [
-  { label: 'Főoldal', icon: faHouse, to: '/', comingSoon: false },
+  { label: 'Főoldal', icon: faHouse, to: '/' },
   {
     label: 'Rúnák',
     // The coin is the runes' icon everywhere on the site (owner, 2026-11-13).
     icon: faCoins,
     to: '/runak',
-    comingSoon: false,
     children: [
       {
         label: 'Átutalás',
@@ -62,8 +64,8 @@ export const NAV: NavItem[] = [
       { label: 'Napló', icon: faClockRotateLeft, to: '/runak/naplo', description: 'Hova mentek a rúnáid', comingSoon: true },
     ],
   },
-  { label: 'Rangok', icon: faHatWizard, to: '/rangok', comingSoon: false },
-  { label: 'Játékosok', icon: faUsers, to: '/jatekosok', comingSoon: false },
+  { label: 'Rangok', icon: faHatWizard, to: '/rangok' },
+  { label: 'Játékosok', icon: faUsers, to: '/jatekosok' },
 ]
 
 /** The phone tab bar, five tabs in thumb reach: every menu item, then the account. */

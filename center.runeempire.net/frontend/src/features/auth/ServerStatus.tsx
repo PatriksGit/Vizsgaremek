@@ -1,4 +1,4 @@
-import { useDiscordWidget } from '@/features/home/discord'
+import { useDiscordWidget } from '@/features/home/api'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 

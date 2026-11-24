@@ -37,7 +37,7 @@ async function sendDetails() {
   fireEvent.change(screen.getByLabelText('Jelszó újra'), { target: { value: 'jelszo-2026' } })
   for (const box of screen.getAllByRole('checkbox')) fireEvent.click(box)
   fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
-  await screen.findByText('Nézd meg az e-mailed')
+  await screen.findByRole('heading', { name: 'Nézd meg az e-mailed' })
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 300))

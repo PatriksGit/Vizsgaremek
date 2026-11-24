@@ -1,14 +1,16 @@
 import { site } from '@/config/site'
 import { useAccount } from '@/features/auth/queries'
 
+import { useMyFriends, useMyStats } from './api'
 import { Dashboard } from './Dashboard'
 import { JoinCard } from './JoinCard'
 import { registeredWithin } from './registration'
-import { useMyFriends, useMyStats } from './stats'
 import { OWN_WORDING } from './wording'
 
 /** How long a new player sees how to join the server. */
 const JOIN_HINT_DAYS = 7
+/** How long a player is welcomed, not welcomed back. */
+const WELCOME_DAYS = 1
 
 /**
  * The overview a player lands on after logging in: their own dashboard
@@ -20,7 +22,9 @@ export function HomePage() {
   const { data: account } = useAccount()
   const stats = useMyStats()
   const friends = useMyFriends()
-  const greeting = registeredWithin(account, 1) ? 'Üdv a birodalomban,' : 'Üdv újra a birodalomban,'
+  // The server's moment once the stats answered (their Date header); the visitor's clock only until then (HO-K1).
+  const now = stats.data?.answeredAt
+  const greeting = registeredWithin(account, WELCOME_DAYS, now) ? 'Üdv a birodalomban,' : 'Üdv újra a birodalomban,'
 
   return (
     <>
@@ -33,7 +37,7 @@ export function HomePage() {
         friends={friends}
         friendBack={{ to: '/', label: 'Vissza a főoldalra' }}
       >
-        {registeredWithin(account, JOIN_HINT_DAYS) && <JoinCard />}
+        {registeredWithin(account, JOIN_HINT_DAYS, now) && <JoinCard />}
       </Dashboard>
     </>
   )

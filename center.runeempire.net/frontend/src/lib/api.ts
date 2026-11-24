@@ -51,6 +51,15 @@ export function formMessage(error: unknown, fallback = GENERIC_ERROR): string {
   return error instanceof ApiError ? error.message : fallback
 }
 
+/**
+ * The server's clock at a response (epoch ms), from its Date header; the visitor's clock without one. The one place the
+ * app reads the server's time: the visitor's clock can be hours or a day off.
+ */
+export function serverMoment(dateHeader: unknown): number {
+  const moment = Date.parse(String(dateHeader))
+  return Number.isNaN(moment) ? Date.now() : moment
+}
+
 export const http = axios.create({
   baseURL: '/api',
   headers: { Accept: 'application/json' },

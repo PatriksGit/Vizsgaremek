@@ -2,7 +2,7 @@ import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { Pill } from '@/components/app/Pill'
-import { rankColor } from '@/features/home/stats'
+import { rankColor } from '@/components/app/rankColor'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
@@ -49,7 +49,7 @@ export function RankCard({
   return (
     <article
       className={cn(
-        'content-in flex flex-col overflow-hidden rounded-2xl border border-[color:color-mix(in_oklab,var(--c)_35%,transparent)] bg-card shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_1px_2px_rgb(0_0_0/0.35)] transition-[border-color,translate,box-shadow] duration-200 hover:-translate-y-1 hover:border-(--c) hover:shadow-[0_12px_28px_-12px_var(--c)] motion-reduce:hover:translate-y-0',
+        'content-in flex flex-col overflow-hidden rounded-2xl border border-(--c)/35 bg-card shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_1px_2px_rgb(0_0_0/0.35)] transition-[border-color,translate,box-shadow] duration-200 hover:-translate-y-1 hover:border-(--c) hover:shadow-[0_12px_28px_-12px_var(--c)] motion-reduce:hover:translate-y-0',
         rank.seasonEndsAt && 'rank-shine',
       )}
       style={{ ...enterAfter(enterDelay), ...accentVars(rank.color) }}
@@ -62,7 +62,7 @@ export function RankCard({
             Szezonális
           </Pill>
         )}
-        <RankBanner rank={rank} className="min-h-0 border-b-0 bg-transparent p-0" />
+        <RankBanner rank={rank} className="min-h-0" />
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4 sm:px-5">

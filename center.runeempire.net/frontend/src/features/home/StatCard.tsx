@@ -3,11 +3,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { CSSProperties, ReactNode } from 'react'
 
 import { FitLine } from '@/components/app/FitLine'
-import { panelLook } from '@/components/app/Panel'
+import { NoData } from '@/components/app/NoData'
+import { panelLook, quietTileLook } from '@/components/app/Panel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-
-import { NO_DATA } from './stats'
 
 type StatCardProps = {
   label: string
@@ -19,12 +18,17 @@ type StatCardProps = {
   unit?: string
   /** Under the value, such as a rank's expiry. */
   children?: ReactNode
+  /**
+   * false: the value fits itself to the line (the punishment's tap target wraps its own FitLine). Inside the card's FitLine
+   * the zoom shrank its 44 px tap height too, to 39 px at 652-700 px (review 2026-11-24 UX-K5).
+   */
+  fit?: boolean
   className?: string
   style?: CSSProperties
 }
 
 /** One of the overview's four numbers: the label and the value on the left, a quiet icon tile on the right. */
-export function StatCard({ label, icon, value, unit, children, className, style }: StatCardProps) {
+export function StatCard({ label, icon, value, unit, children, fit = true, className, style }: StatCardProps) {
   return (
     <li
       className={cn(panelLook, 'flex min-h-21 items-center justify-between gap-3.5 px-4.5 py-4 md:min-h-29 md:px-6 md:py-5', className)}
@@ -34,16 +38,19 @@ export function StatCard({ label, icon, value, unit, children, className, style 
         <p className="text-sm font-bold text-soft md:text-base">{label}</p>
         {value === null ? (
           <p className="text-2xl leading-none font-extrabold text-muted-foreground md:text-3xl">
-            {NO_DATA}
-            <span className="sr-only"> (most nem érhető el)</span>
+            <NoData />
           </p>
         ) : value !== undefined ? (
           // One line beside the icon tile, the unit with it: a long number shrinks instead of running under the tile (V2).
           <p className="text-2xl leading-none font-extrabold text-foreground md:text-3xl">
-            <FitLine>
-              {value}
-              {unit && <span className="text-sm font-bold text-muted-foreground md:text-base"> {unit}</span>}
-            </FitLine>
+            {fit ? (
+              <FitLine>
+                {value}
+                {unit && <span className="text-sm font-bold text-muted-foreground md:text-base"> {unit}</span>}
+              </FitLine>
+            ) : (
+              value
+            )}
           </p>
         ) : (
           <>
@@ -63,7 +70,7 @@ function StatIcon({ icon }: { icon: IconDefinition }) {
   return (
     <span
       aria-hidden="true"
-      className="grid size-11 shrink-0 place-items-center rounded-xl bg-raised text-soft shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] md:size-13 md:rounded-[14px]"
+      className={cn('grid size-11 shrink-0 place-items-center rounded-xl md:size-13 md:rounded-[14px]', quietTileLook)}
     >
       <FontAwesomeIcon icon={icon} className="size-5 md:size-5.75" />
     </span>

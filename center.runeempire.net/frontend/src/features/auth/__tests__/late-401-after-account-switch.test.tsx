@@ -23,7 +23,7 @@ vi.mock('@/features/app/AppLayout', async () => {
 })
 vi.mock('@/features/home/HomePage', async () => {
   const { Link } = await import('react-router')
-  const { useMyStats } = await import('@/features/home/stats')
+  const { useMyStats } = await import('@/features/home/api')
   return {
     HomePage: () => {
       useMyStats()

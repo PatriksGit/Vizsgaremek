@@ -1,9 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-import { ServerStatus } from '@/components/ServerStatus'
 import { site } from '@/config/site'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
+
+import { ServerStatus } from './ServerStatus'
 
 /** When the intro blocks start arriving, and the gap between them (ms). */
 const STAGGER_START = 520

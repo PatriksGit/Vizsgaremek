@@ -1,4 +1,4 @@
-import { faCalendarDays, faCheck, faClock, faCoins } from '@fortawesome/free-solid-svg-icons'
+import { faCalendarDays, faCheck, faClock, faCoins, faHourglassEnd } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { useId, useState } from 'react'
@@ -17,9 +17,7 @@ import { discountPercent } from './shop'
  */
 export function RankBanner({ rank, className }: { rank: Rank; className?: string }) {
   return (
-    <div
-      className={cn('flex aspect-5/2 items-center justify-center border-b border-border bg-background p-2', className)}
-    >
+    <div className={cn('flex aspect-5/2 items-center justify-center', className)}>
       {rank.gifUrl && (
         <img src={rank.gifUrl} alt={`${rank.name} rang animációja`} className="rank-reveal size-full object-contain" />
       )}
@@ -41,7 +39,7 @@ export function SeasonInfo({ endsAt, now }: { endsAt: string; now: Date }) {
   if (left <= 0) {
     return (
       <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-muted-foreground">
-        <FontAwesomeIcon icon={faClock} aria-hidden="true" className="size-3.5" />A vásárlási idő lejárt
+        <FontAwesomeIcon icon={faHourglassEnd} aria-hidden="true" className="size-3.5" />A vásárlási idő lejárt
       </span>
     )
   }
@@ -51,7 +49,8 @@ export function SeasonInfo({ endsAt, now }: { endsAt: string; now: Date }) {
     return (
       <span
         role="timer"
-        aria-label={`Még ${hours} óra ${minutes} perc vásárolható`}
+        // The last minute in seconds: "0 óra 0 perc" would say nothing is left (like R2 at exactly 24 hours).
+        aria-label={`Még ${hours + minutes > 0 ? `${hours} óra ${minutes} perc` : `${seconds} másodperc`} vásárolható`}
         className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary"
       >
         <FontAwesomeIcon icon={faClock} aria-hidden="true" className="size-3.5" />
@@ -77,7 +76,7 @@ export function SeasonInfo({ endsAt, now }: { endsAt: string; now: Date }) {
  * is chosen first; nothing is pushed.
  */
 export function BuyBox({ rank, owned, onBuy }: { rank: Rank; owned: boolean; onBuy: (days: number) => void }) {
-  const options = [...rank.prices].sort((a, b) => a.days - b.days)
+  const options = rank.prices // shortest first (api.ts)
   const [days, setDays] = useState(options[0]?.days ?? 0)
   const name = useId()
   const chosen = options.find((option) => option.days === days) ?? options[0]
@@ -155,10 +154,8 @@ export function OwnedUntil({ until }: { until: Date }) {
 /** In place of the buy button once a seasonal rank's time is over. */
 export function NoLongerSold() {
   return (
-    <span
-      aria-disabled="true"
-      className="flex min-h-12 w-full items-center justify-center rounded-xl border border-line bg-sunken text-[15px] font-bold text-faint"
-    >
+    // No aria-disabled: on a span (no role) it means nothing to a screen reader; the text says it (review 2026-11-24 RK-K4).
+    <span className="flex min-h-12 w-full items-center justify-center rounded-xl border border-line bg-sunken text-[15px] font-bold text-faint">
       Már nem vásárolható
     </span>
   )

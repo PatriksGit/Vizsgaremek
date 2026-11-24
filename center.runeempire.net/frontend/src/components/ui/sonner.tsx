@@ -8,7 +8,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme="dark"
       // Sonner's default region name is English ("Notifications").
       containerAriaLabel="Értesítések"
-      className="toaster group"
       icons={{
         success: (
           <CircleCheckIcon className="size-4" />
@@ -35,7 +34,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast shadow-[0_12px_32px_rgb(0_0_0/0.55)]",
+          toast: "shadow-[0_12px_32px_rgb(0_0_0/0.55)]",
           description: "!text-popover-foreground opacity-85",
         },
       }}

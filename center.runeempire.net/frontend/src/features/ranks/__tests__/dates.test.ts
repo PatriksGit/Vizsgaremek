@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { addDays, ownedUntil, seasonEndText, seasonOver, timeLeft } from '@/features/ranks/dates'
 import { budapestDay } from '@/lib/budapest'
 import type { Rank } from '@/features/ranks/api'
-import type { MyStats } from '@/features/home/stats'
+import type { MyStats } from '@/features/home/api'
 
 const dragon: Rank = { group: 'dragon', name: 'Dragon', details: '', gifUrl: null, prefixUrl: null, prices: [{ days: 30, runes: 1000 }], seasonEndsAt: null, color: null }
 const NOW = new Date('2026-11-16T12:00:00Z')
@@ -23,9 +23,9 @@ describe('rank shop dates', () => {
     expect(budapestDay(addDays(NOW, 90))).toBe('2027.02.14.')
   })
 
-  it('splits the time left into days, hours, minutes and seconds, never below zero', () => {
-    expect(timeLeft(90_061_000)).toEqual({ days: 1, hours: 1, minutes: 1, seconds: 1 })
-    expect(timeLeft(-5000)).toEqual({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+  it('splits the time left into whole hours, minutes and seconds, never below zero', () => {
+    expect(timeLeft(90_061_000)).toEqual({ hours: 25, minutes: 1, seconds: 1 })
+    expect(timeLeft(-5000)).toEqual({ hours: 0, minutes: 0, seconds: 0 })
   })
 
   it('a rank is owned only when the stats name it with a future expiry', () => {

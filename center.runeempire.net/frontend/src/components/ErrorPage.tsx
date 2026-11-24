@@ -74,7 +74,7 @@ export function ErrorPage({ status }: ErrorPageProps) {
           </a>
 
           {site.contactEmail && (
-            <a href={`mailto:${site.contactEmail}`} className={buttonVariants({ variant: 'outline', size: 'lg', className: 'h-11 px-5' })}>
+            <a href={`mailto:${site.contactEmail}`} className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-11 px-5')}>
               <FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />
               E-mail
             </a>

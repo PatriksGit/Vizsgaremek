@@ -44,17 +44,23 @@ production. Open the site as **localhost:5173**, not 127.0.0.1: the backend
 ```
 src/
   App.tsx              routes, the session check before any page shows
-  lib/api.ts           the axios client: CSRF cookie, one retry on 419, Hungarian error messages
+  queryClient.ts       TanStack Query defaults; a 401 forgets the account (the guard sends to /login)
   config/site.ts       site texts and links
+  lib/                 app-wide helpers without UI: api.ts (the axios client: CSRF cookie, one retry on 419,
+                       Hungarian error messages, the server clock), budapest.ts (the server's days and formats),
+                       noData.ts, motion.ts, focus.ts, fitScale.ts, sitePath.ts, toastError.ts
+  hooks/               shared React hooks (useCountUp, use-mobile)
   features/
-    auth/              login, two-step registration (details, then the e-mailed code)
-    app/               the logged-in frame: sidebar, phone tab bar, menu (nav.ts)
-    home/              the overview cards and their data (stats.ts)
+    auth/              login, two-step registration, forgotten password; the login page's server status
+    app/               the logged-in frame: sidebar, account menu (PlayerCard), phone tab bar, menu (nav.ts)
+    home/              the overview: its cards and their data (api.ts)
+    players/           the player search (/jatekosok) and profiles
     ranks/             the rank shop (/rangok): cards, the rank text, the purchase popup
-    account/           account settings
+    account/           account settings (Beállítások)
+    management/        the management page (/management, Google sign-in)
   components/
     ui/                shadcn components (generated, lightly customised)
-    app/               shared pieces of the logged-in pages (Panel, PlayerHead, ...)
+    app/               shared pieces of the logged-in pages (Panel, PlayerHead, NoData, ...)
   test/                test helpers (a fake backend for axios)
 ```
 

@@ -2,6 +2,7 @@ import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link } from 'react-router'
 
+import { FitLine } from '@/components/app/FitLine'
 import { panelLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -9,9 +10,9 @@ import { site } from '@/config/site'
 import { MANAGEMENT_NAV } from '@/features/app/nav'
 import type { Account } from '@/features/auth/api'
 import { useAccount, useLogout } from '@/features/auth/queries'
-import { NO_DATA } from '@/features/home/stats'
 import { useOpenManagement } from '@/features/management/api'
 import { enterAfter } from '@/lib/motion'
+import { NO_DATA } from '@/lib/noData'
 import { cn } from '@/lib/utils'
 
 import { PasswordRow } from './PasswordRow'
@@ -50,13 +51,20 @@ export function AccountPage() {
                 id="management-title"
                 icon={MANAGEMENT_NAV.icon}
                 title={MANAGEMENT_NAV.label}
-                description="A szerver kezelőfelülete, Google-fiókkal léphetsz be."
+                description={
+                  // Never broken at its hyphen ("Google-" / "fiókkal" at 320-360 px, review 2026-11-24 VI-7). A span, not a
+                  // no-break hyphen (U+2011): neither Manrope nor Fraunces has that glyph, so it came from a fallback font.
+                  <>
+                    A szerver kezelőfelülete, <span className="whitespace-nowrap">Google-fiókkal</span> léphetsz be.
+                  </>
+                }
                 action={
                   // The router's link, like the sidebar's: the click asks first and goes to Google only without a live grant.
                   <Link
                     to={MANAGEMENT_NAV.to}
                     onClick={openManagement}
-                    className={buttonVariants({ variant: 'outline', size: 'lg' })}
+                    // Shaped like the other rows' actions (PasswordRow, TwoFactorRow): full width under the text on phones (VI-10).
+                    className={cn(buttonVariants({ variant: 'outline' }), 'h-10 rounded-full px-4.5 font-bold max-sm:w-full')}
                   >
                     Megnyitás
                   </Link>
@@ -78,8 +86,11 @@ function ProfileCard({ account }: { account: Account }) {
     <section aria-label="Profil" style={enterAfter(100)} className={cn(panelLook, 'content-in flex items-center gap-4 md:gap-5')}>
       <PlayerHead name={account.display_name} className="size-14 flex-none md:size-16" />
       <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="truncate font-heading text-xl font-bold text-foreground md:text-2xl">{account.display_name}</p>
-        <p className="truncate text-sm text-muted-foreground" title={account.email ?? undefined}>
+        {/* One line like the overview's name, shrunk instead of cut; the address wraps anywhere, never "…" (VI-9). */}
+        <p className="font-heading text-xl font-bold text-foreground md:text-2xl">
+          <FitLine>{account.display_name}</FitLine>
+        </p>
+        <p className="text-sm wrap-anywhere text-muted-foreground">
           {account.email ?? NO_DATA}
         </p>
       </div>

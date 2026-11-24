@@ -60,7 +60,7 @@ describe('back from the code step after a resend, sent unchanged', () => {
     fireEvent.change(screen.getByLabelText('Jelszó újra'), { target: { value: 'jelszo-2026' } })
     for (const box of screen.getAllByRole('checkbox')) fireEvent.click(box)
     fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
-    await screen.findByText('Nézd meg az e-mailed')
+    await screen.findByRole('heading', { name: 'Nézd meg az e-mailed' })
 
     // The mail does not show up; after the cooldown the player asks for a new code...
     vi.setSystemTime(Date.now() + 11 * 60_000)

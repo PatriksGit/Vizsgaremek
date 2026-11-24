@@ -31,7 +31,7 @@ function renderDialog(props: Partial<Parameters<typeof PurchaseDialog>[0]> = {})
   const onClose = vi.fn()
   render(
     <MemoryRouter>
-      <PurchaseDialog rank={dragon} days={30} ownedUntil={null} balance={10_000} now={NOW} onClose={onClose} {...props} />
+      <PurchaseDialog rank={dragon} days={30} ownedUntil={null} balance={10_000} now={NOW} onClose={onClose} open onClosed={() => {}} {...props} />
     </MemoryRouter>,
   )
   return { dialog: screen.getByRole('alertdialog'), onClose }

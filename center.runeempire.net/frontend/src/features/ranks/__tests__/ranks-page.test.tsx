@@ -9,7 +9,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MyStats } from '@/features/home/stats'
+import type { MyStats } from '@/features/home/api'
 import { RanksPage } from '@/features/ranks/RanksPage'
 import { stubBrowserApis } from '@/test/fakeBackend'
 
@@ -124,7 +124,8 @@ describe('the rank cards', { timeout: 15_000 }, () => {
     await act(() => vi.advanceTimersByTimeAsync(1000))
 
     expect(within(xmas).getByText('A vásárlási idő lejárt')).toBeTruthy()
-    expect(within(xmas).getByText('Már nem vásárolható')).toBeTruthy()
+    // Plain text: no aria-disabled on a span without a role, which means nothing to a screen reader (review 2026-11-24 RK-K4).
+    expect(within(xmas).getByText('Már nem vásárolható').hasAttribute('aria-disabled')).toBe(false)
     expect(within(xmas).queryByRole('button', { name: /^Megveszem/ })).toBeNull()
   })
 

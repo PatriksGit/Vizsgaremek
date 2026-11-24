@@ -4,10 +4,10 @@ import { Area, AreaChart, CartesianGrid, ReferenceArea, XAxis, YAxis } from 'rec
 import { panelLook } from '@/components/app/Panel'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DAY_NAMES, DAY_SHORT, serverTodayIndex } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
+import { NO_DATA } from '@/lib/noData'
 import { cn } from '@/lib/utils'
-
-import { DAY_NAMES, DAY_SHORT, NO_DATA, serverTodayIndex } from './stats'
 
 const chartConfig = { minutes: { color: 'var(--primary)' } } satisfies ChartConfig
 
@@ -27,8 +27,8 @@ function playedSoFar(week: number[], todayIndex: number) {
 type PlaytimeCardProps = {
   /** Minutes played on each day of this week, Monday first; left out while the stats load (a skeleton), null when they could not be loaded (a dash). */
   week?: number[] | null
-  /** The moment the minutes are from (default now). */
-  asOf?: Date
+  /** The server's moment the minutes are from (the stats' answeredAt). */
+  asOf: Date
   /** Over an empty week: to the player on the overview, about them on another player's profile. */
   emptyText: string
   className?: string
@@ -38,7 +38,7 @@ type PlaytimeCardProps = {
  * This week's playtime as a gold line over the days, today's column lit.
  * Hovering a day shows its time. While the stats load, a skeleton.
  */
-export function PlaytimeCard({ week, asOf = new Date(), emptyText, className }: PlaytimeCardProps) {
+export function PlaytimeCard({ week, asOf, emptyText, className }: PlaytimeCardProps) {
   const todayIndex = serverTodayIndex(asOf)
   const total = week ? playedSoFar(week, todayIndex).reduce((sum, minutes) => sum + minutes, 0) : 0
 
@@ -98,7 +98,8 @@ function WeekChart({ week, total, todayIndex, emptyText }: { week: number[]; tot
         role="img"
         aria-label={`Játékidő ezen a héten, összesen ${duration(total)}`}
       >
-        <AreaChart data={rows} margin={{ top: 28, right: 0, bottom: 0, left: 0 }}>
+        {/* One labelled image (role="img" above): no keyboard layer, whose svg was a Tab stop without a focus ring (VI-13). */}
+        <AreaChart accessibilityLayer={false} data={rows} margin={{ top: 28, right: 0, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="playtime-fill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor="var(--color-minutes)" stopOpacity={0.3} />
@@ -113,7 +114,7 @@ function WeekChart({ week, total, todayIndex, emptyText }: { week: number[]; tot
             scale="band"
             interval={0}
             tickLine={false}
-            axisLine={{ stroke: '#35302a' }}
+            axisLine={{ stroke: 'var(--chart-axis)' }}
             tickMargin={10}
             tick={({ x, y, payload }) => {
               const today = payload.value === todayIndex
@@ -145,7 +146,7 @@ function WeekChart({ week, total, todayIndex, emptyText }: { week: number[]; tot
               const row = payload?.[0]?.payload as (typeof rows)[number] | undefined
               if (!active || !row || row.minutes === null) return null
               return (
-                <div className="flex flex-col items-center gap-0.5 rounded-lg border border-[#2f2a21] bg-popover px-2.5 py-1.5 leading-tight shadow-[0_8px_20px_rgb(0_0_0/0.45)]">
+                <div className="flex flex-col items-center gap-0.5 rounded-lg border border-popup-border bg-popover px-2.5 py-1.5 leading-tight shadow-[0_8px_20px_rgb(0_0_0/0.45)]">
                   <span className="text-[11px] font-semibold text-muted-foreground">{DAY_NAMES[row.day]}</span>
                   <span className="text-[13px] font-extrabold text-foreground">{duration(row.minutes)}</span>
                 </div>
@@ -178,11 +179,27 @@ function WeekChart({ week, total, todayIndex, emptyText }: { week: number[]; tot
           />
         </AreaChart>
       </ChartContainer>
+      {/* The days the tooltip shows, for a screen reader (the chart is one image) and without a mouse; like the chart,
+          only the days up to today (review 2026-11-24 HO-K5). */}
+      <ul className="sr-only" aria-label="Napi játékidő">
+        {shown.map((minutes, index) => (
+          <li key={index}>{`${DAY_NAMES[index]}: ${duration(minutes)}`}</li>
+        ))}
+      </ul>
 
       {total === 0 && (
-        <div className="absolute top-[45%] left-1/2 flex -translate-1/2 items-center gap-2.5 rounded-xl border border-line bg-sunken px-4 py-3 text-center text-sm font-bold text-foreground max-sm:w-[85%]">
-          <Hourglass className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-          {emptyText}
+        // Centred on the plot, right of the 34 px hour labels (the YAxis width): centred on the whole card it covered
+        // them on a phone (review 2026-11-24 VI-5). Balanced: "héten" was left alone on its line at 360-390 px (VI-8).
+        <div className="absolute top-[45%] right-0 left-8.5 flex -translate-y-1/2 justify-center px-1">
+          <div
+            className={cn(
+              'flex items-center gap-2.5 rounded-xl border border-line bg-sunken px-4 py-3',
+              'text-center text-sm font-bold text-balance text-foreground',
+            )}
+          >
+            <Hourglass className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            {emptyText}
+          </div>
         </div>
       )}
     </div>

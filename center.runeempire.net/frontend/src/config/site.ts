@@ -40,6 +40,12 @@ export const site = {
 
   logoUrl: '/RuneLogo.webp',
 
+  /**
+   * The Hungarian of Mojang's required "Not an official Minecraft product. Not approved by or associated with Mojang or
+   * Microsoft.": under both footers. Keep its meaning when rewording.
+   */
+  minecraftNotice: 'Nem hivatalos Minecraft termék. Nem a Mojang vagy a Microsoft hagyta jóvá, és nem áll kapcsolatban velük.',
+
   /** Shader screenshot from the server, behind the glass cards. */
   backgroundUrl: '/backgrounds/bg.webp',
 

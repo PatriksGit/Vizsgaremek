@@ -1,12 +1,15 @@
-import { Clock } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 
 import { FitLine } from '@/components/app/FitLine'
+import { panelLook } from '@/components/app/Panel'
 import { Pill } from '@/components/app/Pill'
 import { enterAfter } from '@/lib/motion'
+import { cn } from '@/lib/utils'
 
 import { joinedDay } from './registration'
 import { SkinFigure } from './SkinFigure'
-import { type Streak, StreakPanel, type StreakText } from './StreakPanel'
+import type { Streak } from './api'
+import { StreakPanel, type StreakText } from './StreakPanel'
 
 /**
  * The top of the overview, on a banner of the server's spawn: the greeting,
@@ -34,12 +37,16 @@ export function HeroCard({
   streak?: Streak | null
   /** The streak boxes' words to or about the player (wording.ts). */
   streakText: StreakText
-  asOf?: Date
+  /** The server's moment of the stats (their answeredAt). */
+  asOf: Date
 }) {
   return (
     <section
       aria-label={label}
-      className="card-rise relative isolate flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_1px_2px_rgb(0_0_0/0.35)] md:px-6 md:py-6 xl:min-h-57.5 xl:gap-6 xl:pr-8"
+      className={cn(
+        panelLook,
+        'card-rise relative isolate flex flex-wrap items-center justify-between gap-4 overflow-hidden p-5 md:p-6 xl:min-h-57.5 xl:gap-6 xl:pr-8',
+      )}
     >
       {/* In a layer of its own: a bare <picture> (its <source>) would take a slot in the row and push the name inwards. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20">
@@ -68,7 +75,7 @@ export function HeroCard({
             </p>
             {/* At most one break, between the label and the date (a narrow column at 768 px), and it grows with it (V1). */}
             <Pill tone="neutral" className="mt-2 hidden min-h-7 self-start py-1 font-semibold md:inline-flex">
-              <Clock className="size-3.25 shrink-0" aria-hidden="true" />
+              <CalendarDays className="size-3.25 shrink-0" aria-hidden="true" />
               <span>
                 Csatlakozott: <span className="whitespace-nowrap">{joinedDay(registeredAt)}</span>
               </span>

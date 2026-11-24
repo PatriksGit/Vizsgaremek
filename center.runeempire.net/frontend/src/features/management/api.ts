@@ -62,10 +62,15 @@ async function logoutManagement(): Promise<void> {
  */
 export function useManagementLogout() {
   const navigate = useNavigate()
+  const client = useQueryClient()
 
   return useMutation({
     mutationFn: logoutManagement,
-    onSuccess: () => navigate('/', { replace: true }),
+    onSuccess: async () => {
+      await navigate('/', { replace: true })
+      // Stale, not refetched: the ended grant's answer must not open the dashboard again (Back within 5 s).
+      void client.invalidateQueries({ queryKey: ['management', 'me'], refetchType: 'none' })
+    },
     onError: toastError,
   })
 }

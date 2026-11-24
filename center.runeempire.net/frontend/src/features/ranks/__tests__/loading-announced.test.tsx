@@ -55,7 +55,7 @@ it('the balance and the streak say "betöltés…" while the stats load', async 
       <MemoryRouter initialEntries={['/rangok']}>
         <RanksPage />
         <div data-testid="streak">
-          <StreakPanel streak={undefined} text={OWN_WORDING.streak} />
+          <StreakPanel streak={undefined} text={OWN_WORDING.streak} asOf={new Date()} />
         </div>
       </MemoryRouter>
     </QueryClientProvider>,

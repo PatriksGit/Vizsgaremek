@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 
 import { IconBadge } from '@/components/app/IconBadge'
 import { Panel, panelLook } from '@/components/app/Panel'
+import { Pill } from '@/components/app/Pill'
 import { site } from '@/config/site'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
@@ -26,8 +27,18 @@ export function SectionPage({ item }: { item: NavItem }) {
             <>
               <IconBadge icon={child.icon} />
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="font-heading text-xl text-foreground">{child.label}</span>
-                {child.description && <span className="text-sm text-muted-foreground">{child.description}</span>}
+                {/* "Hamarosan" by the title like in the sidebar, under it when narrow: beside the text it left a 35 px
+                    column of one word per line (review 2026-11-24 SH-3). */}
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-heading text-xl text-foreground">{child.label}</span>
+                  {child.comingSoon && (
+                    <Pill tone="quiet" className="h-5 whitespace-nowrap">
+                      Hamarosan
+                    </Pill>
+                  )}
+                </span>
+                {/* Balanced: the global text-wrap: pretty alone left "Hova mentek a" / "rúnáid" (review 2026-11-24 VI-8). */}
+                {child.description && <span className="text-sm text-balance text-muted-foreground">{child.description}</span>}
               </span>
             </>
           )
@@ -35,10 +46,7 @@ export function SectionPage({ item }: { item: NavItem }) {
           return (
             <li key={child.label}>
               {child.comingSoon ? (
-                <Panel className="flex items-center gap-4 opacity-60">
-                  {content}
-                  <span className="text-xs text-muted-foreground">Hamarosan</span>
-                </Panel>
+                <Panel className="flex h-full items-center gap-4 opacity-60">{content}</Panel>
               ) : (
                 <Link
                   to={child.to}

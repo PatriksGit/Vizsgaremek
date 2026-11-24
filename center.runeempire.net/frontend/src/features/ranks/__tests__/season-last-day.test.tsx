@@ -9,7 +9,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MyStats } from '@/features/home/stats'
+import type { MyStats } from '@/features/home/api'
 import { RanksPage } from '@/features/ranks/RanksPage'
 import { stubBrowserApis } from '@/test/fakeBackend'
 

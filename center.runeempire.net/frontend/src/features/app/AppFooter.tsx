@@ -26,9 +26,7 @@ export function AppFooter() {
           </li>
         ))}
       </ul>
-      <p className="max-w-105 text-balance">
-        Nem hivatalos Minecraft termék. Nem a Mojang vagy a Microsoft hagyta jóvá, és nem áll kapcsolatban velük.
-      </p>
+      <p className="max-w-105 text-balance">{site.minecraftNotice}</p>
     </footer>
   )
 }

@@ -28,11 +28,11 @@ type PurchaseDialogProps = {
   onClose: () => void
   /**
    * Open or closing. The rank stays while it closes, so the exit animation shows its content, not an
-   * empty frame (review 2026-11-17, UI-N2); without it, open while there is a rank.
+   * empty frame (review 2026-11-17, UI-N2).
    */
-  open?: boolean
+  open: boolean
   /** The exit animation has finished: the rank can go. */
-  onClosed?: () => void
+  onClosed: () => void
   /** Where focus goes when it closes (true: back to what opened it). */
   finalFocus?: () => HTMLElement | true
 }
@@ -60,7 +60,7 @@ export function PurchaseDialog({
   balance,
   now,
   onClose,
-  open = rank !== null,
+  open,
   onClosed,
   finalFocus,
 }: PurchaseDialogProps) {
@@ -73,18 +73,16 @@ export function PurchaseDialog({
     <AlertDialog
       open={open}
       onOpenChange={(next) => !next && onClose()}
-      onOpenChangeComplete={(next) => !next && onClosed?.()}
+      onOpenChangeComplete={(next) => !next && onClosed()}
     >
       <AlertDialogContent
         finalFocus={finalFocus}
-        className="max-h-[calc(100svh-2rem)] justify-items-center gap-5 overflow-y-auto rounded-2xl border border-line bg-card px-6 pt-8 pb-6 text-center ring-0 max-w-[calc(100%-2rem)] sm:max-w-100"
+        className="justify-items-center gap-5 px-6 pt-8 pb-6 text-center sm:max-w-100"
       >
         {rank &&
           (seasonOver(rank, now) ? (
             <Popup icon={faXmark} tone="danger" title="Ez a rang már nem vásárolható." body={`${rank.name} · a szezon véget ért.`}>
-              <AlertDialogCancel variant="ghost" className={cn(buttonLook, 'h-auto w-full bg-raised text-foreground hover:bg-raised/80')}>
-                Bezárás
-              </AlertDialogCancel>
+              <CloseButton />
             </Popup>
           ) : missing > 0 ? (
             <Popup
@@ -98,9 +96,7 @@ export function PurchaseDialog({
                 </>
               }
             >
-              <AlertDialogCancel variant="ghost" className={cn(buttonLook, 'h-auto w-full bg-raised text-foreground hover:bg-raised/80')}>
-                Bezárás
-              </AlertDialogCancel>
+              <CloseButton />
             </Popup>
           ) : (
             <Popup
@@ -143,6 +139,15 @@ export function PurchaseDialog({
           ))}
       </AlertDialogContent>
     </AlertDialog>
+  )
+}
+
+/** The only button of a popup that cannot go on (too few runes, the season over). */
+function CloseButton() {
+  return (
+    <AlertDialogCancel variant="ghost" className={cn(buttonLook, 'h-auto w-full bg-raised text-foreground hover:bg-raised/80')}>
+      Bezárás
+    </AlertDialogCancel>
   )
 }
 

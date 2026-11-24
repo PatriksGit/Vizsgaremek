@@ -3,7 +3,7 @@ import { useId, useState } from 'react'
 import { FitLine } from '@/components/app/FitLine'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { useAccount } from '@/features/auth/queries'
-import { rankColor } from '@/features/home/stats'
+import { rankColor } from '@/components/app/rankColor'
 
 import type { Rank } from './api'
 

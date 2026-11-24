@@ -63,7 +63,9 @@ export function RegisterCodeStep({ pending, onResend, onBack }: RegisterCodeStep
     <form onSubmit={(event) => void submit(event)} noValidate className="flex flex-col gap-6">
       <div>
         <h2 ref={headingRef} tabIndex={-1} className="font-heading text-2xl leading-tight text-foreground outline-none">
-          Nézd meg az e-mailed
+          {/* Never "e-" / "mailed" (320 px, review 2026-11-24 VI-7): a span, since Firefox ignores text-wrap: pretty and the
+              no-break hyphen (U+2011) is not in Fraunces. */}
+          Nézd meg az <span className="whitespace-nowrap">e-mailed</span>
         </h2>
         <p className="mt-2 text-muted-foreground">
           Küldtünk egy {CODE_LENGTH} jegyű kódot ide:{' '}

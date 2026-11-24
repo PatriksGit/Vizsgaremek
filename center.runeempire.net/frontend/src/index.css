@@ -22,9 +22,12 @@
     --color-raised: var(--raised);
     --color-sunken: var(--sunken);
     --color-line: var(--line);
+    --color-popup-border: var(--popup-border);
     --color-ok: var(--ok);
+    --color-ok-soft: var(--ok-soft);
     --color-warn: var(--warn);
     --color-danger: var(--danger);
+    --color-danger-soft: var(--danger-soft);
     --color-lock: var(--lock);
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
@@ -34,6 +37,8 @@
     --color-xp: var(--xp);
     --color-redstone: var(--redstone);
     --color-discord: var(--discord);
+    --color-discord-soft: var(--discord-soft);
+    --color-discord-hover: var(--discord-hover);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -62,11 +67,15 @@
  *   background #0C0B09 page       sidebar  #100F0C side menu, bars
  *   card       #15130F cards      sunken   #1A1813 rows inside a card
  *   raised     #1E1B15 pills      popover  #1F1C16 tooltips, menus
+ *   popup-border #2F2A21 the edge of a menu, hover card or chart tooltip
  *   border     #221E18 card edge  line     #2A251D dashed grid, sub-menu rail
  *   foreground #F2EDE4 text       soft     #C9C2B5 labels   muted #A39C8F secondary
  *   faint      #8C8577 captions   primary  #E9B44C gold: current page, today, rank
  * Status: ok #5FBF7A (online, done, no punishment), warn #F5D04A (mute),
- * danger #E5675A (ban, missed), lock #FF3B3B (locked account).
+ * danger #E5675A (ban, missed), lock #FF3B3B (locked account); their light text
+ * tones ok-soft #A9D9B5 and danger-soft #E8A49B (a done / missed streak day's date).
+ * Discord: discord #5865F2, discord-soft #8C96FF (its icon), discord-hover #4752C4.
+ * chart-axis #35302A: the week chart's day axis (an SVG stroke, so a plain variable).
  * Older material tones: xp (the login page's status dot) and redstone (the
  * account page's logout button).
  */
@@ -76,6 +85,7 @@
     --foreground: #f2ede4;
     --card: #15130f;
     --popover: #1f1c16;
+    --popup-border: #2f2a21;
     --popover-foreground: #f2ede4;
     --primary: #e9b44c;
     --primary-foreground: #2b1d05;
@@ -94,8 +104,10 @@
     --sunken: #1a1813;
     --line: #2a251d;
     --ok: #5fbf7a;
+    --ok-soft: #a9d9b5;
     --warn: #f5d04a;
     --danger: #e5675a;
+    --danger-soft: #e8a49b;
     --lock: #ff3b3b;
     --sidebar: #100f0c;
     --sidebar-foreground: #c9c2b5;
@@ -105,6 +117,9 @@
     --xp: #7ed957;
     --redstone: #ff5e57;
     --discord: #5865f2;
+    --discord-soft: #8c96ff;
+    --discord-hover: #4752c4;
+    --chart-axis: #35302a;
 }
 
 @layer base {
@@ -117,21 +132,22 @@
     }
     html {
         @apply font-sans;
+        /* Thin, dark scrollbars instead of the browser's light grey ones. */
+        scrollbar-width: thin;
+        scrollbar-color: rgb(255 255 255 / 0.16) var(--bedrock);
+    }
+    /*
+     * No lone short word on a text's last line ("is.", "itt.", "el"): the browser evens out the last lines (review
+     * 2026-11-24 VI-8). Firefox ignores it, so a word that must not break at its hyphen also gets a nowrap span.
+     */
+    p, li, h1, h2, h3 {
+        text-wrap: pretty;
     }
 }
-
 
 /* The black glass of the login card. */
 @utility glass {
     @apply rounded-3xl border border-white/10 bg-black/55 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl;
-}
-
-/* Thin, dark scrollbars instead of the browser's light grey ones. */
-@layer base {
-    html {
-        scrollbar-width: thin;
-        scrollbar-color: rgb(255 255 255 / 0.16) var(--bedrock);
-    }
 }
 
 /*
@@ -197,11 +213,11 @@
 /* Today's streak day, still waiting for a login: a slow gold pulse around it. */
 @keyframes today-pulse {
     0% {
-        box-shadow: 0 0 0 0 rgb(233 180 76 / 0.45);
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent);
     }
     70%,
     100% {
-        box-shadow: 0 0 0 9px rgb(233 180 76 / 0);
+        box-shadow: 0 0 0 9px transparent;
     }
 }
 
@@ -291,7 +307,7 @@
         z-index: 2;
         border-radius: inherit;
         padding: 1px;
-        background: linear-gradient(115deg, transparent 35%, rgb(233 180 76 / 0.85) 50%, transparent 65%);
+        background: linear-gradient(115deg, transparent 35%, color-mix(in srgb, var(--primary) 85%, transparent) 50%, transparent 65%);
         background-size: 300% 100%;
         animation: rank-shine 5s linear infinite;
         mask:

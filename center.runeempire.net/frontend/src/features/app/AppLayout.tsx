@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router'
 
 import { focusRing } from '@/components/app/interactive'
@@ -19,19 +19,25 @@ import { MobileTabBar } from './MobileTabBar'
 export function AppLayout() {
   // A page reached with router state {quiet: true} skips the page-load build-up (index.css [data-quiet]):
   // e.g. home after a refused management sign-in, so it does not look like a fresh login.
-  // Decided once per page: a later entry of the same page (its own menu link, the skip link's #tartalom)
-  // has no state, and dropping data-quiet then would replay the build-up on a page already shown.
+  // Decided once per page: a later entry of the same page (its own menu link, the logo) has no state,
+  // and dropping data-quiet then would replay the build-up on a page already shown.
   const { pathname, state } = useLocation()
   const [arrival, setArrival] = useState({ pathname, quiet: isQuiet(state) })
   if (arrival.pathname !== pathname) setArrival({ pathname, quiet: isQuiet(state) })
   const quiet = arrival.pathname === pathname ? arrival.quiet : isQuiet(state)
 
   return (
-    // 248 px wide, as in the design.
-    <SidebarProvider style={{ '--sidebar-width': '15.5rem' } as CSSProperties} data-quiet={quiet || undefined}>
-      {/* The first Tab stop: past the menu straight to the page. */}
+    <SidebarProvider data-quiet={quiet || undefined}>
+      {/*
+       * The first Tab stop: past the menu straight to the page. It moves the focus itself: following the
+       * #tartalom fragment would add a history entry without the page's router state (a profile's back link).
+       */}
       <a
         href="#tartalom"
+        onClick={(event) => {
+          event.preventDefault()
+          document.getElementById('tartalom')?.focus()
+        }}
         className="sr-only z-50 rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
       >
         Ugrás a tartalomra

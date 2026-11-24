@@ -3,6 +3,7 @@ import { NavLink } from 'react-router'
 import { cn } from '@/lib/utils'
 
 import { useFromState } from './fromState'
+import { slideTiming } from './styles'
 
 export type AuthMode = 'login' | 'register' | 'forgot'
 
@@ -22,7 +23,7 @@ export function AuthTabs({ mode }: { mode: AuthMode }) {
         aria-hidden="true"
         className={cn(
           'absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-white/10 shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]',
-          'transition-[translate] duration-600 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none',
+          'transition-[translate]', slideTiming,
           mode === 'register' && 'translate-x-full',
         )}
       />

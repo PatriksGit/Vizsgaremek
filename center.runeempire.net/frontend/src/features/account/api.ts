@@ -20,7 +20,7 @@ export async function changePassword(request: { currentPassword: string; passwor
 }
 
 /** A 2FA secret to switch on, kept on the server until a code from the app confirms it. */
-type TwoFactorSetup = { secret: string; otpauthUrl: string }
+export type TwoFactorSetup = { secret: string; otpauthUrl: string }
 
 export async function startTwoFactorSetup(): Promise<TwoFactorSetup> {
   const response = await http.post<Wrapped<{ secret: string; otpauth_url: string }>>('/auth/two-factor/setup')

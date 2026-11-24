@@ -51,23 +51,24 @@ export function LoginForm() {
   const fromState = useFromState()
 
   // This form stays mounted behind the other panels, so the name comes in later, not as a default.
-  const resetUsername = (useLocation().state as ResetState)?.username
-  // A reset also ends a code step the player left open (the browser's Back from it to the panel).
-  const [lastResetUsername, setLastResetUsername] = useState(resetUsername)
-  if (resetUsername !== lastResetUsername) {
-    setLastResetUsername(resetUsername)
-    if (resetUsername) setAskingCode(false)
+  const location = useLocation()
+  const resetUsername = (location.state as ResetState)?.username
+  // One reset fills the form once: coming back to its history entry later (Back, Forward) is not another reset (AU-1).
+  const [filled, setFilled] = useState<{ entry: string; username: string } | null>(null)
+  if (resetUsername && location.key !== filled?.entry) {
+    setFilled({ entry: location.key, username: resetUsername })
+    // A reset also ends a code step the player left open (the browser's Back from it to the panel).
+    setAskingCode(false)
   }
   useEffect(() => {
-    if (resetUsername) {
-      // The failed login (or code) that sent the player to the reset is over too.
-      codeForm.reset({ code: '' })
-      form.clearErrors()
-      form.setValue('username', resetUsername)
-      form.setValue('password', '')
-      form.setFocus('password')
-    }
-  }, [resetUsername, form, codeForm])
+    if (!filled) return
+    // The failed login (or code) that sent the player to the reset is over too.
+    codeForm.reset({ code: '' })
+    form.clearErrors()
+    form.setValue('username', filled.username)
+    form.setValue('password', '')
+    form.setFocus('password')
+  }, [filled, form, codeForm])
 
   // Focus moves with the step, once its field is on the page.
   const wasAskingCode = useRef(false)
@@ -102,7 +103,7 @@ export function LoginForm() {
         <FieldGroup>
           <div className="flex flex-col gap-1.5">
             <h2 className="font-heading text-xl font-bold text-foreground">Kétlépcsős azonosítás</h2>
-            <p className="text-sm text-muted-foreground">Írd be a hitelesítő alkalmazásodban látható 6 jegyű kódot.</p>
+            <p className="text-sm text-muted-foreground">Írd be a hitelesítő alkalmazásodban látható {TOTP_LENGTH} jegyű kódot.</p>
           </div>
           <FormAlert message={codeForm.formState.errors.root?.server?.message} />
           <CodeField

@@ -2,12 +2,14 @@ import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation, useParams } from 'react-router'
 
+import { focusRing } from '@/components/app/interactive'
 import { Panel } from '@/components/app/Panel'
 import { site } from '@/config/site'
 import { NAME_PATTERN } from '@/features/auth/schemas'
 import { Dashboard } from '@/features/home/Dashboard'
 import { PROFILE_WORDING } from '@/features/home/wording'
 import { enterAfter } from '@/lib/motion'
+import { cn } from '@/lib/utils'
 
 import { isMissingPlayer, usePlayerFriends, usePlayerProfile } from './api'
 import { profileBack } from './links'
@@ -36,7 +38,11 @@ function Profile({ name }: { name: string }) {
       to={back.to}
       // Back to a profile: with its own back link, so the chain still ends at the search it started from (K2).
       state={back.back && { back: back.back }}
-      className="content-in inline-flex items-center gap-2 self-start rounded-md text-sm font-semibold text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-primary/30 max-md:-my-3 max-md:min-h-11"
+      // The app's gold keyboard ring (focusRing), like the menu's links (review 2026-11-24 UX-K7).
+      className={cn(
+        'content-in inline-flex items-center gap-2 self-start rounded-md text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground max-md:-my-3 max-md:min-h-11',
+        focusRing,
+      )}
       style={enterAfter(100)}
     >
       <FontAwesomeIcon icon={faArrowLeft} className="size-3.5" aria-hidden="true" />

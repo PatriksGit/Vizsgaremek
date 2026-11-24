@@ -3,19 +3,34 @@ import { Clock } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { Pill } from '@/components/app/Pill'
+import { rankColor } from '@/components/app/rankColor'
 import type { ProfileBack } from '@/features/players/links'
 
-import { countFormat } from '@/lib/budapest'
+import { countFormat, shortDate } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
 
+import type { Friend, MyStats, StatPart, StatsAnswer } from './api'
 import { DiscordCard } from './DiscordCard'
-import { type Friend, FriendsCard } from './FriendsCard'
+import { FriendsCard } from './FriendsCard'
 import { HeroCard } from './HeroCard'
 import { PlaytimeCard } from './PlaytimeCard'
-import { PunishmentCard } from './PunishmentCard'
+import { type Punishment, PunishmentCard } from './PunishmentCard'
 import { StatCard } from './StatCard'
-import { hoursFormat, type MyStats, rankColor, shortDate, type StatPart, type StatsAnswer, toPunishment } from './stats'
 import type { DashboardWording } from './wording'
+
+/** Hours with at most one decimal ("2,5"). */
+const hoursFormat = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 1 })
+
+/** The punishment as the card shows it. */
+function toPunishment(punishment: MyStats['punishment']): Punishment | null {
+  return punishment && {
+    kind: punishment.kind,
+    until: punishment.until,
+    issuedAt: punishment.issued_at,
+    issuedBy: punishment.issued_by,
+    reason: punishment.reason,
+  }
+}
 
 /** The part of a query result the dashboard reads. */
 type Loaded<T> = { data?: T; isFetched: boolean }
@@ -95,9 +110,12 @@ export function Dashboard({ wording, name, registeredAt, stats: statsQuery, frie
           style={enterAfter(680)}
         >
           {stats?.rank?.expires_at && (
-            <Pill tone="gold" className="h-6.5 self-start">
-              <Clock className="size-3.25" aria-hidden="true" />
-              Lejár: {shortDate(stats.rank.expires_at)}
+            // Like the "Csatlakozott" pill (V1): it may grow and break once, only between the label and the date.
+            <Pill tone="gold" className="min-h-6.5 self-start py-1">
+              <Clock className="size-3.25 shrink-0" aria-hidden="true" />
+              <span>
+                Lejár: <span className="whitespace-nowrap">{shortDate(stats.rank.expires_at)}</span>
+              </span>
             </Pill>
           )}
         </StatCard>

@@ -3,17 +3,36 @@ import { faGoogle, faMicrosoft } from '@fortawesome/free-brands-svg-icons'
 import { useQueryClient } from '@tanstack/react-query'
 
 import type { Account } from '@/features/auth/api'
-import { accountQueryKey } from '@/features/auth/queries'
+import { accountQueryKey, useAccount } from '@/features/auth/queries'
+import { ApiError } from '@/lib/api'
 
 /**
  * Writes the new 2FA state into the cached account, so the card switches at
- * once without asking /api/auth/me again.
+ * once without asking /api/auth/me again. Only into the account that asked: a late answer
+ * after a logout and another login must not change the new account's card.
  */
 export function useSetTwoFactorEnabled() {
   const queryClient = useQueryClient()
+  const owner = useAccount().data?.uuid
 
   return (enabled: boolean) =>
-    queryClient.setQueryData<Account | null>(accountQueryKey, (account) => (account ? { ...account, two_factor_enabled: enabled } : account))
+    queryClient.setQueryData<Account | null>(accountQueryKey, (account) =>
+      account && account.uuid === owner ? { ...account, two_factor_enabled: enabled } : account,
+    )
+}
+
+/**
+ * A 409 says 2FA is already in the other state (another tab, or staff switched it off by hand):
+ * the card follows the server, as after a 204. Used as the 2FA mutations' onError.
+ */
+export function useFollowTwoFactorConflict() {
+  const setTwoFactorEnabled = useSetTwoFactorEnabled()
+
+  return (error: unknown) => {
+    if (!(error instanceof ApiError)) return
+    if (error.code === 'two_factor.already_enabled') setTwoFactorEnabled(true)
+    if (error.code === 'two_factor.not_enabled') setTwoFactorEnabled(false)
+  }
 }
 
 /** The key in groups of four, easier to type into an app by hand (the app ignores the spaces). */

@@ -1,9 +1,9 @@
 import { faCoins } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
+import { NoData } from '@/components/app/NoData'
 import { panelLook } from '@/components/app/Panel'
 import { Skeleton } from '@/components/ui/skeleton'
-import { NO_DATA } from '@/features/home/stats'
 import { countFormat } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -21,7 +21,7 @@ export function BalanceBar({ balance }: { balance: number | null | undefined }) 
     <section
       aria-label="Egyenleged"
       style={enterAfter(150)}
-      className={cn(panelLook, 'content-in flex flex-wrap max-md:sticky max-md:top-15 max-md:z-20 max-md:shadow-[0_10px_20px_rgb(0_0_0/0.5)] items-center justify-between gap-x-4 gap-y-2 px-4 py-3 md:px-5')}
+      className={cn(panelLook, 'content-in flex max-md:sticky max-md:top-15 max-md:z-20 max-md:shadow-[0_10px_20px_rgb(0_0_0/0.5)] items-center px-4 py-3 md:px-5')}
     >
       <div className="flex items-center gap-3">
         <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-lg bg-raised text-soft">
@@ -36,8 +36,7 @@ export function BalanceBar({ balance }: { balance: number | null | undefined }) 
             </>
           ) : balance === null ? (
             <span className="text-lg leading-tight font-extrabold text-muted-foreground">
-              {NO_DATA}
-              <span className="sr-only"> (most nem érhető el)</span>
+              <NoData />
             </span>
           ) : (
             <span className="text-lg leading-tight font-extrabold text-foreground">{countFormat.format(balance)} rúna</span>

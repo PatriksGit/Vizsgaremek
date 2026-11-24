@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router'
 
 import { ErrorPage } from '@/components/ErrorPage'
@@ -35,11 +35,16 @@ function RootLayout() {
   // Not isPending: a refetch after a failed check is pending again, and hiding the
   // pages then would remount them on every answer.
   const { data: account, isFetched, error } = useAccount()
+  // TanStack clears `error` while a query without data is asked again (coming back to the tab):
+  // the page keeps the last failure's status until the new answer.
+  const [lastError, setLastError] = useState(error)
+  if (error && error !== lastError) setLastError(error)
   if (!isFetched) return null
 
   // Answered, but only with errors (a guest is null, not undefined): the server or its
   // database is down. The page shows the status; coming back to the tab or a refresh asks again.
-  if (account === undefined) return <ErrorPage status={error instanceof ApiError ? error.status : undefined} />
+  const failure = error ?? lastError
+  if (account === undefined) return <ErrorPage status={failure instanceof ApiError ? failure.status : undefined} />
 
   return <Outlet />
 }
@@ -81,7 +86,7 @@ const router = createBrowserRouter([
         ],
       },
       {
-        // One parent for both paths keeps the card mounted, so it can animate
+        // One parent for the three paths keeps the card mounted, so it can animate
         // between them; the children only name the paths and render nothing.
         element: (
           <GuestOnly>

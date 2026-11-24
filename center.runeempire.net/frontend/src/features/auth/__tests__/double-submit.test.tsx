@@ -52,7 +52,7 @@ describe('double submits', () => {
     fireEvent.change(screen.getByLabelText('Jelszó újra'), { target: { value: 'jelszo-2026' } })
     for (const box of screen.getAllByRole('checkbox')) fireEvent.click(box)
     fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
-    await screen.findByText('Nézd meg az e-mailed')
+    await screen.findByRole('heading', { name: 'Nézd meg az e-mailed' })
 
     fireEvent.change(screen.getByLabelText('Megerősítő kód'), { target: { value: '123456' } })
     // The last digit already sent the code (auth K1), before any click: the button reads "Fiók létrehozása…" now.

@@ -15,6 +15,7 @@ type FitLineProps = {
  * Keeps its content on ONE line and, when the box is narrower than the line, shrinks the whole line to fit (CSS zoom, so
  * its height shrinks too) instead of wrapping or spilling: the rank shop's in-game look, the overview's name and its stat
  * values (owner, 2026-11-17: "a broken line is not pretty"; review 2026-11-23 V1/V2: "ClaudeTes / zt", "9 950 10").
+ * Never put a tap target inside: the zoom shrinks its hit area too (review 2026-11-24 UX-K5, the punishment trigger).
  */
 export function FitLine({ children, className, lineClassName }: FitLineProps) {
   const box = useRef<HTMLSpanElement>(null)

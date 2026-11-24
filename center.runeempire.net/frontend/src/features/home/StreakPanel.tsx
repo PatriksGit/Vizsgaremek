@@ -1,26 +1,16 @@
 import { Check, Clock, Flame, X } from 'lucide-react'
 
+import { NoData } from '@/components/app/NoData'
 import { Skeleton } from '@/components/ui/skeleton'
-import { serverToday } from '@/lib/budapest'
+import { DAY_NAMES, DAY_SHORT, serverTodayIndex, serverWeek } from '@/lib/budapest'
 import { cn } from '@/lib/utils'
 
-import { DAY_NAMES, DAY_SHORT, NO_DATA, serverTodayIndex } from './stats'
-
-/** One day of this week's login streak, as GET /api/me/stats sends it. */
-export type StreakDayStatus = 'done' | 'missed' | 'pending' | 'future' | 'before'
-
-export type Streak = {
-  /** Days in a row, today included once the player logged in. */
-  current: number
-  best: number
-  /** This week, Monday first: seven days. */
-  week: StreakDayStatus[]
-}
+import type { Streak, StreakDayStatus } from './api'
 
 /** Each day's look and its screen-reader text; done and pending come from wording.ts (StreakText). */
 const LOOK: Record<StreakDayStatus, { box: string; date: string; text?: string }> = {
-  done: { box: 'border border-ok/35 bg-ok/12', date: 'text-[#A9D9B5]' },
-  missed: { box: 'border border-danger/35 bg-danger/10', date: 'text-[#E8A49B]', text: 'kimaradt' },
+  done: { box: 'border border-ok/35 bg-ok/12', date: 'text-ok-soft' },
+  missed: { box: 'border border-danger/35 bg-danger/10', date: 'text-danger-soft', text: 'kimaradt' },
   pending: { box: 'today-pulse border-2 border-primary bg-primary/8', date: 'text-primary' },
   future: { box: 'border border-line bg-sunken', date: 'text-faint', text: 'még hátravan' },
   before: { box: 'border border-dashed border-line', date: 'text-faint', text: 'regisztráció előtt' },
@@ -33,12 +23,6 @@ function monthDay(date: Date) {
   return `${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 }
 
-/** The dates of the server's week, Monday first, at local midnight. */
-function thisWeek(today: Date) {
-  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7))
-  return Array.from({ length: 7 }, (_, index) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + index))
-}
-
 /** The words that speak to the player on the overview and about them on a profile (wording.ts). */
 export type StreakText = { done: string; pending: string }
 
@@ -46,8 +30,8 @@ type StreakPanelProps = {
   /** Left out while the stats load (skeletons); null when it could not be loaded (a dash, plain boxes). */
   streak?: Streak | null
   text: StreakText
-  /** The moment the streak is from (default now). */
-  asOf?: Date
+  /** The server's moment the streak is from (the stats' answeredAt). */
+  asOf: Date
   className?: string
 }
 
@@ -56,9 +40,9 @@ type StreakPanelProps = {
  * record on top, then seven boxes (a check for a day logged in, a cross for
  * a missed one, today pulsing gold with a clock until the login).
  */
-export function StreakPanel({ streak, text, asOf = new Date(), className }: StreakPanelProps) {
+export function StreakPanel({ streak, text, asOf, className }: StreakPanelProps) {
   const todayIndex = serverTodayIndex(asOf)
-  const dates = thisWeek(serverToday(asOf))
+  const dates = serverWeek(asOf)
   const dayText = (status: StreakDayStatus) => (status === 'done' || status === 'pending' ? text[status] : LOOK[status].text)
 
   return (
@@ -74,8 +58,7 @@ export function StreakPanel({ streak, text, asOf = new Date(), className }: Stre
               <span className="text-xl font-extrabold text-foreground md:text-2xl">{dayCount(streak.current)}</span>
             ) : streak === null ? (
               <span className="text-xl font-extrabold text-muted-foreground md:text-2xl">
-                {NO_DATA}
-                <span className="sr-only"> (most nem érhető el)</span>
+                <NoData />
               </span>
             ) : (
               <>
@@ -85,7 +68,8 @@ export function StreakPanel({ streak, text, asOf = new Date(), className }: Stre
             )}
           </span>
         </span>
-        {streak && <span className="text-xs text-faint">Rekord: {dayCount(streak.best)}</span>}
+        {/* One line: at 320 px "Rekord: 365" / "nap" broke the number from its unit. */}
+        {streak && <span className="text-xs whitespace-nowrap text-faint">Rekord: {dayCount(streak.best)}</span>}
       </div>
 
       <ol aria-label="Napi sorozat ezen a héten" aria-busy={streak === undefined} className="grid grid-cols-7 gap-1.25 md:gap-1.5">

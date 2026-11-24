@@ -1,4 +1,4 @@
-import { ApiError, http } from '@/lib/api'
+import { ApiError, http, serverMoment } from '@/lib/api'
 
 /** AccountResource on the backend. */
 export type Account = {
@@ -95,8 +95,7 @@ export async function startRegistration(request: RegistrationRequest): Promise<P
 
 /** A server time (ISO 8601) on the visitor's clock, measured against the response's Date header. */
 function localTime(serverIso: string, dateHeader: unknown): number {
-  const serverNow = Date.parse(String(dateHeader))
-  return Date.now() + Date.parse(serverIso) - (Number.isNaN(serverNow) ? Date.now() : serverNow)
+  return Date.now() + Date.parse(serverIso) - serverMoment(dateHeader)
 }
 
 /** A password reset code that went out; the times are epoch ms on the visitor's clock. */

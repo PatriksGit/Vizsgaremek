@@ -11,7 +11,7 @@ import { countFormat } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-import { useDiscordWidget, type DiscordMember, type DiscordWidget } from './discord'
+import { type DiscordMember, type DiscordWidget, useDiscordWidget } from './api'
 
 /** What Discord itself shows for someone without a picture. */
 const DEFAULT_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png'
@@ -49,7 +49,7 @@ export function DiscordCard({ className }: { className?: string }) {
       <div className="flex items-center gap-3">
         <span
           aria-hidden="true"
-          className="grid size-9.5 shrink-0 place-items-center rounded-[10px] bg-discord/16 text-[#8c96ff] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] md:size-11 md:rounded-xl"
+          className="grid size-9.5 shrink-0 place-items-center rounded-[10px] bg-discord/16 text-discord-soft shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] md:size-11 md:rounded-xl"
         >
           <FontAwesomeIcon icon={faDiscord} className="size-5 md:size-5.5" />
         </span>
@@ -88,7 +88,7 @@ export function DiscordCard({ className }: { className?: string }) {
         href={invite}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-auto flex h-11 items-center justify-center gap-2 rounded-xl bg-discord font-extrabold text-white transition-colors outline-none hover:bg-[#4752c4] focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+        className="mt-auto flex h-11 items-center justify-center gap-2 rounded-xl bg-discord font-extrabold text-white transition-colors outline-none hover:bg-discord-hover focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
       >
         <FontAwesomeIcon icon={faDiscord} className="size-4.5" aria-hidden="true" />
         Csatlakozás a Discordhoz
@@ -102,8 +102,10 @@ function Members({ widget }: { widget: DiscordWidget }) {
   const shown = widget.members.slice(0, MEMBERS_SHOWN)
   const rest = widget.presence_count - shown.length
 
+  // "Nobody is on" only when nobody is: a widget with people online but no member list (Discord's own widget may
+  // leave it out) shows just the count above, never "N online" beside "Most senki sincs fent." (review 2026-11-24 HO-K3).
   if (shown.length === 0) {
-    return <p className="text-sm text-muted-foreground">Most senki sincs fent.</p>
+    return widget.presence_count === 0 ? <p className="text-sm text-muted-foreground">Most senki sincs fent.</p> : null
   }
 
   return (
@@ -129,7 +131,7 @@ function Members({ widget }: { widget: DiscordWidget }) {
 /** A member's Discord picture; without one, or if it does not load, Discord's own default picture. Their name is written beside it. */
 function MemberAvatar({ member, className }: { member: DiscordMember; className?: string }) {
   return (
-    <Avatar className={cn('bg-secondary after:hidden', className)}>
+    <Avatar className={cn('bg-secondary', className)}>
       {member.avatar_url && <AvatarImage src={member.avatar_url} alt="" referrerPolicy="no-referrer" />}
       <AvatarFallback className="bg-transparent">
         <img src={DEFAULT_AVATAR} alt="" referrerPolicy="no-referrer" className="size-full rounded-full" />

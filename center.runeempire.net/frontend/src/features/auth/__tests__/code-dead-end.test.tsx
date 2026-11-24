@@ -5,7 +5,7 @@
  * holding a working code with nowhere to type it.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
@@ -56,7 +56,10 @@ function fillDetails(email: string) {
 
 async function sendDetails() {
   fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
-  await screen.findByText(/Nézd meg az e-mailed|nemrég küldtünk kódot/)
+  // The code step's title (its 'e-mailed' is a nowrap span, so it is found by its accessible name) or the cooldown.
+  await waitFor(() =>
+    expect(screen.queryByRole('heading', { name: 'Nézd meg az e-mailed' }) ?? screen.queryByText(/nemrég küldtünk kódot/)).not.toBeNull(),
+  )
 }
 
 /** Where the player can type the code that is in their mailbox. */

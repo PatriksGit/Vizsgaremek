@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
-import { playerCardHover, playerHeadGrow } from '@/components/app/interactive'
+import { playerCardHover, playerGridColumns, playerHeadGrow } from '@/components/app/interactive'
 import { panelLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -23,6 +23,9 @@ const DEBOUNCE_MS = 250
 const MORE_SHOWN_UP_TO = 999
 
 const cardClass = cn(panelLook, 'flex min-h-16 items-center gap-3 px-4 py-3')
+
+/** The friends list's columns (playerGridColumns), so a result card is as wide as a friend card. */
+const gridClass = cn(playerGridColumns, 'gap-3')
 
 /**
  * Page-load order like the other pages: the title, then the search box, then
@@ -97,7 +100,8 @@ export function PlayersPage() {
           maxLength={16}
           autoComplete="off"
           spellCheck={false}
-          autoFocus
+          // Only an empty search: back from a profile (?q= kept) a phone's keyboard would cover the kept results (RK-K3).
+          autoFocus={!asked}
           className="h-12 w-full rounded-xl border border-line bg-sunken pr-4 pl-11 text-base text-foreground transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-primary/60 focus-visible:ring-3 focus-visible:ring-primary/20"
         />
       </div>
@@ -134,8 +138,8 @@ function Results({ query, search }: ResultsProps) {
     )
   }
 
-  // A failed background refresh keeps this query's own answer on screen (like the overview's cards).
-  if (search.error && !search.isFetching && !shown?.exact) {
+  // A failed background refresh keeps its answer on screen (like the overview's cards), also while typing on from it.
+  if (search.error && !search.isFetching && !shown) {
     return (
       <p role="alert" className="content-in text-center text-muted-foreground">
         {formMessage(search.error, 'A keresés most nem sikerült, próbáld újra.')}
@@ -148,7 +152,7 @@ function Results({ query, search }: ResultsProps) {
     return (
       <div aria-busy="true" className="content-in" style={enterAfter(BELOW_DELAY)}>
         <span className="sr-only">Keresés…</span>
-        <ul aria-hidden="true" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul aria-hidden="true" className={gridClass}>
           {[28, 20, 32, 24, 18, 26].map((width, index) => (
             <li key={index} className={cardClass}>
               <Skeleton className="size-10 rounded-md" />
@@ -164,10 +168,12 @@ function Results({ query, search }: ResultsProps) {
     <>
       {shown.exact && (
         <p role="status" className="sr-only">
+          {/* Above the cap the backend stopped counting: say so, like the "999+" card. */}
+          {shown.more > MORE_SHOWN_UP_TO && 'Legalább '}
           {countFormat.format(shown.players.length + shown.more)} találat
         </p>
       )}
-      <ul aria-label="Találatok" className={cn('grid gap-3 transition-opacity sm:grid-cols-2 lg:grid-cols-3', !shown.exact && 'opacity-70')}>
+      <ul aria-label="Találatok" className={cn(gridClass, 'transition-opacity', !shown.exact && 'opacity-70')}>
         {shown.players.map((player, index) => (
           <li key={player.name} className="content-in" style={enterAfter(staggerDelay(index, CARD_STEP))}>
             <Link

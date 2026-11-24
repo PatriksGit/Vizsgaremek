@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { ReactNode } from 'react'
 import { Link, matchPath, useLocation } from 'react-router'
 
-import { ServerBackdrop } from '@/components/ServerBackdrop'
 import { site } from '@/config/site'
 import { enterAfter } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -15,7 +14,8 @@ import { useFromState } from './fromState'
 import { LoginForm } from './LoginForm'
 import { useAccount } from './queries'
 import { RegisterForm } from './RegisterForm'
-import { quietLinkClass } from './styles'
+import { ServerBackdrop } from './ServerBackdrop'
+import { quietLinkClass, slideTiming } from './styles'
 
 const TITLES: Record<AuthMode, string> = { login: 'Belépés', register: 'Regisztráció', forgot: 'Elfelejtett jelszó' }
 
@@ -44,7 +44,7 @@ export function AuthPage() {
       <div className="card-rise glass grid w-full max-w-4xl overflow-hidden md:grid-cols-2">
         <AuthShowcase className="border-white/10 max-md:border-b md:border-r" />
 
-        {/* Both forms share one grid cell, so the column is as tall as the taller one.
+        {/* The three forms share one grid cell, so the column is as tall as the tallest one.
             The entrance plays on this wrapper: the slides' own opacity drives the slide. */}
         <div className="content-in grid overflow-hidden" style={enterAfter(500)}>
           <FormSlide mode={mode} active={mode === 'login'} from="left">
@@ -83,7 +83,7 @@ function FormSlide({ mode, active, from, header, children }: FormSlideProps) {
       inert={!active}
       className={cn(
         'col-start-1 row-start-1 flex flex-col justify-start gap-6 p-6 sm:p-8',
-        'transition-[translate,opacity] duration-600 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none',
+        'transition-[translate,opacity]', slideTiming,
         active
           ? cn(
               'translate-x-0 opacity-100',

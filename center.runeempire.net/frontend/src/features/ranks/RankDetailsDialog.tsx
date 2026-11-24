@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { rankColor } from '@/features/home/stats'
+import { rankColor } from '@/components/app/rankColor'
 import { countFormat } from '@/lib/budapest'
 
 import type { Rank } from './api'
@@ -50,12 +50,12 @@ export function RankDetailsDialog({
     >
       <DialogContent
         style={accentVars(rank?.color ?? null)}
-        className="flex max-h-[calc(100svh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border border-line bg-card p-0 ring-0 sm:max-w-160"
+        className="flex flex-col gap-0 overflow-hidden p-0 sm:max-w-160"
       >
         {rank && (
           <>
             <div className="min-h-0 flex-1 overflow-y-auto">
-              <RankBanner rank={rank} />
+              <RankBanner rank={rank} className="border-b border-border bg-background p-2" />
               <div className="flex flex-col gap-4 p-6 pb-2">
                 <div className="flex flex-col items-center gap-2 text-center">
                   <DialogTitle

@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 
+import { focusRing } from '@/components/app/interactive'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { useAccount } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
@@ -47,7 +48,9 @@ export function MobileTabBar() {
                 aria-current={current ? 'page' : undefined}
                 className={cn(
                   tabBase,
-                  'rounded-lg transition-colors outline-none focus-visible:bg-white/6',
+                  // The app's gold keyboard ring like the sidebar's rows; the faint fill stays under it (review 2026-11-24 VI-K4).
+                  'rounded-lg transition-colors focus-visible:bg-white/6',
+                  focusRing,
                   current ? 'font-extrabold text-primary' : 'font-semibold text-muted-foreground hover:text-foreground',
                 )}
               >

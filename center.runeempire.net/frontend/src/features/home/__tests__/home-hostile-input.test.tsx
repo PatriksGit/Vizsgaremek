@@ -77,6 +77,7 @@ it('hostile friend names and rank colours stay text and drop out of style', () =
       <FriendsCard
         title={OWN_WORDING.friends}
         emptyText={OWN_WORDING.noFriends}
+        back={{ to: '/', label: 'Vissza a főoldalra' }}
         friends={[
           { name: '<img src=x onerror=alert(1)>', online: true, has_profile: true, rank: { name: '<b>x</b>', color: 'red; background-image: url(https://evil.invalid/x)' } },
           { name: '‮evil​', online: false, has_profile: true, rank: null },

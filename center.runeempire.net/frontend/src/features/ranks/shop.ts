@@ -9,7 +9,7 @@ import type { RankPrice } from './api'
  * the management section moves the badge with it and it can never lie.
  */
 export function discountPercent(prices: RankPrice[], days: number): number {
-  const shortest = [...prices].sort((a, b) => a.days - b.days)[0]
+  const shortest = prices[0] // the API lists the durations shortest first
   const chosen = prices.find((option) => option.days === days)
   if (!shortest || !chosen || shortest.runes <= 0 || chosen.days === shortest.days) return 0
 

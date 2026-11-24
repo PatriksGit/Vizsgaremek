@@ -7,6 +7,7 @@ import { Panel } from '@/components/app/Panel'
 import { buttonVariants } from '@/components/ui/button'
 import { site } from '@/config/site'
 import { enterAfter } from '@/lib/motion'
+import { cn } from '@/lib/utils'
 
 /**
  * How a new player gets into the game: the same name in Minecraft, and the
@@ -40,7 +41,8 @@ export function JoinCard() {
           href={site.discordInviteUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className={buttonVariants({ variant: 'outline', size: 'lg', className: 'h-11 border-discord/40 px-4 hover:bg-discord/15' })}
+          // cn, not buttonVariants' className: only tailwind-merge lets the Discord hover beat the outline's hover:bg-muted (UX-1).
+          className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-11 border-discord/40 px-4 hover:bg-discord/15')}
         >
           <FontAwesomeIcon icon={faDiscord} className="text-discord" aria-hidden="true" />
           Csatlakozás a Discordhoz

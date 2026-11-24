@@ -7,7 +7,8 @@ import { Separator } from "@/components/ui/separator"
 // MobileTabBar instead, so the sidebar is a plain frame: no open/collapsed
 // state, no mobile sheet, no offcanvas or icon mode, no Ctrl/Cmd+B shortcut
 // and no sidebar_state cookie (the cookie was outside the privacy notice's list).
-const SIDEBAR_WIDTH = "16rem"
+// 248 px wide, as in the design.
+const SIDEBAR_WIDTH = "15.5rem"
 
 function SidebarProvider({
   className,
@@ -18,7 +19,7 @@ function SidebarProvider({
     <div
       data-slot="sidebar-wrapper"
       style={{ "--sidebar-width": SIDEBAR_WIDTH, ...style } as React.CSSProperties}
-      className={cn("group/sidebar-wrapper flex min-h-svh w-full", className)}
+      className={cn("flex min-h-svh w-full", className)}
       {...props}
     />
   )
@@ -116,7 +117,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
     <li
       data-slot="sidebar-menu-item"
       data-sidebar="menu-item"
-      className={cn("group/menu-item relative", className)}
+      className={cn("relative", className)}
       {...props}
     />
   )
@@ -144,7 +145,7 @@ function SidebarMenuSubItem({
     <li
       data-slot="sidebar-menu-sub-item"
       data-sidebar="menu-sub-item"
-      className={cn("group/menu-sub-item relative", className)}
+      className={cn("relative", className)}
       {...props}
     />
   )

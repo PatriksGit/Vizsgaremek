@@ -13,7 +13,9 @@ class RankResource extends JsonResource
 {
     /**
      * Transform the resource into an array. prices lists each duration the
-     * rank sells for (a list, so a later duration needs no new field);
+     * rank sells for, shortest first (a list, so a later duration needs no
+     * new field; the frontend takes prices[0] as the shortest and does not
+     * re-sort);
      * season_ends_at is null for a year-round rank; color is the in-game
      * #RRGGBB from LuckPerms, or null.
      *

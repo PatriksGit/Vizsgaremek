@@ -1,3 +1,6 @@
+/** The card's slide: the forms (AuthPage) and the tab highlight (AuthTabs) move together, so they share the timing. */
+export const slideTiming = 'duration-600 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none'
+
 /** The full-width submit button of every auth form. */
 export const submitButtonClass = 'h-11 w-full rounded-lg text-base font-semibold md:h-10'
 

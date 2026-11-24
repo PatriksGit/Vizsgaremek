@@ -1,5 +1,5 @@
-import { dateOrDash, type MyStats } from '@/features/home/stats'
-import { budapestClock, budapestDay, DAY_MS } from '@/lib/budapest'
+import type { MyStats } from '@/features/home/api'
+import { budapestClock, budapestDay, dateOrDash, DAY_MS } from '@/lib/budapest'
 
 import type { Rank } from './api'
 
@@ -7,15 +7,13 @@ export function addDays(from: Date, days: number) {
   return new Date(from.getTime() + days * DAY_MS)
 }
 
-/** A countdown's parts; zero once the moment has passed. */
+/** A countdown's parts (whole hours, so the last day reads 23:59:59 down); zero once the moment has passed. */
 export function timeLeft(ms: number) {
   let left = Math.max(0, Math.floor(ms / 1000))
-  const days = Math.floor(left / 86_400)
-  left -= days * 86_400
   const hours = Math.floor(left / 3600)
   left -= hours * 3600
   const minutes = Math.floor(left / 60)
-  return { days, hours, minutes, seconds: left - minutes * 60 }
+  return { hours, minutes, seconds: left - minutes * 60 }
 }
 
 /**

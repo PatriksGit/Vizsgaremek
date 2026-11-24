@@ -30,7 +30,7 @@ function Stand() {
 }
 
 /**
- * The player's own skin as a 3D figure in the hero: 150x250 on wide screens,
+ * The player's skin (the overview's or a profile's) as a 3D figure in the hero: 150x250 on wide screens,
  * 84x150 on phones. Its place stays empty until the figure with the real skin
  * fades in (owner, 2026-11-13: no skeleton for the skin; even a cached skin
  * needs three.js and WebGL to start, so an outline would always flash up).

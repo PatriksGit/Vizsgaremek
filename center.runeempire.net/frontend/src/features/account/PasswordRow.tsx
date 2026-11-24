@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { faCheck, faCircleInfo, faKey } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faKey } from '@fortawesome/free-solid-svg-icons'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
@@ -13,74 +12,11 @@ import { changePassword } from '@/features/account/api'
 import { applyApiError } from '@/features/auth/errors'
 import { PasswordField } from '@/features/auth/fields'
 import { FormAlert } from '@/features/auth/FormAlert'
-import {
-  ALLOWED_PASSWORD_PATTERN,
-  changePasswordSchema,
-  PASSWORD_EXAMPLE,
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  type ChangePasswordValues,
-} from '@/features/auth/schemas'
+import { changePasswordSchema, type ChangePasswordValues } from '@/features/auth/schemas'
 import { cn } from '@/lib/utils'
 
+import { PasswordRules } from './PasswordRules'
 import { SettingsRow } from './SettingsRow'
-
-/**
- * The password policy as the player types (PlayablePassword on the backend):
- * the site's real rules, not the design's upper case / digit / symbol ones.
- */
-function passwordRules(value: string) {
-  const typed = value.length > 0
-  // Spaces are the second rule: the third one is only about the other characters.
-  const withoutSpaces = value.replace(/\s/g, '')
-  return [
-    {
-      label: `${PASSWORD_MIN_LENGTH}–${PASSWORD_MAX_LENGTH} karakter`,
-      ok: value.length >= PASSWORD_MIN_LENGTH && value.length <= PASSWORD_MAX_LENGTH,
-    },
-    { label: 'Szóköz nélkül', ok: typed && !/\s/.test(value) },
-    {
-      label: 'Magyar vagy angol betűk, számok, alap jelek',
-      example: PASSWORD_EXAMPLE,
-      ok: typed && (withoutSpaces === '' || ALLOWED_PASSWORD_PATTERN.test(withoutSpaces)),
-    },
-  ]
-}
-
-/**
- * The live checklist under the new password, inside the field's description so
- * it is read with the field; its last line says what saving does to the other
- * devices (owner, 2026-11-22: there, not in a footer).
- */
-function PasswordRules({ value }: { value: string }) {
-  return (
-    <span className="flex flex-col gap-1.5">
-      {passwordRules(value).map((rule) => (
-        <span
-          key={rule.label}
-          className={cn('flex items-start gap-2 text-[13px]', rule.ok ? 'text-soft' : 'text-muted-foreground')}
-        >
-          {rule.ok ? (
-            <FontAwesomeIcon icon={faCheck} aria-hidden="true" className="mt-0.5 size-3.5 flex-none text-ok" />
-          ) : (
-            <span aria-hidden="true" className="mt-0.5 flex size-3.5 flex-none items-center justify-center">
-              <span className="size-1.25 rounded-full bg-faint" />
-            </span>
-          )}
-          <span>
-            {rule.label}
-            {'example' in rule && ` ${rule.example}`}
-          </span>
-          <span className="sr-only">{rule.ok ? ' – teljesül' : ' – még nem teljesül'}</span>
-        </span>
-      ))}
-      <span className="flex items-start gap-2 text-[13px] text-muted-foreground">
-        <FontAwesomeIcon icon={faCircleInfo} aria-hidden="true" className="mt-0.5 size-3.5 flex-none text-faint" />
-        Mentés után kijelentkeztetünk a többi eszközről.
-      </span>
-    </span>
-  )
-}
 
 const empty: ChangePasswordValues = { currentPassword: '', password: '', passwordConfirmation: '' }
 
@@ -98,12 +34,23 @@ export function PasswordRow({ username }: { username: string }) {
   const { errors, isSubmitting } = form.formState
   // Bumped on every close: a refusal that arrives after Mégse belongs to no opening.
   const opening = useRef(0)
+  const toggle = useRef<HTMLButtonElement>(null)
+  const formBox = useRef<HTMLFormElement>(null)
+  // Closed from inside the form: the focused Mégse / Mentés turns inert, so the keyboard goes back to the toggle.
+  const refocusToggle = useRef(false)
 
   useEffect(() => {
     if (open) form.setFocus('currentPassword')
+    else if (refocusToggle.current) {
+      refocusToggle.current = false
+      toggle.current?.focus()
+    }
   }, [open, form])
 
   const close = () => {
+    const focused = document.activeElement
+    // body: the Mentés button that was focused got disabled while saving and lost the focus.
+    refocusToggle.current = focused === document.body || Boolean(formBox.current?.contains(focused))
     opening.current += 1
     form.reset(empty)
     setOpen(false)
@@ -132,7 +79,7 @@ export function PasswordRow({ username }: { username: string }) {
       description="Ezzel a jelszóval lépsz be a szerverre is."
       action={
         !open && (
-          <Button variant="outline" onClick={() => setOpen(true)} className="h-10 rounded-full px-4.5 font-bold max-sm:w-full">
+          <Button ref={toggle} variant="outline" onClick={() => setOpen(true)} className="h-10 rounded-full px-4.5 font-bold max-sm:w-full">
             Jelszó módosítása
           </Button>
         )
@@ -150,8 +97,10 @@ export function PasswordRow({ username }: { username: string }) {
           open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
         )}
       >
-        <div className="min-h-0 overflow-hidden">
-          <form onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate className="pt-5 sm:pl-14">
+        {/* 12 px of room each side, so the clip does not cut "Elfelejtetted?"'s 44 px tap area and focus ring on phones
+            (review 2026-11-24 VI-14); the negative margin keeps the layout where it was. */}
+        <div className="-mx-3 min-h-0 overflow-hidden px-3">
+          <form ref={formBox} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate className="pt-5 sm:pl-14">
             {/* For password managers: which account the new password belongs to. */}
             <input type="text" name="username" autoComplete="username" value={username} readOnly hidden />
 

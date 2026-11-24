@@ -1,14 +1,12 @@
-import { Menu as MenuPrimitive } from '@base-ui/react/menu'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faChevronRight, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Link, useLocation } from 'react-router'
 
 import { focusRing } from '@/components/app/interactive'
+import { quietTileLook } from '@/components/app/Panel'
 import { Pill } from '@/components/app/Pill'
-import { PlayerHead } from '@/components/app/PlayerHead'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
   Sidebar,
   SidebarContent,
@@ -21,12 +19,11 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { site } from '@/config/site'
-import { useAccount, useLogout } from '@/features/auth/queries'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
-import { useOpenManagement } from '@/features/management/api'
-import { ACCOUNT_NAV, isAccountArea, isActive, isPage, MANAGEMENT_NAV, NAV, type NavItem, type NavLinkItem } from './nav'
+import { isActive, isPage, NAV, type NavItem, type NavLinkItem } from './nav'
+import { PlayerCard } from './PlayerCard'
 
 /** A top-level row: the icon on its tile and the label, 44 px tall. */
 const row = cn(
@@ -52,8 +49,8 @@ function IconTile({ icon, state }: { icon: IconDefinition; state: TileState }) {
         'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
         state === 'current' && 'bg-primary text-primary-foreground',
         state === 'inside' && 'bg-primary/15 text-primary',
-        state === 'idle' &&
-          'bg-raised text-soft shadow-[inset_0_0_0_1px_rgb(255_255_255/0.07)] group-hover/row:text-foreground',
+        state === 'idle' && quietTileLook,
+        state === 'idle' && 'group-hover/row:text-foreground',
       )}
     >
       <FontAwesomeIcon icon={icon} className="size-3.75" />
@@ -187,90 +184,5 @@ function SubLink({ item }: { item: NavLinkItem }) {
     >
       {item.label}
     </Link>
-  )
-}
-
-/** A row in the account menu; highlighted by the pointer or the arrow keys. */
-const menuRow = 'flex h-10 cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-semibold outline-none select-none'
-
-/** The player at the bottom: their head, name and a gear; the whole card opens the settings and logout above it. */
-function PlayerCard() {
-  const { data: account } = useAccount()
-  const { pathname } = useLocation()
-  const logout = useLogout()
-  const openManagement = useOpenManagement()
-  // The gear is gold on every page of this menu (Management too, review 2026-11-23 app-shell K3);
-  // each row in it marks only its own page.
-  const inAccountArea = isAccountArea(pathname)
-
-  return (
-    <DropdownMenu>
-      {/* The whole card opens the menu: the head, the name and the gear (owner, 2026-11-13). */}
-      <DropdownMenuTrigger
-        aria-label="Fiók menü"
-        className={cn(
-          'group/card flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-border bg-card py-2 pr-2 pl-2.5 text-left transition-colors',
-          'hover:border-line hover:bg-raised data-popup-open:border-primary/30 data-popup-open:bg-raised',
-          focusRing,
-        )}
-      >
-        <PlayerHead name={account?.display_name} className="size-8 shrink-0 rounded-sm" />
-        <span className="min-w-0 flex-1 truncate font-bold text-foreground">{account?.display_name}</span>
-        <span
-          aria-hidden="true"
-          className={cn(
-            'grid size-10 shrink-0 place-items-center rounded-lg transition-colors',
-            inAccountArea ? 'bg-primary/10 text-primary' : 'text-muted-foreground group-hover/card:text-foreground',
-            'group-data-popup-open/card:text-foreground',
-          )}
-        >
-          <FontAwesomeIcon
-            icon={faGear}
-            className="size-4.25 transition-transform duration-300 group-data-popup-open/card:rotate-60 motion-reduce:transition-none"
-          />
-        </span>
-      </DropdownMenuTrigger>
-      {/* As wide as the card, right above it. */}
-      <DropdownMenuContent
-        side="top"
-        align="start"
-        sideOffset={8}
-        className="w-(--anchor-width) rounded-xl border border-[#2f2a21] p-1.5 shadow-[0_12px_32px_rgb(0_0_0/0.55)] ring-0"
-      >
-        {account?.can_manage && (
-          <MenuPrimitive.LinkItem
-            closeOnClick
-            // The router's link, like every other page (owner, 2026-11-23: no full reload); the click
-            // asks first (useOpenManagement) and goes to Google only when there is no live grant.
-            onClick={openManagement}
-            render={<Link to={MANAGEMENT_NAV.to} aria-current={isPage(MANAGEMENT_NAV.to, pathname) ? 'page' : undefined} />}
-            className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
-          >
-            <FontAwesomeIcon icon={MANAGEMENT_NAV.icon} className="size-3.75 text-muted-foreground" aria-hidden="true" />
-            {MANAGEMENT_NAV.label}
-          </MenuPrimitive.LinkItem>
-        )}
-        <MenuPrimitive.LinkItem
-          closeOnClick
-          render={<Link to={ACCOUNT_NAV.to} aria-current={isPage(ACCOUNT_NAV.to, pathname) ? 'page' : undefined} />}
-          className={cn(menuRow, 'text-foreground data-highlighted:bg-sunken')}
-        >
-          <FontAwesomeIcon icon={faGear} className="size-3.75 text-muted-foreground" aria-hidden="true" />
-          Beállítások
-        </MenuPrimitive.LinkItem>
-        {/* Logged out: the guard sends the player to the login page. */}
-        <MenuPrimitive.Item
-          onClick={() => logout.mutate()}
-          disabled={logout.isPending}
-          className={cn(
-            menuRow,
-            'text-foreground data-disabled:opacity-60 data-highlighted:bg-danger/10 data-highlighted:text-danger',
-          )}
-        >
-          <FontAwesomeIcon icon={faRightFromBracket} className="size-3.75" aria-hidden="true" />
-          {logout.isPending ? 'Kijelentkezés…' : 'Kijelentkezés'}
-        </MenuPrimitive.Item>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }

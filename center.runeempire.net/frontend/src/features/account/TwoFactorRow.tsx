@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { Pill } from '@/components/app/Pill'
 import { Button } from '@/components/ui/button'
+import { TOTP_LENGTH } from '@/features/auth/schemas'
 
 import { SettingsRow } from './SettingsRow'
 import { TwoFactorDisableDialog } from './TwoFactorDisableDialog'
@@ -27,7 +28,7 @@ export function TwoFactorRow({ enabled }: { enabled: boolean }) {
       description={
         enabled
           ? 'A weboldalon és a szerveren is kérjük a kódot a hitelesítő appodból.'
-          : 'Belépéskor a jelszavad után egy 6 jegyű kódot is kérünk a hitelesítő appodból. Így akkor sem tudnak belépni, ha valaki megszerzi a jelszavad.'
+          : `Belépéskor a jelszavad után egy ${TOTP_LENGTH} jegyű kódot is kérünk a hitelesítő appodból. Így akkor sem tudnak belépni, ha valaki megszerzi a jelszavad.`
       }
       action={
         enabled ? (

@@ -76,7 +76,7 @@ describe('the hidden bot trap', () => {
     renderWith(<RegisterForm />)
     fillDetails()
     fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
-    await screen.findByText(/Nézd meg az e-mailed/)
+    await screen.findByRole('heading', { name: 'Nézd meg az e-mailed' })
 
     expect(bodies).toHaveLength(1)
     expect(bodies[0]).not.toHaveProperty('newsletter')
@@ -88,7 +88,7 @@ describe('the hidden bot trap', () => {
     fillDetails()
     fireEvent.click(trap(container)!)
     fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
-    await screen.findByText(/Nézd meg az e-mailed/)
+    await screen.findByRole('heading', { name: 'Nézd meg az e-mailed' })
 
     expect(bodies[0]).toMatchObject({ newsletter: true })
   })

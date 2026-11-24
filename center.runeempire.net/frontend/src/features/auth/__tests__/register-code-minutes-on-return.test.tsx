@@ -45,13 +45,13 @@ async function mailCodeThenComeBackAfter(minutes: number) {
   fireEvent.change(screen.getByLabelText('Jelszó újra'), { target: { value: 'jelszo-2026' } })
   for (const box of screen.getAllByRole('checkbox')) fireEvent.click(box)
   fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
-  await screen.findByText('Nézd meg az e-mailed')
+  await screen.findByRole('heading', { name: 'Nézd meg az e-mailed' })
 
   // The player looks at the address again a while later, finds it right, and sends the details unchanged.
   vi.setSystemTime(start + minutes * 60_000)
   fireEvent.click(screen.getByRole('button', { name: 'Javítsd ki' }))
   fireEvent.click(screen.getByRole('button', { name: 'Kód küldése' }))
-  await screen.findByText('Nézd meg az e-mailed')
+  await screen.findByRole('heading', { name: 'Nézd meg az e-mailed' })
   return requests
 }
 

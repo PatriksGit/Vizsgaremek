@@ -1,34 +1,23 @@
-import { faCircleCheck, faEnvelope, faKey, faPaperPlane, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { faCircleCheck, faEnvelope, faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { ApiError, formMessage } from '@/lib/api'
+import { formMessage } from '@/lib/api'
 
 import { resendAtFromError } from './api'
 import { CodeField } from './CodeField'
 import { applyApiError } from './errors'
-import { CodeMayBeOutHint, HoneypotField, PasswordField, TextField } from './fields'
+import { CodeMayBeOutHint, HoneypotField, TextField } from './fields'
+import { ForgotNewPasswordStep } from './ForgotNewPasswordStep'
 import { FormAlert } from './FormAlert'
-import { useFromState } from './fromState'
-import { useRequestPasswordReset, useResetPassword, useVerifyResetCode } from './queries'
-import {
-  CODE_RESENT_MESSAGE,
-  codeSchema,
-  forgotEmailSchema,
-  newPasswordSchema,
-  PASSWORD_HINT,
-  TOTP_LENGTH,
-  totpSchema,
-  type ForgotEmailValues,
-  type NewPasswordValues,
-} from './schemas'
+import { useRequestPasswordReset, useVerifyResetCode } from './queries'
+import { CODE_RESENT_MESSAGE, codeSchema, forgotEmailSchema, type ForgotEmailValues } from './schemas'
 import { linkButtonClass, submitButtonClass as submitClass } from './styles'
 import { useCodeForm } from './useCodeForm'
 import { useCountdown } from './useCountdown'
@@ -46,12 +35,9 @@ type Step = 'email' | 'code' | 'password'
  * going back to the e-mail or reloading the page.
  */
 export function ForgotPasswordForm() {
-  const navigate = useNavigate()
   const isMobile = useIsMobile()
   const requestReset = useRequestPasswordReset()
   const verifyCode = useVerifyResetCode()
-  const resetPassword = useResetPassword()
-  const fromState = useFromState()
 
   const [step, setStep] = useState<Step>('email')
   const [sent, setSent] = useState<Sent | null>(null)
@@ -61,8 +47,6 @@ export function ForgotPasswordForm() {
   // The verified account has 2FA: the last step asks its authenticator code too (2026-11-22).
   const [twoFactorRequired, setTwoFactorRequired] = useState(false)
   const [resending, setResending] = useState(false)
-  // Set before a request starts, so a second submit in the same moment sends nothing.
-  const saving = useRef(false)
   const secondsLeft = useCountdown(sent?.resendAt ?? null)
 
   const emailForm = useForm<ForgotEmailValues>({ resolver: zodResolver(forgotEmailSchema), defaultValues: { email: '', newsletter: false } })
@@ -78,28 +62,24 @@ export function ForgotPasswordForm() {
         const verified = await verifyCode.mutateAsync({ email: sent.email, code })
         setTwoFactorRequired(verified.twoFactorRequired)
         setStep('password')
-        askFocus('password')
+        // The new password step takes the keyboard itself (ForgotNewPasswordStep).
+        setFocusRequest(null)
       } finally {
         setChecking(false)
       }
     },
     focusCode: () => askFocus('code'),
   })
-  const passwordForm = useForm<NewPasswordValues>({
-    resolver: zodResolver(newPasswordSchema),
-    defaultValues: { password: '', passwordConfirmation: '', twoFactorCode: '' },
-  })
 
   // Focus is asked for and given once the field can take it: a browser refuses
   // focus on a disabled field (the code field while a code is checked or sent).
-  const [focusRequest, setFocusRequest] = useState<{ field: 'email' | 'code' | 'password'; count: number } | null>(null)
-  const askFocus = (field: 'email' | 'code' | 'password') => setFocusRequest((last) => ({ field, count: (last?.count ?? 0) + 1 }))
+  const [focusRequest, setFocusRequest] = useState<{ field: 'email' | 'code'; count: number } | null>(null)
+  const askFocus = (field: 'email' | 'code') => setFocusRequest((last) => ({ field, count: (last?.count ?? 0) + 1 }))
   useEffect(() => {
     if (!focusRequest || checking || resending) return
     if (focusRequest.field === 'email') emailForm.setFocus('email')
     if (focusRequest.field === 'code') codeForm.setFocus('code')
-    if (focusRequest.field === 'password') passwordForm.setFocus('password')
-  }, [focusRequest, checking, resending, emailForm, codeForm, passwordForm])
+  }, [focusRequest, checking, resending, emailForm, codeForm])
 
   // On phones each section that appears scrolls into view.
   const codeSection = useRef<HTMLDivElement>(null)
@@ -130,7 +110,6 @@ export function ForgotPasswordForm() {
     setTwoFactorRequired(false)
     emailForm.reset()
     codeForm.reset()
-    passwordForm.reset()
   }
 
   // The handlers run only from events (handleSubmit is called there), never during render.
@@ -180,41 +159,11 @@ export function ForgotPasswordForm() {
     }
   }
 
-  const onPassword = async (values: NewPasswordValues) => {
-    if (saving.current) return
-    const twoFactorCode = values.twoFactorCode?.replace(/\s/g, '') ?? ''
-    if (twoFactorRequired && !totpSchema.safeParse({ code: twoFactorCode }).success) {
-      passwordForm.setError('twoFactorCode', { message: `Írd be a hitelesítő alkalmazásban látható ${TOTP_LENGTH} jegyű kódot.` })
-      return
-    }
-    saving.current = true
-    try {
-      const { username, account } = await resetPassword.mutateAsync({
-        password: values.password,
-        passwordConfirmation: values.passwordConfirmation,
-        ...(twoFactorRequired ? { twoFactorCode } : {}),
-      })
-      // The panel stays mounted beside the login: nothing of this reset, the new password least of all, stays in it.
-      startOver()
-      toast.success('Megváltozott a jelszavad, most már beléphetsz.')
-      // Logged out (the reset ended this account's session, or nobody was logged in): log in with the new one.
-      // A guest keeps the page they asked for before the login (auth K2).
-      navigate(account ? '/' : '/login', { state: account ? null : { ...fromState, username } })
-    } catch (error) {
-      if (error instanceof ApiError && error.code === 'auth.reset_expired') {
-        // The permission ran out: start again from the address.
-        startOver()
-        emailForm.setError('root.server', { message: error.message })
-        askFocus('email')
-        return
-      }
-      applyApiError(error, passwordForm.setError, {
-        password: 'password',
-        two_factor_code: 'twoFactorCode',
-      })
-    } finally {
-      saving.current = false
-    }
+  /** The permission ran out (auth.reset_expired): start again from the address, saying why. */
+  const onExpired = (message: string) => {
+    startOver()
+    emailForm.setError('root.server', { message })
+    askFocus('email')
   }
 
   const emailLocked = step !== 'email'
@@ -309,41 +258,7 @@ export function ForgotPasswordForm() {
 
       {verified && (
         <Reveal ref={passwordSection}>
-          <form onSubmit={(event) => void passwordForm.handleSubmit(onPassword)(event)} noValidate>
-            <FieldGroup className="gap-4">
-              <FormAlert message={passwordForm.formState.errors.root?.server?.message} />
-              <PasswordField
-                label="Új jelszó"
-                autoComplete="new-password"
-                description={PASSWORD_HINT}
-                error={passwordForm.formState.errors.password?.message}
-                {...passwordForm.register('password')}
-              />
-              <PasswordField
-                label="Új jelszó újra"
-                autoComplete="new-password"
-                error={passwordForm.formState.errors.passwordConfirmation?.message}
-                {...passwordForm.register('passwordConfirmation')}
-              />
-              {twoFactorRequired && (
-                <TextField
-                  label="Kód a hitelesítő alkalmazásból"
-                  icon={faShieldHalved}
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={TOTP_LENGTH + 1}
-                  placeholder="000000"
-                  description="A fiókodon kétlépcsős azonosítás van bekapcsolva, ezért a kódját is kérjük."
-                  error={passwordForm.formState.errors.twoFactorCode?.message}
-                  {...passwordForm.register('twoFactorCode')}
-                />
-              )}
-              <Button type="submit" disabled={passwordForm.formState.isSubmitting} className={submitClass}>
-                <FontAwesomeIcon icon={faKey} aria-hidden="true" />
-                {passwordForm.formState.isSubmitting ? 'Mentés…' : 'Jelszó mentése'}
-              </Button>
-            </FieldGroup>
-          </form>
+          <ForgotNewPasswordStep twoFactorRequired={twoFactorRequired} onDone={startOver} onExpired={onExpired} />
         </Reveal>
       )}
     </section>

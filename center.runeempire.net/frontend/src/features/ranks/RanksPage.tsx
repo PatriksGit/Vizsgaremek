@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { site } from '@/config/site'
 import { staggerDelay } from '@/lib/motion'
 import { cn } from '@/lib/utils'
-import { useMyStats } from '@/features/home/stats'
+import { useMyStats } from '@/features/home/api'
 
 import { type Rank, useRanks } from './api'
 import { BalanceBar } from './BalanceBar'
@@ -35,14 +35,32 @@ const CARD_STEP = 70
 const listClass = '@container'
 const rowClass = 'flex flex-wrap justify-center gap-5'
 const cellClass =
-  'w-full @min-[40rem]:w-[calc((100%-1.25rem)/2)] @min-[40rem]:max-w-[21rem] @min-[58rem]:w-[calc((100%-2.5rem)/3)] @min-[78rem]:w-[calc((100%-3.75rem)/4)]'
+  'w-full @min-[40rem]:w-[calc((100%-1.25rem)/2)] @min-[40rem]:max-w-84 @min-[58rem]:w-[calc((100%-2.5rem)/3)] @min-[78rem]:w-[calc((100%-3.75rem)/4)]'
 
-/** The value, or the last non-null one before it: what a closing dialog still shows once its rank is gone. */
-function useLastShown<T>(value: T | null) {
-  const [last, setLast] = useState(value)
+/**
+ * One dialog's rank. The dialog keeps the rank's group (and the purchase its duration), not the rank: a refetch (a new
+ * price) reaches an open dialog, and a rank or duration taken off sale closes it (R1, RP1). A closing dialog keeps
+ * showing the last rank it had until its exit animation ends, never an empty frame or a 0-rune price (UI-N2, V3).
+ */
+function useRankDialog(ranks: Rank[] | undefined) {
+  const [shown, setShown] = useState<{ group: string; days?: number; open: boolean } | null>(null)
+  const live =
+    ranks?.find(
+      (rank) => rank.group === shown?.group && (shown.days === undefined || rank.prices.some((price) => price.days === shown.days)),
+    ) ?? null
+  const [last, setLast] = useState(live)
   // Adjusting state while rendering (React's "storing information from previous renders"), not a ref read in render.
-  if (value !== null && value !== last) setLast(value)
-  return value ?? last
+  if (live !== null && live !== last) setLast(live)
+
+  return {
+    rank: shown ? (live ?? last) : null,
+    days: shown?.days ?? 0,
+    open: shown?.open === true && live !== null,
+    show: (group: string, days?: number) => setShown({ group, days, open: true }),
+    close: () => setShown((current) => current && { ...current, open: false }),
+    /** The exit animation has finished: the rank can go. */
+    closed: () => setShown(null),
+  }
 }
 
 /**
@@ -59,20 +77,8 @@ export function RanksPage() {
   const ranksFailed = !ranks && ranksFetched
   const statsFailed = !stats && statsFetched
   const now = useNow()
-  // The open dialogs keep the rank's group, not the rank: a refetch (new price, a rank taken
-  // off sale) shows in an open dialog too, and a removed rank's dialog closes. A closing dialog
-  // keeps its group until its exit animation ends, so it never fades out empty (UI-N2).
-  const [shownDetails, setShownDetails] = useState<{ group: string; open: boolean } | null>(null)
-  const [buying, setBuying] = useState<{ group: string; days: number; open: boolean } | null>(null)
-  const liveDetails = ranks?.find((rank) => rank.group === shownDetails?.group) ?? null
-  // A duration taken off sale closes the purchase like a removed rank (its price would read 0).
-  const liveBuying =
-    ranks?.find((rank) => rank.group === buying?.group && rank.prices.some((price) => price.days === buying.days)) ?? null
-  // A dialog whose rank (or duration) a refetch took off sale closes showing the last one it had, not an empty frame (V3).
-  const lastDetails = useLastShown(liveDetails)
-  const lastBuying = useLastShown(liveBuying)
-  const details = shownDetails ? lastDetails : null
-  const buyingRank = buying ? lastBuying : null
+  const details = useRankDialog(ranks)
+  const purchase = useRankDialog(ranks)
   // The "Mit kapsz?" button that opened the details, and where the purchase's
   // focus goes back to: a purchase started in the details returns to that
   // button, since the one that opened it is gone by then (review 2026-11-17,
@@ -88,8 +94,8 @@ export function RanksPage() {
 
   const buy = (rank: Rank, days: number, fromDetails = false) => {
     purchaseReturn.current = fromDetails ? detailsTrigger.current : null
-    setShownDetails((shown) => shown && { ...shown, open: false })
-    setBuying({ group: rank.group, days, open: true })
+    details.close()
+    purchase.show(rank.group, days)
   }
 
   return (
@@ -117,7 +123,7 @@ export function RanksPage() {
                   now={now}
                   onDetails={(trigger) => {
                     detailsTrigger.current = trigger
-                    setShownDetails({ group: rank.group, open: true })
+                    details.show(rank.group)
                   }}
                   onBuy={(days) => buy(rank, days)}
                 />
@@ -144,24 +150,24 @@ export function RanksPage() {
       )}
 
       <RankDetailsDialog
-        rank={details}
-        ownedUntil={until(details)}
+        rank={details.rank}
+        ownedUntil={until(details.rank)}
         balance={balance}
         now={now}
-        open={shownDetails?.open === true && liveDetails !== null}
-        onClose={() => setShownDetails((shown) => shown && { ...shown, open: false })}
-        onClosed={() => setShownDetails(null)}
-        onBuy={(days) => details && buy(details, days, true)}
+        open={details.open}
+        onClose={details.close}
+        onClosed={details.closed}
+        onBuy={(days) => details.rank && buy(details.rank, days, true)}
       />
       <PurchaseDialog
-        rank={buyingRank}
-        days={buying?.days ?? 0}
-        ownedUntil={until(buyingRank)}
+        rank={purchase.rank}
+        days={purchase.days}
+        ownedUntil={until(purchase.rank)}
         balance={balance}
         now={now}
-        open={buying?.open === true && liveBuying !== null}
-        onClose={() => setBuying((shown) => shown && { ...shown, open: false })}
-        onClosed={() => setBuying(null)}
+        open={purchase.open}
+        onClose={purchase.close}
+        onClosed={purchase.closed}
         finalFocus={() => purchaseReturn.current ?? true}
       />
     </div>

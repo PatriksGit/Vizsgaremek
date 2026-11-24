@@ -1,9 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
-import type { Friend } from '@/features/home/FriendsCard'
-import { answeredAt, type MyStats, type StatsAnswer } from '@/features/home/stats'
+import type { Friend, MyStats, StatsAnswer } from '@/features/home/api'
 import { NAME_PATTERN } from '@/features/auth/schemas'
-import { ApiError, http } from '@/lib/api'
+import { ApiError, http, serverMoment } from '@/lib/api'
 
 /** What the search may start with: the characters a name can have, at most a whole name. */
 const NAME_START = /^[A-Za-z0-9_]{1,16}$/
@@ -76,18 +75,23 @@ const retryUnlessMissing = (failures: number, error: Error) =>
 /** Every minute, until the player turns out not to exist. */
 const everyMinuteUnlessMissing = ({ state }: { state: { error: unknown } }) => (isMissingPlayer(state.error) ? false : 60_000)
 
+/** What a profile's two queries share: a well-formed name only, one retry, asked again every minute. */
+const profileQuery = (name: string) => ({
+  enabled: NAME_PATTERN.test(name),
+  retry: retryUnlessMissing,
+  staleTime: 60_000,
+  refetchInterval: everyMinuteUnlessMissing,
+})
+
 /** Another player's numbers, asked again every minute like the overview's. */
 export function usePlayerProfile(name: string) {
   return useQuery({
     queryKey: ['player', name.toLowerCase(), 'stats'],
     queryFn: async (): Promise<StatsAnswer<PlayerProfile>> => {
       const response = await http.get<{ data: PlayerProfile }>(`/players/${encodeURIComponent(name)}/stats`)
-      return { ...response.data.data, answeredAt: answeredAt(response.headers?.date) }
+      return { ...response.data.data, answeredAt: serverMoment(response.headers?.date) }
     },
-    enabled: NAME_PATTERN.test(name),
-    retry: retryUnlessMissing,
-    staleTime: 60_000,
-    refetchInterval: everyMinuteUnlessMissing,
+    ...profileQuery(name),
   })
 }
 
@@ -96,9 +100,6 @@ export function usePlayerFriends(name: string) {
   return useQuery({
     queryKey: ['player', name.toLowerCase(), 'friends'],
     queryFn: async () => (await http.get<{ data: Friend[] }>(`/players/${encodeURIComponent(name)}/friends`)).data.data,
-    enabled: NAME_PATTERN.test(name),
-    retry: retryUnlessMissing,
-    staleTime: 60_000,
-    refetchInterval: everyMinuteUnlessMissing,
+    ...profileQuery(name),
   })
 }

@@ -22,7 +22,12 @@ export function LegalDialog({ title, children }: { title: string; children: Reac
         {children}
       </DialogTrigger>
       {/* One "Bezárás" for a screen reader: the bottom button, no corner X (review 2026-11-23 ui K4). */}
-      <DialogContent showCloseButton={false} className="gap-5 rounded-md p-6 sm:max-w-lg">
+      {/* Its own surface (the popover colour with a ring), as before the shared card surface of review 2026-11-24 UX-K1: the
+          login page is final; it keeps only the new max height and scroll. */}
+      <DialogContent
+        showCloseButton={false}
+        className="gap-5 rounded-md border-0 bg-popover p-6 ring-1 ring-foreground/10 sm:max-w-lg"
+      >
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold">{title}</DialogTitle>
           <DialogDescription>A dokumentum szövege hamarosan felkerül ide.</DialogDescription>

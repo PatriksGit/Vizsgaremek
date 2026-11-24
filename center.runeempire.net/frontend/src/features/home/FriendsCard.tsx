@@ -1,26 +1,18 @@
 import { Link } from 'react-router'
 
-import { playerCardHover, playerHeadGrow } from '@/components/app/interactive'
+import { playerCardHover, playerGridColumns, playerHeadGrow } from '@/components/app/interactive'
 import { panelLook } from '@/components/app/Panel'
 import { Pill } from '@/components/app/Pill'
 import { PlayerHead } from '@/components/app/PlayerHead'
+import { rankColor } from '@/components/app/rankColor'
 import { Skeleton } from '@/components/ui/skeleton'
 import { type ProfileBack, profilePath } from '@/features/players/links'
 import { countFormat } from '@/lib/budapest'
 import { enterAfter } from '@/lib/motion'
+import { NO_DATA } from '@/lib/noData'
 import { cn } from '@/lib/utils'
 
-import { NO_DATA, rankColor } from './stats'
-
-/** A friend from RuneFriends, as GET /api/me/friends sends it. */
-export type Friend = {
-  name: string
-  online: boolean
-  /** They have a website account, so a profile to open; RuneFriends may know a friend without one. */
-  has_profile: boolean
-  /** Their LuckPerms rank; null when LuckPerms could not be read. */
-  rank: { name: string; color: string | null } | null
-}
+import type { Friend } from './api'
 
 /**
  * The player's friends from the game: their heads with a green dot while
@@ -41,7 +33,7 @@ export function FriendsCard({
   /** From wording.ts: "Barátaid" on the overview, "Barátai" on a profile; so is the empty line. */
   title: string
   emptyText: string
-  back?: ProfileBack
+  back: ProfileBack
 }) {
   const online = friends?.filter((friend) => friend.online).length ?? 0
 
@@ -77,7 +69,7 @@ export function FriendsCard({
         </p>
       ) : friends === undefined ? (
         <div aria-busy="true">
-          <ul aria-hidden="true" className="grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
+          <ul aria-hidden="true" className={cn(playerGridColumns, 'gap-3')}>
             {[24, 18, 28].map((width, index) => (
               <li key={index} className="flex items-center gap-3 rounded-xl border border-border bg-sunken px-3 py-2.5">
                 <Skeleton className="size-8 rounded-sm" />
@@ -90,11 +82,11 @@ export function FriendsCard({
       ) : friends.length === 0 ? (
         <p className="text-sm text-muted-foreground">{emptyText}</p>
       ) : (
-        <ul className="grid gap-x-3 gap-y-0.5 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] sm:gap-y-3">
+        <ul className={cn(playerGridColumns, 'gap-x-3 gap-y-0.5 sm:gap-y-3')}>
           {friends.map((friend) => (
             <li key={friend.name}>
               {friend.has_profile ? (
-                <Link to={profilePath(friend.name)} state={back && { back }} className={cn(rowClass, playerCardHover)}>
+                <Link to={profilePath(friend.name)} state={{ back }} className={cn(rowClass, playerCardHover)}>
                   <FriendRow friend={friend} />
                 </Link>
               ) : (
