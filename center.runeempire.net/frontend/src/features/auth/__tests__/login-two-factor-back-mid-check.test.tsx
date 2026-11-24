@@ -53,7 +53,7 @@ async function givePassword() {
 const typeCode = (code: string) => fireEvent.change(screen.getByLabelText('Kód az alkalmazásból'), { target: { value: code } })
 const backToPassword = () => fireEvent.click(screen.getByRole('button', { name: 'Vissza a jelszóhoz' }))
 
-it('repro: back while the code is checked, the late "wrong code" shows on the next code step', async () => {
+it('repro: back while the code is checked, the late "wrong code" does not show on the next code step', async () => {
   const backend = renderLogin()
   await givePassword()
   typeCode('111111')

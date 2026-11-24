@@ -1,4 +1,4 @@
-import { isCancelledError, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { isCancelledError, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, type MouseEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 
@@ -21,6 +21,11 @@ async function fetchManagementMe(): Promise<ManagementMe> {
   return response.data.data
 }
 
+/** One key and fetcher for the page's query and the menu's check, so the check's answer lands in the page's cache. */
+function managementMeQuery(uuid: string | undefined) {
+  return queryOptions({ queryKey: ['management', 'me', uuid], queryFn: fetchManagementMe })
+}
+
 /** How long an answer counts as fresh: the menu's check just before opening the page is not asked again. */
 const FRESH_MS = 5_000
 
@@ -34,8 +39,7 @@ const FRESH_MS = 5_000
 export function useManagementMe({ enabled = true }: { enabled?: boolean } = {}) {
   const account = useAccount().data
   return useQuery({
-    queryKey: ['management', 'me', account?.uuid],
-    queryFn: fetchManagementMe,
+    ...managementMeQuery(account?.uuid),
     staleTime: FRESH_MS,
     enabled: enabled && Boolean(account?.can_manage),
     retry: false,
@@ -95,18 +99,15 @@ export function useOpenManagement() {
     checking.current = true
     const from = here.current
     try {
-      const me = await client.fetchQuery({
-        queryKey: ['management', 'me', account?.uuid],
-        queryFn: fetchManagementMe,
-        staleTime: 0,
-        retry: false,
-      })
+      const me = await client.fetchQuery({ ...managementMeQuery(account?.uuid), staleTime: 0, retry: false })
       if (here.current !== from) return
       if (me.signed_in) navigate(MANAGEMENT_NAV.to)
       else window.location.assign(GOOGLE_REDIRECT_URL)
     } catch (error) {
       // Cancelled by a login or logout meanwhile (setAccount cancels every query): nothing to say.
       if (isCancelledError(error)) return
+      // A failure that arrives after the player moved on (a 15 s timeout) is dropped like a late answer.
+      if (here.current !== from) return
       toastError(error)
     } finally {
       checking.current = false

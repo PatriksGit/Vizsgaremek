@@ -55,7 +55,7 @@ async function mailCodeThenComeBackAfter(minutes: number) {
   return requests
 }
 
-it('repro: back after 9 minutes, the code step still says 15 minutes (only 6 are left)', async () => {
+it('repro: back after 9 minutes, the code step says the 6 minutes left, not 15', async () => {
   const requests = await mailCodeThenComeBackAfter(9)
 
   expect(requests).toHaveLength(1)

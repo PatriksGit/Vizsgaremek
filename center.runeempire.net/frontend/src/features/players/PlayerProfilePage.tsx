@@ -4,11 +4,12 @@ import { Link, useLocation, useParams } from 'react-router'
 
 import { Panel } from '@/components/app/Panel'
 import { site } from '@/config/site'
+import { NAME_PATTERN } from '@/features/auth/schemas'
 import { Dashboard } from '@/features/home/Dashboard'
 import { PROFILE_WORDING } from '@/features/home/wording'
 import { enterAfter } from '@/lib/motion'
 
-import { isMissingPlayer, PLAYER_NAME, usePlayerFriends, usePlayerProfile } from './api'
+import { isMissingPlayer, usePlayerFriends, usePlayerProfile } from './api'
 import { profileBack } from './links'
 
 /**
@@ -43,7 +44,7 @@ function Profile({ name }: { name: string }) {
     </Link>
   )
 
-  if (!PLAYER_NAME.test(name) || isMissingPlayer(profile.error)) {
+  if (!NAME_PATTERN.test(name) || isMissingPlayer(profile.error)) {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 lg:mt-10">
         <title>{`Játékosok | ${site.name}`}</title>

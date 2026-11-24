@@ -3,6 +3,8 @@
  * AM-8: useOpenManagement acts on its answer wherever the player is by then. Tap "Megnyitás",
  * then (the check is slow, nothing shows it is working) go to another page: the late answer still
  * pulls the player to /management, or, without a grant, off the site to Google.
+ * Final review 2026-11-23 Minor 5: a late FAILURE (a 15 s timeout, a 5xx) still toasted on whatever page the
+ * player was on by then.
  * Uses a data router (createMemoryRouter) like the app's createBrowserRouter.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -27,6 +29,11 @@ const ACCOUNT: Account = {
 }
 const SIGNED_IN: Reply = { status: 200, data: { data: { signed_in: true, email: 'admin@example.com', expires_at: '2026-11-23T12:30:00Z' } } }
 const SIGNED_OUT: Reply = { status: 200, data: { data: { signed_in: false } } }
+
+const SERVER_ERROR: Reply = { status: 500, data: { message: 'Szerverhiba.' } }
+
+const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
+vi.mock('sonner', async (importOriginal) => ({ ...(await importOriginal<typeof import('sonner')>()), toast: toastMock }))
 
 const assign = vi.fn()
 beforeAll(stubBrowserApis)
@@ -103,4 +110,14 @@ it('control: staying on the page, the answer opens /management', async () => {
 it('control path2: staying on the page, no grant goes to Google', async () => {
   await tapThenLeave(SIGNED_OUT, false)
   expect(assign).toHaveBeenCalledTimes(1)
+})
+
+it('repro path3: a late failure does not toast on the page the player went to', async () => {
+  await tapThenLeave(SERVER_ERROR, true)
+  expect(toastMock.error).not.toHaveBeenCalled()
+})
+
+it('control path3: staying on the page, a failure toasts', async () => {
+  await tapThenLeave(SERVER_ERROR, false)
+  expect(toastMock.error).toHaveBeenCalledTimes(1)
 })

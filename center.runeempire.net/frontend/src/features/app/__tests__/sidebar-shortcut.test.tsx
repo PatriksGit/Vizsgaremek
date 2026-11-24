@@ -1,14 +1,14 @@
 /**
- * Regression test (review 2026-11-17, UI-1). The bug it guards against: AppLayout wraps the logged-in pages in shadcn's
- * SidebarProvider, but the sidebar is collapsible="none" (AppSidebar.tsx), so
- * it can never collapse. SidebarProvider still listens to Ctrl/Cmd+B on the
- * window (ui/sidebar.tsx), swallows the browser's own shortcut
- * (preventDefault) and writes a `sidebar_state` cookie (path=/, 7 days) that
- * the browser then sends to the API with every request. The privacy notice's
- * cookie list (root CLAUDE.md) names only center_session, XSRF-TOKEN and
+ * Regression test (review 2026-11-17, UI-1). The bug it guarded against: AppLayout wrapped the logged-in pages in shadcn's
+ * SidebarProvider, but the sidebar was collapsible="none" (AppSidebar.tsx), so
+ * it could never collapse. SidebarProvider still listened to Ctrl/Cmd+B on the
+ * window (ui/sidebar.tsx), swallowed the browser's own shortcut
+ * (preventDefault) and wrote a `sidebar_state` cookie (path=/, 7 days) that
+ * the browser then sent to the API with every request. The privacy notice's
+ * cookie list (root CLAUDE.md) names only the session cookie, XSRF-TOKEN and
  * __cf_bm.
  *
- * Happens when: a logged-in player presses Ctrl+B (Firefox: bookmarks sidebar).
+ * Happened when: a logged-in player pressed Ctrl+B (Firefox: bookmarks sidebar).
  *
  * Since review 2026-11-23 (ui K2) SidebarProvider is a plain frame with no state at all; this test keeps a later
  * `shadcn add` from bringing the shortcut or the cookie back.

@@ -210,7 +210,6 @@ export function ForgotPasswordForm() {
       }
       applyApiError(error, passwordForm.setError, {
         password: 'password',
-        password_confirmation: 'passwordConfirmation',
         two_factor_code: 'twoFactorCode',
       })
     } finally {

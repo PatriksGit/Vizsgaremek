@@ -2,10 +2,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
 import type { Friend } from '@/features/home/FriendsCard'
 import { answeredAt, type MyStats, type StatsAnswer } from '@/features/home/stats'
+import { NAME_PATTERN } from '@/features/auth/schemas'
 import { ApiError, http } from '@/lib/api'
-
-/** A whole Minecraft name: 3-16 letters, digits or underscores (the backend's Account::NAME_PATTERN). */
-export const PLAYER_NAME = /^[A-Za-z0-9_]{3,16}$/
 
 /** What the search may start with: the characters a name can have, at most a whole name. */
 const NAME_START = /^[A-Za-z0-9_]{1,16}$/
@@ -86,7 +84,7 @@ export function usePlayerProfile(name: string) {
       const response = await http.get<{ data: PlayerProfile }>(`/players/${encodeURIComponent(name)}/stats`)
       return { ...response.data.data, answeredAt: answeredAt(response.headers?.date) }
     },
-    enabled: PLAYER_NAME.test(name),
+    enabled: NAME_PATTERN.test(name),
     retry: retryUnlessMissing,
     staleTime: 60_000,
     refetchInterval: everyMinuteUnlessMissing,
@@ -98,7 +96,7 @@ export function usePlayerFriends(name: string) {
   return useQuery({
     queryKey: ['player', name.toLowerCase(), 'friends'],
     queryFn: async () => (await http.get<{ data: Friend[] }>(`/players/${encodeURIComponent(name)}/friends`)).data.data,
-    enabled: PLAYER_NAME.test(name),
+    enabled: NAME_PATTERN.test(name),
     retry: retryUnlessMissing,
     staleTime: 60_000,
     refetchInterval: everyMinuteUnlessMissing,

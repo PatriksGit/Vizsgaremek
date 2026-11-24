@@ -76,7 +76,7 @@ async function toLoginFromForgot() {
   await waitFor(() => expect(loginSlide()).not.toBeNull())
 }
 
-it('repro: Back from the 2FA code step to the panel, reset: the login card still asks for the code', {
+it('repro: Back from the 2FA code step to the panel, reset: the login card asks for the password, the name filled in', {
   timeout: 15_000,
 }, async () => {
   await renderApp()

@@ -85,7 +85,7 @@ async function renderApp() {
 
 const sessionGone = { status: 401, data: { message: 'Ehhez be kell jelentkezned.', code: 'unauthenticated' } }
 
-it('repro: logged out here, in again in another tab: a later 401 on /jatekosok forgets the page', {
+it('repro: logged out here, in again in another tab: a later 401 on /jatekosok keeps the page', {
   timeout: 15_000,
 }, async () => {
   const app = await renderApp()
