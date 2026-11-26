@@ -35,7 +35,8 @@ class ResetPasswordController extends Controller
         $accountId = PasswordResetPermission::accountId($request->session());
         $account = $accountId === null ? null : Account::find($accountId);
 
-        if ($account === null) {
+        // The e-mail may have been changed by staff since the code was verified.
+        if ($account === null || ! PasswordResetPermission::matches($request->session(), $account)) {
             throw new ResetExpired;
         }
 

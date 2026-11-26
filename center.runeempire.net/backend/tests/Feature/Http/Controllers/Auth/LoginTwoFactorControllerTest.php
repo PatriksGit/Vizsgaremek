@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers\Auth;
 
+use App\Actions\DisableAccountTwoFactor;
 use App\Exceptions\Auth\AccountLocked;
 use App\Models\Account;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -167,6 +168,18 @@ class LoginTwoFactorControllerTest extends TestCase
             ->assertTooManyRequests()
             ->assertJsonPath('code', 'auth.two_factor_guesses_spent')
             ->assertHeader('Retry-After');
+        $this->assertGuest('web');
+    }
+
+    /** Staff may switch 2FA off between the two steps (2026-11-26): the code step then just expires. */
+    public function test_two_factor_switched_off_meanwhile_expires_the_step(): void
+    {
+        $account = $this->twoFactorAccount();
+        $this->login()->assertAccepted();
+        $manager = Account::factory()->create(['display_name' => 'Boss']);
+        app(DisableAccountTwoFactor::class)->handle($manager, 'boss@example.com', $account);
+
+        $this->code($this->totp())->assertUnprocessable()->assertJsonPath('code', 'auth.two_factor_expired');
         $this->assertGuest('web');
     }
 

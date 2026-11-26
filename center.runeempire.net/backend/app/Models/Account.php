@@ -32,6 +32,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string|null $email
  * @property bool $twofa_enabled
  * @property string|null $twofa_secret the RuneAuth contract form (App\Support\TwoFactorSecret)
+ * @property string|null $last_ip written by RuneAuth on every game login; null before the first join
+ * @property string|null $registered_ip written by RuneAuth on the first join
+ * @property-read CarbonImmutable|null $last_login_at
  * @property-read bool $locked
  * @property-read AccountLock|null $lock
  * @property-read CarbonImmutable|null $created_at
@@ -169,5 +172,15 @@ class Account extends Model implements AuthenticatableContract
         return Attribute::get(fn (?string $value): ?CarbonImmutable => $value === null
             ? null
             : CarbonImmutable::parse($value, config('database.connections.global.clock_timezone'))->utc());
+    }
+
+    /**
+     * The last game login, which RuneAuth writes in UTC itself.
+     *
+     * @return Attribute<?CarbonImmutable, never>
+     */
+    protected function lastLoginAt(): Attribute
+    {
+        return Attribute::get(fn (?string $value): ?CarbonImmutable => $value === null ? null : CarbonImmutable::parse($value, 'UTC'));
     }
 }

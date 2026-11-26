@@ -30,7 +30,9 @@ class LoginTwoFactorController extends Controller
 
         $accountId = TwoFactorLogin::accountId($request->session());
         $account = $accountId === null ? null : Account::find($accountId);
-        if ($account === null) {
+        // Staff may have switched 2FA off since the password step: the step then just expires.
+        if ($account === null || ! $account->twofa_enabled) {
+            TwoFactorLogin::forget($request->session());
             throw TwoFactorExpired::login();
         }
 

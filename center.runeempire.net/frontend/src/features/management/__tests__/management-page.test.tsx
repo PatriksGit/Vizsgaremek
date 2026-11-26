@@ -198,11 +198,11 @@ it('not_allowed names the address Google returned, but only when it is an addres
   await expectToastAndHome('Ez az e-mail cím nem jogosult a belépésre.')
 })
 
-it('signed in shows the address and the placeholder; Kilépés calls the logout and goes home, not to Google', async () => {
+it('signed in shows the address and the tools; Kilépés calls the logout and goes home, not to Google', async () => {
   const calls = renderAt('/management', ACCOUNT, () => SIGNED_IN)
   expect(await screen.findByRole('heading', { level: 1, name: 'Management' })).toBeTruthy()
   expect(screen.getByText('Bejelentkezve: admin@example.com')).toBeTruthy()
-  expect(screen.getByText('Itt lesznek majd a kezelési eszközök.')).toBeTruthy()
+  expect(screen.getByRole('tab', { name: 'Játékosok' }).getAttribute('aria-selected')).toBe('true')
 
   fireEvent.click(screen.getByRole('button', { name: 'Kilépés a managementből' }))
 

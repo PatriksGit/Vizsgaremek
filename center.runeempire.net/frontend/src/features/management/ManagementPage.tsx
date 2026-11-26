@@ -9,8 +9,12 @@ import { Button } from '@/components/ui/button'
 import { site } from '@/config/site'
 import { ApiError, formMessage } from '@/lib/api'
 import { enterAfter } from '@/lib/motion'
+import { cn } from '@/lib/utils'
 
 import { GOOGLE_REDIRECT_URL, useManagementLogout, useManagementMe } from './api'
+import { ManagementLog } from './ManagementLog'
+import { ManagementPlayers } from './ManagementPlayers'
+import { PlayerDialog } from './PlayerDialog'
 import { errorText, isEmailAddress } from './wording'
 
 /**
@@ -142,9 +146,61 @@ function SignedIn({ email }: { email: string }) {
           Kilépés a managementből
         </Button>
       </Panel>
-      <Panel as="section" aria-label="Kezelőeszközök" style={enterAfter(250)} className="content-in">
-        <p className="text-muted-foreground">Itt lesznek majd a kezelési eszközök.</p>
-      </Panel>
+      <div style={enterAfter(250)} className="content-in">
+        <Tools />
+      </div>
     </>
+  )
+}
+
+const TABS = [
+  { id: 'jatekosok', label: 'Játékosok' },
+  { id: 'naplo', label: 'Napló' },
+] as const
+
+type Tab = (typeof TABS)[number]['id']
+
+/**
+ * The staff tools (owner, 2026-11-26): Játékosok (search + a player's dialog) and Napló (every staff action).
+ * Plain local state, not nested routes: /management keeps its one sign-in flow.
+ */
+function Tools() {
+  const [tab, setTab] = useState<Tab>('jatekosok')
+  // The dialog keeps its player until the exit animation ends (like the rank shop's dialogs), so it never fades out empty.
+  const [opened, setOpened] = useState<string | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const openPlayer = (name: string) => {
+    setOpened(name)
+    setDialogOpen(true)
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div role="tablist" aria-label="Kezelőeszközök" className="flex w-fit gap-1 rounded-xl border border-line bg-sunken p-1">
+        {TABS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            role="tab"
+            id={`management-tab-${option.id}`}
+            aria-selected={tab === option.id}
+            aria-controls={`management-panel-${option.id}`}
+            onClick={() => setTab(option.id)}
+            className={cn(
+              'min-h-10 cursor-pointer rounded-lg px-4 text-sm font-extrabold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary max-md:min-h-11',
+              tab === option.id ? 'bg-primary text-background' : 'text-soft hover:text-foreground',
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <div role="tabpanel" id={`management-panel-${tab}`} aria-labelledby={`management-tab-${tab}`}>
+        {tab === 'jatekosok' ? <ManagementPlayers onOpen={openPlayer} /> : <ManagementLog />}
+      </div>
+
+      {opened && <PlayerDialog name={opened} open={dialogOpen} onClose={() => setDialogOpen(false)} onClosed={() => setOpened(null)} />}
+    </div>
   )
 }

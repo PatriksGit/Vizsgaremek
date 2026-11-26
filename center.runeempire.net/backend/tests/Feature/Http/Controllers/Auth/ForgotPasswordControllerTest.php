@@ -9,6 +9,8 @@ use App\Support\PasswordResetGuesses;
 use App\Support\RegistrationCode;
 use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Notifications\Events\NotificationSending;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Testing\TestResponse;
@@ -51,6 +53,23 @@ class ForgotPasswordControllerTest extends TestCase
         });
 
         return $code;
+    }
+
+    /**
+     * Staff may change the address while the code is on its way to the old
+     * one (2026-11-26, final review): that code must not be stored, or whoever
+     * holds the old mailbox could use it with the new address.
+     */
+    public function test_an_address_changed_while_the_code_is_mailed_stores_no_code(): void
+    {
+        $account = $this->account();
+        Event::listen(NotificationSending::class, function () use ($account): void {
+            Account::query()->whereKey($account->id)->update(['email' => 'new@example.com']);
+        });
+
+        $this->forgot()->assertUnprocessable()->assertJsonValidationErrors(['email' => self::NO_ACCOUNT]);
+
+        $this->assertSame(0, PasswordResetCode::query()->where('account_id', $account->id)->count());
     }
 
     public function test_mails_a_code_and_returns_202_with_the_address_and_expiry(): void

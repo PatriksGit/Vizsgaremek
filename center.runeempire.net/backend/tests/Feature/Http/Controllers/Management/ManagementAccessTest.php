@@ -2,16 +2,15 @@
 
 namespace Tests\Feature\Http\Controllers\Management;
 
-use App\Actions\FindManagementPermission;
 use App\Models\Account;
 use App\Models\Manager;
-use App\Support\ManagementSession;
 use App\Support\PluginDatabase;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
+use Tests\Support\SignsInToManagement;
 use Tests\TestCase;
 
 /**
@@ -21,7 +20,7 @@ use Tests\TestCase;
  */
 class ManagementAccessTest extends TestCase
 {
-    use LazilyRefreshDatabase;
+    use LazilyRefreshDatabase, SignsInToManagement;
 
     private Account $account;
 
@@ -33,34 +32,6 @@ class ManagementAccessTest extends TestCase
 
         // A route behind the guard; the real management routes come in later tasks.
         Route::middleware(['api', 'auth:sanctum', 'management'])->get('/api/management/_probe', fn () => response()->json(['data' => 'ok']));
-    }
-
-    private function grantPermission(?Account $account = null): void
-    {
-        PluginDatabase::table('luckperms', 'luckperms_user_permissions')->insert([
-            'uuid' => ($account ?? $this->account)->uuid, 'permission' => FindManagementPermission::NODE, 'value' => 1, 'server' => 'global', 'world' => 'global', 'expiry' => 0, 'contexts' => '{}',
-        ]);
-    }
-
-    /**
-     * Logs in on the website, then goes on like a browser with that session cookie.
-     */
-    private function logIn(?Account $account = null): void
-    {
-        $this->postJson('/api/auth/login', ['username' => ($account ?? $this->account)->display_name, 'password' => 'titkos-jelszo'], self::FROM_WEBSITE)->assertOk();
-        $this->asBrowserWithSession($this->lastSessionId());
-    }
-
-    /**
-     * Puts a Google grant into the logged-in browser's session, as the callback would.
-     */
-    private function giveGrant(string $email = 'boss@example.com', ?Account $account = null): void
-    {
-        $session = $this->app['session']->driver();
-        $session->setId($this->lastSessionId());
-        $session->start();
-        ManagementSession::grant($session, $account ?? $this->account, $email);
-        $session->save();
     }
 
     /**
@@ -82,34 +53,34 @@ class ManagementAccessTest extends TestCase
 
     private function readyManager(): void
     {
-        $this->grantPermission();
+        $this->grantManagementPermission($this->account);
         Manager::create(['email' => 'boss@example.com']);
-        $this->logIn();
-        $this->giveGrant();
+        $this->logInOnWebsite($this->account);
+        $this->giveManagementGrant($this->account);
     }
 
     public function test_a_guarded_route_needs_each_key(): void
     {
         $this->probe()->assertUnauthorized();
 
-        $this->logIn();
+        $this->logInOnWebsite($this->account);
         $this->probe()->assertForbidden()->assertJsonPath('code', 'management.forbidden');
 
-        $this->grantPermission();
+        $this->grantManagementPermission($this->account);
         $this->probe()->assertForbidden()->assertJsonPath('code', 'management.sign_in_required');
 
         Manager::create(['email' => 'boss@example.com']);
-        $this->giveGrant();
+        $this->giveManagementGrant($this->account);
         $this->probe()->assertOk()->assertExactJson(['data' => 'ok']);
     }
 
     public function test_a_grant_of_another_account_is_refused(): void
     {
         $other = Account::factory()->withPassword('titkos-jelszo')->create(['display_name' => 'MasikJatekos']);
-        $this->grantPermission($other);
+        $this->grantManagementPermission($other);
         Manager::create(['email' => 'boss@example.com']);
-        $this->logIn($other);
-        $this->giveGrant('boss@example.com', $this->account);
+        $this->logInOnWebsite($other);
+        $this->giveManagementGrant($this->account, 'boss@example.com');
 
         $this->probe()->assertForbidden()->assertJsonPath('code', 'management.sign_in_required');
     }
@@ -168,7 +139,7 @@ class ManagementAccessTest extends TestCase
 
     public function test_me_refuses_without_the_permission(): void
     {
-        $this->logIn();
+        $this->logInOnWebsite($this->account);
 
         $this->getJson('/api/management/me', self::FROM_WEBSITE)->assertForbidden()->assertJsonPath('code', 'management.forbidden');
     }
@@ -176,8 +147,8 @@ class ManagementAccessTest extends TestCase
     public function test_me_refuses_when_luckperms_cannot_be_read(): void
     {
         Exceptions::fake();
-        $this->grantPermission();
-        $this->logIn();
+        $this->grantManagementPermission($this->account);
+        $this->logInOnWebsite($this->account);
         config(['database.plugins.luckperms' => 'center_missing_test']);
 
         $this->getJson('/api/management/me', self::FROM_WEBSITE)->assertForbidden()->assertJsonPath('code', 'management.forbidden');
@@ -187,13 +158,13 @@ class ManagementAccessTest extends TestCase
 
     public function test_me_reports_signed_in_or_not(): void
     {
-        $this->grantPermission();
+        $this->grantManagementPermission($this->account);
         Manager::create(['email' => 'boss@example.com']);
-        $this->logIn();
+        $this->logInOnWebsite($this->account);
 
         $this->getJson('/api/management/me', self::FROM_WEBSITE)->assertOk()->assertExactJson(['data' => ['signed_in' => false]]);
 
-        $this->giveGrant();
+        $this->giveManagementGrant($this->account);
 
         $response = $this->getJson('/api/management/me', self::FROM_WEBSITE)->assertOk();
         $response->assertJsonPath('data.signed_in', true)->assertJsonPath('data.email', 'boss@example.com');

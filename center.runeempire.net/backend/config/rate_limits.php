@@ -132,4 +132,20 @@ return [
         'per_minute' => max(1, (int) env('RATE_LIMITS_MANAGEMENT_PER_MINUTE', 10)),
     ],
 
+    /*
+     * GET /api/management/players (the staff search), per account: one
+     * request per letter like the Játékosok search.
+     */
+    'management_search' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_MANAGEMENT_SEARCH_PER_MINUTE', 60)),
+    ],
+
+    /*
+     * The other management routes (a player's details, the e-mail change,
+     * switching 2FA off, the staff log), together, per account.
+     */
+    'management_actions' => [
+        'per_minute' => max(1, (int) env('RATE_LIMITS_MANAGEMENT_ACTIONS_PER_MINUTE', 60)),
+    ],
+
 ];

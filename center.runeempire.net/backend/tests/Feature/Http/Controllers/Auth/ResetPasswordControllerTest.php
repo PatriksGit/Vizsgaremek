@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers\Auth;
 
+use App\Actions\ChangeAccountEmail;
 use App\Actions\CheckTwoFactorCode;
 use App\Exceptions\Auth\AccountLocked;
 use App\Exceptions\Auth\InvalidCredentials;
@@ -99,6 +100,22 @@ class ResetPasswordControllerTest extends TestCase
         $this->postJson('/api/auth/login', ['username' => 'PatrikT', 'password' => 'regi-jelszo'], self::FROM_WEBSITE)
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['username' => InvalidCredentials::MESSAGE]);
+    }
+
+    /**
+     * Staff often change an e-mail because the old address is someone else's
+     * (2026-11-26): a reset verified through the old address must not finish.
+     */
+    public function test_reset_permission_from_before_an_email_change_fails(): void
+    {
+        $account = $this->account();
+        $this->verifiedBrowser($account);
+
+        $manager = Account::factory()->create(['display_name' => 'Boss']);
+        app(ChangeAccountEmail::class)->handle($manager, 'boss@example.com', $account, 'new@example.com');
+
+        $this->reset()->assertUnprocessable()->assertJsonPath('code', 'auth.reset_expired');
+        $this->assertPasswordUnchanged($account);
     }
 
     public function test_without_a_verified_code_it_says_to_start_again(): void

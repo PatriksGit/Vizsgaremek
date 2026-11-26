@@ -103,5 +103,7 @@
         <env name="FRONTEND_URL" value="http://localhost:5173" force="true"/>
         <env name="MANAGEMENT_SESSION_MINUTES" value="30" force="true"/>
         <env name="RATE_LIMITS_MANAGEMENT_PER_MINUTE" value="10" force="true"/>
+        <env name="RATE_LIMITS_MANAGEMENT_SEARCH_PER_MINUTE" value="60" force="true"/>
+        <env name="RATE_LIMITS_MANAGEMENT_ACTIONS_PER_MINUTE" value="60" force="true"/>
     </php>
 </phpunit>

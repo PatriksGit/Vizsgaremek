@@ -11,6 +11,8 @@ use App\Notifications\PasswordResetCodeNotification;
 use App\Support\PasswordResetGuesses;
 use App\Support\RegistrationCode;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
@@ -73,16 +75,25 @@ class StartPasswordReset
         }
 
         try {
-            $resetCode = DB::transaction(function () use ($account, $code, $expiresInMinutes): PasswordResetCode {
-                PasswordResetCode::query()->where('expires_at', '<=', now())->delete();
-                PasswordResetCode::query()->where('account_id', $account->id)->delete();
+            // Staff may have changed the address while the mail was on its way (ChangeAccountEmail holds the
+            // same lock): a code sent to the old address must not be stored, or whoever holds that mailbox could
+            // use it with the new one. The account (Auth) and the code (Center) are on two servers, hence a lock.
+            $resetCode = self::addressLock($account->id)->block(5, function () use ($account, $email, $code, $expiresInMinutes): PasswordResetCode {
+                if (Account::normalizeEmail((string) Account::query()->whereKey($account->id)->value('email')) !== $email) {
+                    throw ValidationException::withMessages(['email' => 'Ehhez az e-mail címhez nem tartozik fiók.']);
+                }
 
-                return PasswordResetCode::create([
-                    'account_id' => $account->id,
-                    'code_hash' => RegistrationCode::hash($code),
-                    'expires_at' => now()->addMinutes($expiresInMinutes),
-                ]);
-            }, attempts: 3); // Two requests at the same moment can deadlock on InnoDB gap locks.
+                return DB::transaction(function () use ($account, $code, $expiresInMinutes): PasswordResetCode {
+                    PasswordResetCode::query()->where('expires_at', '<=', now())->delete();
+                    PasswordResetCode::query()->where('account_id', $account->id)->delete();
+
+                    return PasswordResetCode::create([
+                        'account_id' => $account->id,
+                        'code_hash' => RegistrationCode::hash($code),
+                        'expires_at' => now()->addMinutes($expiresInMinutes),
+                    ]);
+                }, attempts: 3); // Two requests at the same moment can deadlock on InnoDB gap locks.
+            });
         } catch (Throwable $exception) {
             RateLimiter::clear($cooldownKey);
 
@@ -99,6 +110,26 @@ class StartPasswordReset
     public static function resendAt(int $accountId): CarbonInterface
     {
         return now()->addSeconds(RateLimiter::availableIn(self::cooldownKey($accountId)));
+    }
+
+    /**
+     * The lock that keeps an account's address and its reset code in step:
+     * storing a code (here) and a staff e-mail change (ChangeAccountEmail)
+     * never run at the same time for one account.
+     */
+    public static function addressLock(int $accountId): Lock
+    {
+        return Cache::lock('password-reset-address:'.$accountId, 10);
+    }
+
+    /**
+     * Lets the account get a code at once: a staff e-mail change does it, so
+     * a code sent to the old address minutes earlier does not hold up the
+     * first one to the new address.
+     */
+    public static function clearCooldown(int $accountId): void
+    {
+        RateLimiter::clear(self::cooldownKey($accountId));
     }
 
     private static function cooldownKey(int $accountId): string

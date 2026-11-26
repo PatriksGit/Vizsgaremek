@@ -59,6 +59,10 @@ class RateLimitServiceProvider extends ServiceProvider
 
         RateLimiter::for('management', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.management.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));
 
+        RateLimiter::for('management-search', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.management_search.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));
+
+        RateLimiter::for('management-actions', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.management_actions.per_minute'))->by('account:'.$request->user()?->getAuthIdentifier())->response(self::tooManyAttempts()));
+
         RateLimiter::for('skins', fn (Request $request): Limit => Limit::perMinute(config('rate_limits.skins.per_minute'))->by(RateLimitClient::of($request))->response(self::tooManyAttempts()));
     }
 

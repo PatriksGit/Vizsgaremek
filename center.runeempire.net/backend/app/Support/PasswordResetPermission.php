@@ -16,12 +16,30 @@ class PasswordResetPermission
 
     private const KEY = 'password_reset';
 
+    /**
+     * The address the code went to is kept too, see matches().
+     */
     public static function grant(Session $session, Account $account): void
     {
         $session->put(self::KEY, [
             'account_id' => $account->id,
+            'email' => Account::normalizeEmail((string) $account->email),
             'expires_at' => now()->addMinutes(self::MINUTES)->getTimestamp(),
         ]);
+    }
+
+    /**
+     * Whether the account still has the address the verified code went to:
+     * after a staff e-mail change (often because the old address is someone
+     * else's) a permission won through the old address must not finish.
+     */
+    public static function matches(Session $session, Account $account): bool
+    {
+        $permission = $session->get(self::KEY);
+
+        return is_array($permission)
+            && isset($permission['email'])
+            && $permission['email'] === Account::normalizeEmail((string) $account->email);
     }
 
     /**

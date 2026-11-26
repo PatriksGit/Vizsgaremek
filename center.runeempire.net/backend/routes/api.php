@@ -14,10 +14,15 @@ use App\Http\Controllers\Auth\StartTwoFactorSetupController;
 use App\Http\Controllers\Auth\VerifyPasswordResetCodeController;
 use App\Http\Controllers\Auth\VerifyRegistrationController;
 use App\Http\Controllers\DiscordWidgetController;
+use App\Http\Controllers\Management\ChangePlayerEmailController;
+use App\Http\Controllers\Management\DisablePlayerTwoFactorController;
 use App\Http\Controllers\Management\GoogleCallbackController;
 use App\Http\Controllers\Management\GoogleRedirectController;
+use App\Http\Controllers\Management\ManagementActionsController;
 use App\Http\Controllers\Management\ManagementLogoutController;
 use App\Http\Controllers\Management\ManagementMeController;
+use App\Http\Controllers\Management\ManagementPlayerController;
+use App\Http\Controllers\Management\ManagementPlayerSearchController;
 use App\Http\Controllers\MyFriendsController;
 use App\Http\Controllers\MyStatsController;
 use App\Http\Controllers\PlayerFriendsController;
@@ -86,6 +91,20 @@ Route::prefix('management/google')->name('management.google.')
 Route::middleware('auth:sanctum')->prefix('management')->name('management.')->group(function () {
     Route::get('/me', ManagementMeController::class)->name('me');
     Route::post('/logout', ManagementLogoutController::class)->name('logout');
+});
+
+// The management tools (2026-11-26), all behind the full guard: the staff search, a player's private
+// details and the two staff actions on them, and the staff log. The search has its own limiter (one
+// request per letter); the rest share one.
+Route::middleware(['auth:sanctum', 'management'])->prefix('management')->name('management.')->group(function () {
+    Route::get('/players', ManagementPlayerSearchController::class)->middleware('throttle:management-search')->name('players.search');
+
+    Route::middleware('throttle:management-actions')->group(function () {
+        Route::get('/players/{player}', ManagementPlayerController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('players.show');
+        Route::put('/players/{player}/email', ChangePlayerEmailController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('players.email');
+        Route::delete('/players/{player}/two-factor', DisablePlayerTwoFactorController::class)->where('player', '[A-Za-z0-9_]{3,16}')->name('players.two-factor');
+        Route::get('/actions', ManagementActionsController::class)->name('actions');
+    });
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {
