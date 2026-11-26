@@ -109,6 +109,19 @@ it('a card opens its tool page with a back link', async () => {
   expect(screen.getByRole('link', { name: 'Vissza a Managementhez' }).getAttribute('href')).toBe('/management')
 })
 
+/**
+ * Owner, 2026-11-26: on desktop the sidebar's Management group navigates, so the back link to the hub is for
+ * phones only (no sidebar there); a small "Management" kicker above the title says where the page belongs
+ * (the sidebar has two "Napló"s).
+ */
+it('the back link is for phones only and a Management kicker sits above the title', async () => {
+  renderAt('/management/naplo')
+
+  const title = await screen.findByRole('heading', { level: 1, name: 'Napló' })
+  expect(screen.getByRole('link', { name: 'Vissza a Managementhez' }).className).toContain('md:hidden')
+  expect(title.previousElementSibling?.textContent).toBe('Management')
+})
+
 it('the Napló page shows the log', async () => {
   renderAt('/management/naplo')
 
