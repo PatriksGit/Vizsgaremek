@@ -8,7 +8,7 @@ import { popupLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useAccount, useLogout } from '@/features/auth/queries'
-import { useManagementLogout, useManagementSignedIn, useOpenManagement } from '@/features/management/api'
+import { useManagementLogout, useManagementPresence, useOpenManagement } from '@/features/management/api'
 import { cn } from '@/lib/utils'
 
 import { ACCOUNT_NAV, isAccountArea, isPage, MANAGEMENT_NAV } from './nav'
@@ -22,11 +22,13 @@ export function PlayerCard() {
   const { pathname } = useLocation()
   const logout = useLogout()
   const openManagement = useOpenManagement()
-  const managementSignedIn = useManagementSignedIn()
+  // A live grant: the sidebar's Management group navigates, so this menu offers only the way out (owner, 2026-11-26).
+  const managementSignedIn = useManagementPresence()
   const managementLogout = useManagementLogout()
   // The gear is gold on every page of this menu (Management too, review 2026-11-23 app-shell K3);
   // each row in it marks only its own page.
-  const inAccountArea = isAccountArea(pathname)
+  // With the Management group shown, /management/* marks that group, not this menu.
+  const inAccountArea = managementSignedIn ? isPage(ACCOUNT_NAV.to, pathname) : isAccountArea(pathname)
 
   return (
     <DropdownMenu>
@@ -62,7 +64,7 @@ export function PlayerCard() {
         sideOffset={8}
         className={cn('w-(--anchor-width) rounded-xl p-1.5 ring-0', popupLook)}
       >
-        {account?.can_manage && (
+        {account?.can_manage && !managementSignedIn && (
           <MenuPrimitive.LinkItem
             closeOnClick
             // The router's link, like every other page (owner, 2026-11-23: no full reload); the click

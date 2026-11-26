@@ -1,5 +1,6 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
+import { forgetManagementPresence } from '@/features/management/api'
 import { ApiError, http } from '@/lib/api'
 
 /** What the staff search looks in (owner, 2026-11-26): the name, the last IP or the e-mail. */
@@ -62,6 +63,7 @@ export function searchableFor(mode: SearchMode, q: string) {
 export function handOffOnSignInRequired(client: QueryClient, error: unknown) {
   if (error instanceof ApiError && error.code === 'management.sign_in_required') {
     void client.invalidateQueries({ queryKey: ['management', 'me'] })
+    forgetManagementPresence(client)
   }
 }
 

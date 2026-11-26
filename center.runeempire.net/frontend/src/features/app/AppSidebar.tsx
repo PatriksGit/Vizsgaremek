@@ -23,6 +23,7 @@ import { blurAfterPointerClick } from '@/lib/focus'
 import { cn } from '@/lib/utils'
 
 import { isActive, isPage, NAV, type NavItem, type NavLinkItem } from './nav'
+import { useProtectedNav } from './protectedNav'
 import { PlayerCard } from './PlayerCard'
 
 /** A top-level row: the icon on its tile and the label, 44 px tall. */
@@ -65,6 +66,9 @@ function IconTile({ icon, state }: { icon: IconDefinition; state: TileState }) {
  * settings and logout. Phones get the tab bar instead (MobileTabBar).
  */
 export function AppSidebar() {
+  // The groups behind a permission or a live grant (protectedNav.ts), after the menu everyone sees.
+  const protectedNav = useProtectedNav()
+
   return (
     <Sidebar className="sticky top-0 hidden h-svh shrink-0 gap-4 border-r border-sidebar-border px-4 py-5 md:flex">
       <SidebarHeader className="gap-4 p-0">
@@ -79,7 +83,7 @@ export function AppSidebar() {
       <SidebarContent className="-mx-4 px-4">
         <nav aria-label="Főmenü">
           <SidebarMenu className="gap-1">
-            {NAV.map((item) => (
+            {[...NAV, ...protectedNav].map((item) => (
               <SidebarMenuItem key={item.label}>
                 {item.children ? <NavGroup item={item} /> : <TopLink item={item} />}
               </SidebarMenuItem>

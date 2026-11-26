@@ -31,7 +31,6 @@ const ACCOUNT: Account = {
 }
 
 const GRANT = { signed_in: true, email: 'boss@example.com', expires_at: '2026-11-26T12:30:00Z' }
-const GOOGLE = '/api/management/google/redirect'
 
 const replace = vi.fn()
 const assign = vi.fn()
@@ -55,6 +54,8 @@ function renderAt(path: string, me: unknown = undefined) {
   const calls = installFakeBackend({
     'GET /auth/me': () => ({ status: 200, data: { data: ACCOUNT } }),
     'GET /management/me': () => meAnswer,
+    // The sidebar's peek stays unanswered: these tests are about the frame's cached answer.
+    'GET /management/me?peek=1': () => new Promise<Reply>(() => {}),
     'GET /management/actions': () => ({ status: 200, data: { data: [], meta: { next_cursor: null } } }),
     'POST /management/logout': () => ({ status: 204 }),
   })
@@ -147,17 +148,6 @@ it('every /management/me observer carries retry false, so no re-check ever retri
   expect(query?.options.retry).toBe(false)
 })
 
-it('the menu Management item on a tool page with a lapsed grant leaves the forward to the frame (one navigation)', async () => {
-  renderAt('/management/naplo')
-  await screen.findByRole('heading', { level: 1, name: 'Napló' })
-  meAnswer = { status: 200, data: { data: { signed_in: false } } }
-
-  await openMenu()
-  fireEvent.click(screen.getByRole('menuitem', { name: 'Management' }))
-
-  await waitFor(() => expect(replace).toHaveBeenCalledWith(GOOGLE))
-  expect(assign).not.toHaveBeenCalled()
-})
 
 it('Beállítások shows the logout row on phones only while signed in', async () => {
   renderAt('/beallitasok', { signed_in: false })

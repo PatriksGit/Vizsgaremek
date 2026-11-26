@@ -59,6 +59,8 @@ function renderManagementThenHome(second: Reply) {
   installFakeBackend({
     'GET /auth/me': () => ({ status: 200, data: { data: ACCOUNT } }),
     'GET /management/me': () => answer,
+    // The sidebar's peek stays unanswered: these tests are about the frame's and the menu's own asks.
+    'GET /management/me?peek=1': () => new Promise<never>(() => {}),
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   client.setQueryData(['account'], ACCOUNT)

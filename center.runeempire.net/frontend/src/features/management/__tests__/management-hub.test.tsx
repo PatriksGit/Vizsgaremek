@@ -56,6 +56,8 @@ function renderAt(path: string, me: Handler = () => SIGNED_IN) {
   installFakeBackend({
     'GET /auth/me': () => ({ status: 200, data: { data: ACCOUNT } }),
     'GET /management/me': me,
+    // The sidebar's peek stays unanswered: these tests are about the frame's and the menu's own asks.
+    'GET /management/me?peek=1': () => new Promise<never>(() => {}),
     'GET /management/actions': () => ({ status: 200, data: { data: [], meta: { next_cursor: null } } }),
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })

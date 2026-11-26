@@ -12,6 +12,7 @@ import { AppLayout } from '@/features/app/AppLayout'
 import type { Account } from '@/features/auth/api'
 import { ManagementHome } from '@/features/management/ManagementHome'
 import { ManagementPage } from '@/features/management/ManagementPage'
+import { ManagementPlayersPage } from '@/features/management/ManagementPlayersPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { installFakeBackend, stubBrowserApis } from '@/test/fakeBackend'
 
@@ -60,6 +61,8 @@ function renderApp() {
   const calls = installFakeBackend({
     'GET /auth/me': () => ({ status: 200, data: { data: ACCOUNT } }),
     'GET /management/me': () => (signedIn ? SIGNED_IN : SIGNED_OUT),
+    // The sidebar's peek stays unanswered: these tests are about the frame's and the menu's own asks.
+    'GET /management/me?peek=1': () => new Promise<never>(() => {}),
     'POST /management/logout': () => {
       signedIn = false
       return { status: 204 }
@@ -82,6 +85,7 @@ function renderApp() {
               }
             >
               <Route index element={<ManagementHome />} />
+              <Route path="jatekosok" element={<ManagementPlayersPage />} />
             </Route>
           </Route>
         </Routes>
@@ -97,10 +101,16 @@ async function openFromMenu() {
   await screen.findByRole('link', { name: /Játékosok.*Keresés/ })
 }
 
-/** Home -> Management (menu) -> Management again (menu, a second history entry) -> Kilépés -> home. */
+/**
+ * Home -> Management (menu) -> Játékosok (card) -> the hub again (back link: a second hub entry) -> Kilépés -> home.
+ * (2026-11-26: while the grant is live the menu offers Kilépés, not Management, so the second entry comes from the
+ * hub's own links; the frame stays mounted there, so it asks /me once, not twice.)
+ */
 async function openTwiceThenLogOut() {
   await openFromMenu()
-  await openFromMenu()
+  fireEvent.click(screen.getByRole('link', { name: /Játékosok.*Keresés/ }))
+  fireEvent.click(await screen.findByRole('link', { name: 'Vissza a Managementhez' }))
+  await screen.findByRole('link', { name: /Játékosok.*Keresés/ })
   await logOutOfManagement()
   await screen.findByRole('heading', { name: 'Főoldal' })
 }
@@ -117,7 +127,7 @@ it('Back right after Kilépés does not show the ended management dashboard', as
 
   // The grant was dropped at the server: the page must ask again (and go to Google), not show the old answer.
   expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).toBeNull()
-  expect(calls.filter((call) => call === 'GET /management/me')).toHaveLength(3)
+  expect(calls.filter((call) => call === 'GET /management/me')).toHaveLength(2)
 })
 
 it('control: Back after the 5 s fresh window asks again and goes to Google', { timeout: 15_000 }, async () => {
@@ -129,5 +139,5 @@ it('control: Back after the 5 s fresh window asks again and goes to Google', { t
 
   await waitFor(() => expect(replace).toHaveBeenCalledWith('/api/management/google/redirect'))
   expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).toBeNull()
-  expect(calls.filter((call) => call === 'GET /management/me')).toHaveLength(3)
+  expect(calls.filter((call) => call === 'GET /management/me')).toHaveLength(2)
 })

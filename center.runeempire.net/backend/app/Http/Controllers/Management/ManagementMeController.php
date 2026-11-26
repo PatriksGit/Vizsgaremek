@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Support\ManagementAccess;
 use Carbon\CarbonImmutable;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,15 +18,18 @@ class ManagementMeController extends Controller
      * slides it). The same check as the guard (ManagementAccess), but a missing
      * grant is an answer here, not an error: the management page asks this to
      * know whether to send the player to Google. Without the permission 403.
+     * With peek=1 the grant is NOT slid (the sidebar's Management group asks on
+     * every page load and must not keep the grant alive).
      *
      * @response array{data: array{signed_in: bool, email?: string, expires_at?: string}}
      */
+    #[QueryParameter('peek', description: 'Answer without sliding the grant.', type: 'boolean', required: false)]
     public function __invoke(Request $request, ManagementAccess $managementAccess): JsonResponse
     {
         /** @var Account $account */
         $account = $request->user();
 
-        $grant = $managementAccess->liveGrant($account, $request->session());
+        $grant = $managementAccess->liveGrant($account, $request->session(), slide: ! $request->boolean('peek'));
 
         if ($grant === null) {
             return response()->json(['data' => ['signed_in' => false]]);

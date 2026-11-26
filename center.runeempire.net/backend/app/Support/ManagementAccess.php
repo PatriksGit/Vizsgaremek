@@ -19,20 +19,21 @@ class ManagementAccess
     public function __construct(private readonly FindManagementPermission $findManagementPermission) {}
 
     /**
-     * The live grant (its expiry slid forward), or null when there is none. A
-     * grant whose address was taken off the list is dropped from the session.
+     * The live grant (its expiry slid forward, unless $slide is false: the
+     * peek of /me?peek=1), or null when there is none. A grant whose address
+     * was taken off the list is dropped from the session either way.
      *
      * @return array{email: string, expires_at: int}|null
      *
      * @throws Forbidden without the permission, or when LuckPerms cannot be read (reported, fail closed)
      */
-    public function liveGrant(Account $account, Session $session): ?array
+    public function liveGrant(Account $account, Session $session, bool $slide = true): ?array
     {
         if (! rescue(fn (): bool => $this->findManagementPermission->handle($account), false)) {
             throw new Forbidden;
         }
 
-        $grant = ManagementSession::current($session, $account);
+        $grant = $slide ? ManagementSession::current($session, $account) : ManagementSession::peek($session, $account);
 
         if ($grant !== null && ! Manager::isListed($grant['email'])) {
             ManagementSession::forget($session);

@@ -64,6 +64,8 @@ function renderAt(path: string, account: Account, me: Handler = () => SIGNED_OUT
   const calls = installFakeBackend({
     'GET /auth/me': () => ({ status: 200, data: { data: account } }),
     'GET /management/me': me,
+    // The sidebar's peek stays unanswered: these tests are about the frame's own ask.
+    'GET /management/me?peek=1': () => new Promise<Reply>(() => {}),
     'POST /management/logout': logout,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })

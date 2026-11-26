@@ -48,6 +48,8 @@ function renderSettings(me: Reply) {
     'GET /auth/me': () => ({ status: 200, data: { data: ACCOUNT } }),
     // A slow server: the test decides when the check answers.
     'GET /management/me': () => new Promise<Reply>((resolve) => (release = () => resolve(me))),
+    // The sidebar's peek stays unanswered: these tests are about the frame's and the menu's own asks.
+    'GET /management/me?peek=1': () => new Promise<never>(() => {}),
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   client.setQueryData(['account'], ACCOUNT)

@@ -45,6 +45,8 @@ function renderSettings() {
     // A slow server: the check answers only when the test says so.
     'GET /management/me': () =>
       new Promise<Reply>((resolve) => (release = () => resolve({ status: 200, data: { data: { signed_in: false } } }))),
+    // The sidebar's peek stays unanswered: these tests are about the frame's and the menu's own asks.
+    'GET /management/me?peek=1': () => new Promise<never>(() => {}),
     'POST /auth/logout': () => ({ status: 204 }),
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })

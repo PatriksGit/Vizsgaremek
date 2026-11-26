@@ -1,4 +1,4 @@
-import { isCancelledError, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { isCancelledError, queryOptions, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useSyncExternalStore, type MouseEvent } from 'react'
 import { matchPath, useLocation, useNavigate } from 'react-router'
 
@@ -55,24 +55,67 @@ export function useManagementMe({ enabled = true }: { enabled?: boolean } = {}) 
   })
 }
 
+/** The sidebar group's own query: the peek answers, never the frame's sliding ones. */
+export const managementPresenceKey = (uuid: string | undefined) => ['management', 'presence', uuid] as const
+
+async function peekManagementMe(): Promise<ManagementMe> {
+  // The flag in the path, not in params: one address per kind of ask (the sliding /me vs the peek).
+  const response = await http.get<{ data: ManagementMe }>('/management/me?peek=1')
+  return response.data.data
+}
+
 /**
- * Whether the last /management/me answer this tab has says signed in: for the menu's "Kilépés a
- * managementből" (owner, 2026-11-26). An observer that never fetches (enabled: false) -- why: every
- * /me call slides the 30-minute grant, so the menu must not ask. An invalidated answer counts as
- * "no" (final review 2026-11-26): the logout and a lapsed grant's hand-off invalidate it without a
- * refetch, and the next real answer clears that. A stale "yes" after the grant ran out by itself is
- * harmless: the logout only drops a grant.
+ * Whether this tab has a live management grant (owner, 2026-11-26): the sidebar's Management group and the
+ * account menu's "Kilépés a managementből". Asked once per page load with /management/me?peek=1, which never
+ * slides the 30-minute grant (a sliding ask would keep it alive while the manager only browses the site), and
+ * again by peek when the grant runs out -- still alive (the tools slid it) keeps the group, lapsed hides it.
+ * The frame's own /me answer counts too, read from the cache (enabled: false, never a fetch): the group shows
+ * right after the Google sign-in. An INVALIDATED frame answer counts as no: the logout and a lapsed grant's
+ * hand-off only invalidate it (a signed-out entry there would make a mounted frame forward to Google); they also
+ * set the presence to signed out.
  */
-export function useManagementSignedIn() {
+export function useManagementPresence() {
   const account = useAccount().data
   const client = useQueryClient()
+  const canManage = Boolean(account?.can_manage)
+  const presence = useQuery({
+    queryKey: managementPresenceKey(account?.uuid),
+    queryFn: peekManagementMe,
+    enabled: canManage,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity,
+    // Again when the grant runs out. Never after a failure (it keeps the last good data, so its past expires_at
+    // would ask every second), and a back-off when this clock already passed the server's expires_at (a clock
+    // ahead of the server) -- why: the unthrottled /me asking every second (final review 2026-11-26).
+    refetchInterval: (query) => {
+      const answer = query.state.data
+      if (query.state.status === 'error' || !answer?.signed_in) return false
+      const left = Date.parse(answer.expires_at) - Date.now()
+      return left > 0 ? left + 1_000 : 30_000
+    },
+  })
   const { queryKey } = managementMeQuery(account?.uuid)
   const me = useQuery({ ...managementMeQuery(account?.uuid), enabled: false })
   const invalidated = useSyncExternalStore(
     (onChange) => client.getQueryCache().subscribe(onChange),
     () => client.getQueryState(queryKey)?.isInvalidated ?? false,
   )
-  return Boolean(account?.can_manage) && me.data?.signed_in === true && !invalidated
+  // The NEWEST answer wins (final review 2026-11-26): the frame's "yes" from the Google sign-in stays cached, so
+  // it must not outvote a later peek's "no" once the grant lapsed. A failed peek counts as no (its data is old).
+  const peekAnswer = presence.isError ? undefined : presence.data
+  const frameAnswer = invalidated ? undefined : me.data
+  const latest =
+    peekAnswer && frameAnswer ? (me.dataUpdatedAt > presence.dataUpdatedAt ? frameAnswer : peekAnswer) : (peekAnswer ?? frameAnswer)
+  // A peek that failed after the frame answered is the newest word too: no (a revoked permission answers 403).
+  if (presence.isError && presence.errorUpdatedAt > me.dataUpdatedAt) return false
+  return canManage && latest?.signed_in === true
+}
+
+/** The grant is gone (the logout, a lapsed grant's answer): the sidebar group and the menu's Kilépés go too. */
+export function forgetManagementPresence(client: QueryClient) {
+  client.setQueriesData({ queryKey: ['management', 'presence'] }, { signed_in: false })
 }
 
 /** Drops only the management grant; the website login stays. */
@@ -97,6 +140,7 @@ export function useManagementLogout() {
       await navigate('/', { replace: true })
       // Stale, not refetched: the ended grant's answer must not open the dashboard again (Back within 5 s).
       void client.invalidateQueries({ queryKey: ['management', 'me'], refetchType: 'none' })
+      forgetManagementPresence(client)
     },
     onError: toastError,
   })

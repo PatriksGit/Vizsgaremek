@@ -33,14 +33,32 @@ class ManagementSession
      */
     public static function current(Session $session, Account $account): ?array
     {
+        $grant = self::peek($session, $account);
+
+        if ($grant === null) {
+            return null;
+        }
+
+        $grant['expires_at'] = self::expiresAt();
+        $session->put(self::KEY, [...$session->get(self::KEY), 'expires_at' => $grant['expires_at']]);
+
+        return $grant;
+    }
+
+    /**
+     * The live grant of this account without sliding it (2026-11-26): the
+     * sidebar's Management group asks on every page load, and that must not
+     * keep the grant alive while the manager only browses the website.
+     *
+     * @return array{email: string, expires_at: int}|null
+     */
+    public static function peek(Session $session, Account $account): ?array
+    {
         $grant = $session->get(self::KEY);
 
         if (! is_array($grant) || $grant['account_id'] !== $account->id || $grant['expires_at'] < now()->getTimestamp()) {
             return null;
         }
-
-        $grant['expires_at'] = self::expiresAt();
-        $session->put(self::KEY, $grant);
 
         return ['email' => $grant['email'], 'expires_at' => $grant['expires_at']];
     }

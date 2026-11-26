@@ -5,6 +5,7 @@ namespace Tests\Feature\Http\Controllers\Management;
 use App\Models\Account;
 use App\Models\Manager;
 use App\Support\PluginDatabase;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Exceptions;
@@ -180,6 +181,42 @@ class ManagementAccessTest extends TestCase
         Manager::where('email', 'boss@example.com')->delete();
 
         $this->getJson('/api/management/me', self::FROM_WEBSITE)->assertOk()->assertExactJson(['data' => ['signed_in' => false]]);
+        $this->assertNull($this->storedGrant());
+    }
+
+    /**
+     * ?peek=1 (2026-11-26, the sidebar's Management group): the same answer,
+     * but the grant is not slid, so a page load never keeps it alive.
+     */
+    public function test_peek_does_not_slide(): void
+    {
+        $this->readyManager();
+        $before = $this->storedGrant()['expires_at'];
+        $this->travel(10)->minutes();
+
+        $peek = $this->getJson('/api/management/me?peek=1', self::FROM_WEBSITE)->assertOk()->assertJsonPath('data.signed_in', true);
+
+        $this->assertSame($before, $this->storedGrant()['expires_at']);
+        $this->assertSame(CarbonImmutable::createFromTimestampUTC($before)->toIso8601String(), $peek->json('data.expires_at'));
+
+        $this->getJson('/api/management/me', self::FROM_WEBSITE)->assertOk();
+        $this->assertGreaterThan($before, $this->storedGrant()['expires_at']);
+    }
+
+    public function test_peek_sees_a_lapsed_grant_as_signed_out(): void
+    {
+        $this->readyManager();
+        $this->travel(31)->minutes();
+
+        $this->getJson('/api/management/me?peek=1', self::FROM_WEBSITE)->assertOk()->assertExactJson(['data' => ['signed_in' => false]]);
+    }
+
+    public function test_peek_on_an_unlisted_address_drops_the_grant(): void
+    {
+        $this->readyManager();
+        Manager::where('email', 'boss@example.com')->delete();
+
+        $this->getJson('/api/management/me?peek=1', self::FROM_WEBSITE)->assertOk()->assertExactJson(['data' => ['signed_in' => false]]);
         $this->assertNull($this->storedGrant());
     }
 

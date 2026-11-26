@@ -10,7 +10,7 @@ import { site } from '@/config/site'
 import { MANAGEMENT_NAV } from '@/features/app/nav'
 import type { Account } from '@/features/auth/api'
 import { useAccount, useLogout } from '@/features/auth/queries'
-import { useManagementLogout, useManagementSignedIn, useOpenManagement } from '@/features/management/api'
+import { useManagementLogout, useManagementPresence, useOpenManagement } from '@/features/management/api'
 import { enterAfter } from '@/lib/motion'
 import { NO_DATA } from '@/lib/noData'
 import { cn } from '@/lib/utils'
@@ -27,7 +27,7 @@ export function AccountPage() {
   // RequireAccount renders this page only for a logged-in player.
   const account = useAccount().data!
   const openManagement = useOpenManagement()
-  const managementSignedIn = useManagementSignedIn()
+  const managementSignedIn = useManagementPresence()
   const managementLogout = useManagementLogout()
 
   return (
