@@ -74,7 +74,7 @@ export function AccountPage() {
               />
             </div>
           )}
-          {/* The sidebar menu's "Kilépés a managementből" on phones (owner, 2026-11-26), only while signed in to management. */}
+          {/* The sidebar menu's "Management kilépés" on phones (owner, 2026-11-26), only while signed in to management. */}
           {managementSignedIn && (
             <div className="md:hidden">
               <SettingsRow
@@ -90,7 +90,7 @@ export function AccountPage() {
                     disabled={managementLogout.isPending}
                     className="h-10 rounded-full px-4.5 font-bold max-sm:w-full"
                   >
-                    Kilépés a managementből
+                    Management kilépés
                   </Button>
                 }
               />

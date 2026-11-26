@@ -66,7 +66,7 @@ async function peekManagementMe(): Promise<ManagementMe> {
 
 /**
  * Whether this tab has a live management grant (owner, 2026-11-26): the sidebar's Management group and the
- * account menu's "Kilépés a managementből". Asked once per page load with /management/me?peek=1, which never
+ * account menu's "Management kilépés". Asked once per page load with /management/me?peek=1, which never
  * slides the 30-minute grant (a sliding ask would keep it alive while the manager only browses the site), and
  * again by peek when the grant runs out -- still alive (the tools slid it) keeps the group, lapsed hides it.
  * The frame's own /me answer counts too, read from the cache (enabled: false, never a fetch): the group shows

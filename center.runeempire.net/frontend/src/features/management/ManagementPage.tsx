@@ -38,7 +38,7 @@ export function ManagementPage() {
       {!signedIn && <title>{`Management | ${site.name}`}</title>}
       {/*
        * Gated on isFetchedAfterMount, never isPending (see the Queries rule): a cached answer from an
-       * earlier visit (e.g. before "Kilépés a managementből", or a grant that ran out) must not show the
+       * earlier visit (e.g. before "Management kilépés", or a grant that ran out) must not show the
        * dashboard for a moment before this visit's answer forwards to Google (owner, 2026-11-23).
        */}
       {!(me.isFetchedAfterMount || freshOnArrival) ? (

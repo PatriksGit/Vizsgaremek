@@ -124,7 +124,7 @@ it('the menu offers Kilépés instead of Management while the group shows, and t
   fireEvent.click(screen.getByRole('button', { name: 'Fiók menü' }))
   await screen.findByRole('menuitem', { name: 'Beállítások' })
   expect(screen.queryByRole('menuitem', { name: 'Management' })).toBeNull()
-  fireEvent.click(screen.getByRole('menuitem', { name: 'Kilépés a managementből' }))
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Management kilépés' }))
 
   await waitFor(() => expect(group()).toBeNull())
   fireEvent.click(screen.getByRole('button', { name: 'Fiók menü' }))

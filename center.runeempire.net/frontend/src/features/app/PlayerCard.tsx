@@ -85,7 +85,7 @@ export function PlayerCard() {
             className={cn(menuRow, 'text-foreground data-disabled:opacity-60 data-highlighted:bg-sunken')}
           >
             <FontAwesomeIcon icon={faRightFromBracket} className="size-3.75 text-muted-foreground" aria-hidden="true" />
-            Kilépés a managementből
+            Management kilépés
           </MenuPrimitive.Item>
         )}
         <MenuPrimitive.LinkItem

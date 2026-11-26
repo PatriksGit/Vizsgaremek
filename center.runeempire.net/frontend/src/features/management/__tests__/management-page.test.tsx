@@ -21,7 +21,7 @@ import { installFakeBackend, stubBrowserApis, type Handler, type Reply } from '@
 /** The logout moved into the account menu (owner, 2026-11-26). */
 async function logOutOfManagement() {
   fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Kilépés a managementből' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Management kilépés' }))
 }
 
 

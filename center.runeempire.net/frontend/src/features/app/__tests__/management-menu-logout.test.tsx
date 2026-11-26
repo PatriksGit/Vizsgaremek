@@ -1,5 +1,5 @@
 /**
- * "Kilépés a managementből" lives in the account menu (owner, 2026-11-26), under
+ * "Management kilépés" lives in the account menu (owner, 2026-11-26), under
  * the Management row, and on phones on Beállítások: only while the cached
  * /management/me answer says signed in. It never asks /management/me itself
  * (each call slides the 30-minute grant). Rendered with the real management
@@ -96,19 +96,19 @@ async function openMenu() {
 it('the menu row shows only with a cached signed-in answer', async () => {
   renderAt('/', { signed_in: false })
   await openMenu()
-  expect(screen.queryByRole('menuitem', { name: 'Kilépés a managementből' })).toBeNull()
+  expect(screen.queryByRole('menuitem', { name: 'Management kilépés' })).toBeNull()
   cleanup()
 
   renderAt('/', GRANT)
   await openMenu()
-  expect(screen.getByRole('menuitem', { name: 'Kilépés a managementből' })).toBeTruthy()
+  expect(screen.getByRole('menuitem', { name: 'Management kilépés' })).toBeTruthy()
 })
 
 it('the menu row reads the cache only', async () => {
   const { calls } = renderAt('/')
   await openMenu()
 
-  expect(screen.queryByRole('menuitem', { name: 'Kilépés a managementből' })).toBeNull()
+  expect(screen.queryByRole('menuitem', { name: 'Management kilépés' })).toBeNull()
   expect(calls).not.toContain('GET /management/me')
 })
 
@@ -117,7 +117,7 @@ it('menu logout from a tool page goes home, not to Google', async () => {
   await screen.findByRole('heading', { level: 1, name: 'Napló' })
   await openMenu()
 
-  fireEvent.click(screen.getByRole('menuitem', { name: 'Kilépés a managementből' }))
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Management kilépés' }))
 
   expect(await screen.findByRole('heading', { name: 'Főoldal' })).toBeTruthy()
   expect(calls).toContain('POST /management/logout')
@@ -129,11 +129,11 @@ it('after the logout the menu no longer offers it (final review 2026-11-26, Impo
   renderAt('/management/naplo')
   await screen.findByRole('heading', { level: 1, name: 'Napló' })
   await openMenu()
-  fireEvent.click(screen.getByRole('menuitem', { name: 'Kilépés a managementből' }))
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Management kilépés' }))
   await screen.findByRole('heading', { name: 'Főoldal' })
 
   await openMenu()
-  expect(screen.queryByRole('menuitem', { name: 'Kilépés a managementből' })).toBeNull()
+  expect(screen.queryByRole('menuitem', { name: 'Management kilépés' })).toBeNull()
 })
 
 it('every /management/me observer carries retry false, so no re-check ever retries (final review, Minor 2)', async () => {
@@ -152,11 +152,11 @@ it('every /management/me observer carries retry false, so no re-check ever retri
 it('Beállítások shows the logout row on phones only while signed in', async () => {
   renderAt('/beallitasok', { signed_in: false })
   await screen.findByRole('heading', { level: 1, name: 'Beállítások' })
-  expect(screen.queryByRole('button', { name: 'Kilépés a managementből' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Management kilépés' })).toBeNull()
   cleanup()
 
   renderAt('/beallitasok', GRANT)
-  const button = await screen.findByRole('button', { name: 'Kilépés a managementből' })
+  const button = await screen.findByRole('button', { name: 'Management kilépés' })
   expect(button.closest('.md\\:hidden')).not.toBeNull()
 
   fireEvent.click(button)

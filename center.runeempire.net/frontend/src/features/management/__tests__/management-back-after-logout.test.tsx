@@ -1,5 +1,5 @@
 /**
- * Review 2026-11-24 AC-1: after "Kilépés a managementből", the browser's Back to an earlier /management entry within
+ * Review 2026-11-24 AC-1: after "Management kilépés", the browser's Back to an earlier /management entry within
  * 5 s of the last check showed the ended dashboard ("Bejelentkezve: ...") again, with no new check.
  * The cached signed_in: true answer was still fresh, so freshOnArrival trusted it.
  */
@@ -19,7 +19,7 @@ import { installFakeBackend, stubBrowserApis } from '@/test/fakeBackend'
 /** The logout moved into the account menu (owner, 2026-11-26). */
 async function logOutOfManagement() {
   fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
-  fireEvent.click(await screen.findByRole('menuitem', { name: 'Kilépés a managementből' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Management kilépés' }))
 }
 
 
