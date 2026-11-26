@@ -12,6 +12,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import { AppLayout } from '@/features/app/AppLayout'
 import type { Account } from '@/features/auth/api'
+import { ManagementHome } from '@/features/management/ManagementHome'
 import { ManagementPage } from '@/features/management/ManagementPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { installFakeBackend, stubBrowserApis } from '@/test/fakeBackend'
@@ -56,7 +57,9 @@ function renderAt(path: string) {
                   <ManagementPage />
                 </RequireManager>
               }
-            />
+            >
+              <Route index element={<ManagementHome />} />
+            </Route>
           </Route>
         </Routes>
       </MemoryRouter>
@@ -70,20 +73,18 @@ it('repro: the dashboard opened from the menu is still there 6 s later', { timeo
   renderAt('/')
   fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Management' }))
-  expect(await screen.findByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(await screen.findByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
 
   await wait(6_000)
 
-  expect(screen.queryByText('Bejelentkezve: admin@example.com')).not.toBeNull()
-  expect(screen.queryByRole('button', { name: 'Kilépés a managementből' })).not.toBeNull()
+  expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).not.toBeNull()
 })
 
 it('control: the dashboard loaded directly (bookmark, refresh) is still there 6 s later', { timeout: 15_000 }, async () => {
   renderAt('/management')
-  expect(await screen.findByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(await screen.findByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
 
   await wait(6_000)
 
-  expect(screen.queryByText('Bejelentkezve: admin@example.com')).not.toBeNull()
-  expect(screen.queryByRole('button', { name: 'Kilépés a managementből' })).not.toBeNull()
+  expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).not.toBeNull()
 })

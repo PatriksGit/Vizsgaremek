@@ -10,9 +10,17 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import { AppLayout } from '@/features/app/AppLayout'
 import type { Account } from '@/features/auth/api'
+import { ManagementHome } from '@/features/management/ManagementHome'
 import { ManagementPage } from '@/features/management/ManagementPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { installFakeBackend, stubBrowserApis } from '@/test/fakeBackend'
+
+/** The logout moved into the account menu (owner, 2026-11-26). */
+async function logOutOfManagement() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Kilépés a managementből' }))
+}
+
 
 const ACCOUNT: Account = {
   uuid: 'u-1',
@@ -72,7 +80,9 @@ function renderApp() {
                   <ManagementPage />
                 </RequireManager>
               }
-            />
+            >
+              <Route index element={<ManagementHome />} />
+            </Route>
           </Route>
         </Routes>
       </MemoryRouter>
@@ -84,14 +94,14 @@ function renderApp() {
 async function openFromMenu() {
   fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Management' }))
-  await screen.findByText('Bejelentkezve: admin@example.com')
+  await screen.findByRole('link', { name: /Játékosok.*Keresés/ })
 }
 
 /** Home -> Management (menu) -> Management again (menu, a second history entry) -> Kilépés -> home. */
 async function openTwiceThenLogOut() {
   await openFromMenu()
   await openFromMenu()
-  fireEvent.click(screen.getByRole('button', { name: 'Kilépés a managementből' }))
+  await logOutOfManagement()
   await screen.findByRole('heading', { name: 'Főoldal' })
 }
 
@@ -106,7 +116,7 @@ it('Back right after Kilépés does not show the ended management dashboard', as
   await wait(50)
 
   // The grant was dropped at the server: the page must ask again (and go to Google), not show the old answer.
-  expect(screen.queryByText('Bejelentkezve: admin@example.com')).toBeNull()
+  expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).toBeNull()
   expect(calls.filter((call) => call === 'GET /management/me')).toHaveLength(3)
 })
 
@@ -118,6 +128,6 @@ it('control: Back after the 5 s fresh window asks again and goes to Google', { t
   fireEvent.click(screen.getByRole('button', { name: 'Böngésző Vissza' }))
 
   await waitFor(() => expect(replace).toHaveBeenCalledWith('/api/management/google/redirect'))
-  expect(screen.queryByText('Bejelentkezve: admin@example.com')).toBeNull()
+  expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).toBeNull()
   expect(calls.filter((call) => call === 'GET /management/me')).toHaveLength(3)
 })

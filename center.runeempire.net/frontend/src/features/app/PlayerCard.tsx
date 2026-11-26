@@ -8,7 +8,7 @@ import { popupLook } from '@/components/app/Panel'
 import { PlayerHead } from '@/components/app/PlayerHead'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useAccount, useLogout } from '@/features/auth/queries'
-import { useOpenManagement } from '@/features/management/api'
+import { useManagementLogout, useManagementSignedIn, useOpenManagement } from '@/features/management/api'
 import { cn } from '@/lib/utils'
 
 import { ACCOUNT_NAV, isAccountArea, isPage, MANAGEMENT_NAV } from './nav'
@@ -22,6 +22,8 @@ export function PlayerCard() {
   const { pathname } = useLocation()
   const logout = useLogout()
   const openManagement = useOpenManagement()
+  const managementSignedIn = useManagementSignedIn()
+  const managementLogout = useManagementLogout()
   // The gear is gold on every page of this menu (Management too, review 2026-11-23 app-shell K3);
   // each row in it marks only its own page.
   const inAccountArea = isAccountArea(pathname)
@@ -72,6 +74,17 @@ export function PlayerCard() {
             <FontAwesomeIcon icon={MANAGEMENT_NAV.icon} className="size-3.75 text-muted-foreground" aria-hidden="true" />
             {MANAGEMENT_NAV.label}
           </MenuPrimitive.LinkItem>
+        )}
+        {/* Only while the cached answer says signed in (owner, 2026-11-26: the logout left the management page). */}
+        {managementSignedIn && (
+          <MenuPrimitive.Item
+            onClick={() => managementLogout.mutate()}
+            disabled={managementLogout.isPending}
+            className={cn(menuRow, 'text-foreground data-disabled:opacity-60 data-highlighted:bg-sunken')}
+          >
+            <FontAwesomeIcon icon={faRightFromBracket} className="size-3.75 text-muted-foreground" aria-hidden="true" />
+            Kilépés a managementből
+          </MenuPrimitive.Item>
         )}
         <MenuPrimitive.LinkItem
           closeOnClick

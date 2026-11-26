@@ -12,6 +12,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import { AppLayout } from '@/features/app/AppLayout'
 import type { Account } from '@/features/auth/api'
+import { ManagementHome } from '@/features/management/ManagementHome'
 import { ManagementPage } from '@/features/management/ManagementPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { installFakeBackend, stubBrowserApis, type Reply } from '@/test/fakeBackend'
@@ -74,7 +75,9 @@ function renderManagementThenHome(second: Reply) {
                   <ManagementPage />
                 </RequireManager>
               }
-            />
+            >
+              <Route index element={<ManagementHome />} />
+            </Route>
           </Route>
         </Routes>
       </MemoryRouter>
@@ -90,7 +93,7 @@ function renderManagementThenHome(second: Reply) {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function visitHomeAndComeBack(next: () => void) {
-  expect(await screen.findByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(await screen.findByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
   // Away to the overview through the menu, then Back after the 5 s fresh window.
   fireEvent.click(screen.getAllByRole('link', { name: /Főoldal/ })[0])
   expect(await screen.findByRole('heading', { name: 'Főoldal' })).toBeTruthy()
@@ -105,7 +108,7 @@ it('repro: a failed re-check never shows the earlier visit\'s dashboard', { time
 
   await waitFor(() => expect(screen.queryByRole('heading', { name: 'Főoldal' })).toBeNull())
   await wait(300)
-  expect(screen.queryByText('Bejelentkezve: admin@example.com')).toBeNull()
+  expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).toBeNull()
 })
 
 it('control: a re-check that answers "signed out" does not show the old dashboard and goes to Google', { timeout: 15_000 }, async () => {
@@ -113,5 +116,5 @@ it('control: a re-check that answers "signed out" does not show the old dashboar
   await visitHomeAndComeBack(next)
 
   await waitFor(() => expect(replace).toHaveBeenCalledWith('/api/management/google/redirect'))
-  expect(screen.queryByText('Bejelentkezve: admin@example.com')).toBeNull()
+  expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).toBeNull()
 })

@@ -13,6 +13,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import { AppLayout } from '@/features/app/AppLayout'
 import type { Account } from '@/features/auth/api'
+import { ManagementHome } from '@/features/management/ManagementHome'
 import { ManagementPage } from '@/features/management/ManagementPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { installFakeBackend, stubBrowserApis, type Reply } from '@/test/fakeBackend'
@@ -74,7 +75,9 @@ function renderManagementThenHome(second: Reply) {
                   <ManagementPage />
                 </RequireManager>
               }
-            />
+            >
+              <Route index element={<ManagementHome />} />
+            </Route>
           </Route>
         </Routes>
       </MemoryRouter>
@@ -100,7 +103,7 @@ it('repro path2: coming back after a failed first load asks again and shows the 
   const { next } = renderManagementThenHome(SIGNED_IN)
   await failThenHomeAndBack(next)
 
-  expect(await screen.findByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(await screen.findByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
 })
 
 it('control path2: a failed first load shows the reason, not a blank page', async () => {

@@ -8,12 +8,15 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { Toaster } from '@/components/ui/sonner'
 import { AccountPage } from '@/features/account/AccountPage'
 import { AppLayout } from '@/features/app/AppLayout'
-import { MANAGEMENT_NAV, NAV } from '@/features/app/nav'
+import { MANAGEMENT_NAV, MANAGEMENT_PAGES, NAV } from '@/features/app/nav'
 import { SectionPage } from '@/features/app/SectionPage'
 import { AuthPage } from '@/features/auth/AuthPage'
 import { GuestOnly, RequireAccount } from '@/features/auth/guards'
 import { useAccount } from '@/features/auth/queries'
+import { ManagementHome } from '@/features/management/ManagementHome'
+import { ManagementLogPage } from '@/features/management/ManagementLogPage'
 import { ManagementPage } from '@/features/management/ManagementPage'
+import { ManagementPlayersPage } from '@/features/management/ManagementPlayersPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { HomePage } from '@/features/home/HomePage'
 import { PlayerProfilePage } from '@/features/players/PlayerProfilePage'
@@ -73,11 +76,17 @@ const router = createBrowserRouter([
           { path: 'beallitasok', element: <AccountPage /> },
           {
             path: MANAGEMENT_NAV.to.slice(1),
+            // The frame: the one sign-in flow; once signed in, the hub or a tool's page (owner, 2026-11-26).
             element: (
               <RequireManager>
                 <ManagementPage />
               </RequireManager>
             ),
+            children: [
+              { index: true, element: <ManagementHome /> },
+              { path: MANAGEMENT_PAGES.players.slice(MANAGEMENT_NAV.to.length + 1), element: <ManagementPlayersPage /> },
+              { path: MANAGEMENT_PAGES.log.slice(MANAGEMENT_NAV.to.length + 1), element: <ManagementLogPage /> },
+            ],
           },
           { path: 'rangok', element: <RanksPage /> },
           { path: 'jatekosok', element: <PlayersPage /> },

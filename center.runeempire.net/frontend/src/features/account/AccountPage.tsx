@@ -10,7 +10,7 @@ import { site } from '@/config/site'
 import { MANAGEMENT_NAV } from '@/features/app/nav'
 import type { Account } from '@/features/auth/api'
 import { useAccount, useLogout } from '@/features/auth/queries'
-import { useOpenManagement } from '@/features/management/api'
+import { useManagementLogout, useManagementSignedIn, useOpenManagement } from '@/features/management/api'
 import { enterAfter } from '@/lib/motion'
 import { NO_DATA } from '@/lib/noData'
 import { cn } from '@/lib/utils'
@@ -27,6 +27,8 @@ export function AccountPage() {
   // RequireAccount renders this page only for a logged-in player.
   const account = useAccount().data!
   const openManagement = useOpenManagement()
+  const managementSignedIn = useManagementSignedIn()
+  const managementLogout = useManagementLogout()
 
   return (
     <div className="mx-auto flex w-full max-w-220 flex-col gap-6 lg:mt-4">
@@ -68,6 +70,28 @@ export function AccountPage() {
                   >
                     Megnyitás
                   </Link>
+                }
+              />
+            </div>
+          )}
+          {/* The sidebar menu's "Kilépés a managementből" on phones (owner, 2026-11-26), only while signed in to management. */}
+          {managementSignedIn && (
+            <div className="md:hidden">
+              <SettingsRow
+                id="management-logout-title"
+                icon={faRightFromBracket}
+                title="Management-belépés"
+                description="Be vagy lépve a managementbe. Ha nem használod, magától is lejár."
+                action={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => managementLogout.mutate()}
+                    disabled={managementLogout.isPending}
+                    className="h-10 rounded-full px-4.5 font-bold max-sm:w-full"
+                  >
+                    Kilépés a managementből
+                  </Button>
                 }
               />
             </div>

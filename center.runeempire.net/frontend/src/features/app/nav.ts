@@ -39,6 +39,12 @@ export const ACCOUNT_NAV: NavLinkItem = { label: 'Fiók', icon: faGear, to: '/be
  */
 export const MANAGEMENT_NAV: NavLinkItem = { label: 'Management', icon: faUserTie, to: '/management' }
 
+/** The management tools' own pages under the hub (owner, 2026-11-26): App.tsx's routes and the hub's cards. */
+export const MANAGEMENT_PAGES = {
+  players: `${MANAGEMENT_NAV.to}/jatekosok`,
+  log: `${MANAGEMENT_NAV.to}/naplo`,
+} as const
+
 /**
  * The logged-in pages: the one list the sidebar and the phone tab bar are
  * both built from. For now only these (owner, 2026-11-13): the runes with
@@ -91,5 +97,5 @@ export function isActive(item: NavItem, pathname: string) {
  * from Beállítások. Marks the sidebar's gear and the phone Fiók tab (review 2026-11-23 app-shell K3).
  */
 export function isAccountArea(pathname: string) {
-  return isPage(ACCOUNT_NAV.to, pathname) || isPage(MANAGEMENT_NAV.to, pathname)
+  return isPage(ACCOUNT_NAV.to, pathname) || isPage(MANAGEMENT_NAV.to, pathname) || isUnder(MANAGEMENT_NAV.to, pathname)
 }

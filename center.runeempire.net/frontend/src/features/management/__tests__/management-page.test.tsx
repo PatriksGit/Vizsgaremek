@@ -13,9 +13,17 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { AccountPage } from '@/features/account/AccountPage'
 import { AppLayout } from '@/features/app/AppLayout'
 import type { Account } from '@/features/auth/api'
+import { ManagementHome } from '@/features/management/ManagementHome'
 import { ManagementPage } from '@/features/management/ManagementPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { installFakeBackend, stubBrowserApis, type Handler, type Reply } from '@/test/fakeBackend'
+
+/** The logout moved into the account menu (owner, 2026-11-26). */
+async function logOutOfManagement() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Kilépés a managementből' }))
+}
+
 
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
 vi.mock('sonner', async (importOriginal) => ({ ...(await importOriginal<typeof import('sonner')>()), toast: toastMock }))
@@ -75,7 +83,9 @@ function renderAt(path: string, account: Account, me: Handler = () => SIGNED_OUT
                   <ManagementPage />
                 </RequireManager>
               }
-            />
+            >
+              <Route index element={<ManagementHome />} />
+            </Route>
           </Route>
         </Routes>
       </MemoryRouter>
@@ -90,7 +100,7 @@ it('the Management menu item checks first: a live grant opens the dashboard insi
   const item = await screen.findByRole('menuitem', { name: 'Management' })
   expect(item.getAttribute('href')).toBe('/management')
   fireEvent.click(item)
-  expect(await screen.findByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(await screen.findByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
   expect(assign).not.toHaveBeenCalled()
   expect(replace).not.toHaveBeenCalled()
   cleanup()
@@ -198,13 +208,11 @@ it('not_allowed names the address Google returned, but only when it is an addres
   await expectToastAndHome('Ez az e-mail cím nem jogosult a belépésre.')
 })
 
-it('signed in shows the address and the tools; Kilépés calls the logout and goes home, not to Google', async () => {
+it('signed in shows the tool cards; Kilépés in the account menu calls the logout and goes home, not to Google', async () => {
   const calls = renderAt('/management', ACCOUNT, () => SIGNED_IN)
-  expect(await screen.findByRole('heading', { level: 1, name: 'Management' })).toBeTruthy()
-  expect(screen.getByText('Bejelentkezve: admin@example.com')).toBeTruthy()
-  expect(screen.getByRole('tab', { name: 'Játékosok' }).getAttribute('aria-selected')).toBe('true')
+  expect(await screen.findByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
 
-  fireEvent.click(screen.getByRole('button', { name: 'Kilépés a managementből' }))
+  await logOutOfManagement()
 
   expect(await screen.findByRole('heading', { name: 'Főoldal' })).toBeTruthy()
   expect(calls).toContain('POST /management/logout')
@@ -218,21 +226,21 @@ it('after Kilépés, opening Management again never shows the old dashboard befo
     signedIn = false
     return { status: 204 }
   })
-  fireEvent.click(await screen.findByRole('button', { name: 'Kilépés a managementből' }))
+  await logOutOfManagement()
   expect(await screen.findByRole('heading', { name: 'Főoldal' })).toBeTruthy()
 
   fireEvent.click(await screen.findByRole('button', { name: 'Fiók menü' }))
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Management' }))
   // The cached signed-in answer is not shown: the menu asks first and goes straight to Google.
-  expect(screen.queryByText('Bejelentkezve: admin@example.com')).toBeNull()
+  expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).toBeNull()
   await waitFor(() => expect(assign).toHaveBeenCalledWith(GOOGLE))
-  expect(screen.queryByText('Bejelentkezve: admin@example.com')).toBeNull()
+  expect(screen.queryByRole('link', { name: /Játékosok.*Keresés/ })).toBeNull()
   expect(screen.getByRole('heading', { name: 'Főoldal' })).toBeTruthy()
 })
 
 it('a failed logout toasts the error and stays signed in', async () => {
   renderAt('/management', ACCOUNT, () => SIGNED_IN, () => ({ status: 500, data: { message: 'Hiba történt.' } }))
-  fireEvent.click(await screen.findByRole('button', { name: 'Kilépés a managementből' }))
+  await logOutOfManagement()
   await waitFor(() => expect(toastMock.error).toHaveBeenCalled())
-  expect(screen.getByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(screen.getByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
 })

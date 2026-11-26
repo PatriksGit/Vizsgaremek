@@ -14,6 +14,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import { AccountPage } from '@/features/account/AccountPage'
 import type { Account } from '@/features/auth/api'
+import { ManagementHome } from '@/features/management/ManagementHome'
 import { ManagementPage } from '@/features/management/ManagementPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { installFakeBackend, stubBrowserApis, type Reply } from '@/test/fakeBackend'
@@ -56,7 +57,7 @@ function renderSettings(me: Reply) {
         element: <Outlet />,
         children: [
           { path: 'beallitasok', element: <AccountPage /> },
-          { path: 'management', element: <RequireManager><ManagementPage /></RequireManager> },
+          { path: 'management', element: <RequireManager><ManagementPage /></RequireManager>, children: [{ index: true, element: <ManagementHome /> }] },
         ],
       },
     ],
@@ -86,7 +87,7 @@ async function tap(times: number, me: Reply) {
 
 it('repro: two taps while the check runs still leave one /management entry: Back returns to the settings', async () => {
   const router = await tap(2, SIGNED_IN)
-  expect(await screen.findByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(await screen.findByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
 
   await act(() => router.navigate(-1))
 
@@ -101,7 +102,7 @@ it('repro path2: two taps while the check runs start one navigation to Google, n
 
 it('control: one tap, then Back returns to the settings', async () => {
   const router = await tap(1, SIGNED_IN)
-  expect(await screen.findByText('Bejelentkezve: admin@example.com')).toBeTruthy()
+  expect(await screen.findByRole('link', { name: /Játékosok.*Keresés/ })).toBeTruthy()
 
   await act(() => router.navigate(-1))
 

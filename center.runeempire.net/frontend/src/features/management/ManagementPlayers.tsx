@@ -1,6 +1,7 @@
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 
 import { playerCardHover, playerGridColumns, playerHeadGrow } from '@/components/app/interactive'
 import { panelLook } from '@/components/app/Panel'
@@ -29,6 +30,11 @@ const MODES: { mode: SearchMode; label: string; field: string; placeholder: stri
   { mode: 'email', label: 'E-mail', field: 'E-mail cím', placeholder: 'Írj be egy e-mail címet', maxLength: 255 },
 ]
 
+/** A mode from the address; anything else (a typo, an old link) is the name search. */
+function modeFrom(value: string | null): SearchMode {
+  return MODES.some((option) => option.mode === value) ? (value as SearchMode) : 'name'
+}
+
 const cardClass = cn(panelLook, 'flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left')
 
 /**
@@ -37,17 +43,40 @@ const cardClass = cn(panelLook, 'flex min-h-16 w-full items-center gap-3 px-4 py
  * keeps the text and asks again in the new mode.
  */
 export function ManagementPlayers({ onOpen }: { onOpen: (name: string) => void }) {
-  const [mode, setMode] = useState<SearchMode>('name')
-  const [text, setText] = useState('')
-  const [asked, setAsked] = useState('')
+  // The search lives in the address (?by=&q=, written once typing pauses), so Back from the hub or the Napló shows it
+  // again (2026-11-26). The search itself asks for what the address holds.
+  const [params, setParams] = useSearchParams()
+  const addressMode = modeFrom(params.get('by'))
+  const addressText = params.get('q') ?? ''
+  const addressKey = `${addressMode}\n${addressText}`
+
+  const [mode, setMode] = useState<SearchMode>(addressMode)
+  const [text, setText] = useState(addressText)
+  // The box follows an address change it did not write itself (the menu's link, Back), like the Játékosok page:
+  // `followed` is the address last seen, `written` the one the box last wrote.
+  const [followed, setFollowed] = useState(addressKey)
+  const [written, setWritten] = useState(addressKey)
+  if (addressKey !== followed) {
+    setFollowed(addressKey)
+    if (addressKey !== written) {
+      setWritten(addressKey)
+      setMode(addressMode)
+      setText(addressText)
+    }
+  }
   const current = MODES.find((option) => option.mode === mode) ?? MODES[0]
 
   useEffect(() => {
-    const timer = setTimeout(() => setAsked(text), DEBOUNCE_MS)
+    const key = `${mode}\n${text}`
+    if (key === addressKey) return
+    const timer = setTimeout(() => {
+      setWritten(key)
+      setParams(text ? { by: mode, q: text } : mode === 'name' ? {} : { by: mode }, { replace: true })
+    }, DEBOUNCE_MS)
     return () => clearTimeout(timer)
-  }, [text])
+  }, [mode, text, addressKey, setParams])
 
-  const search = useManagementPlayerSearch(mode, asked)
+  const search = useManagementPlayerSearch(addressMode, addressText)
 
   return (
     <div className="flex flex-col gap-5">

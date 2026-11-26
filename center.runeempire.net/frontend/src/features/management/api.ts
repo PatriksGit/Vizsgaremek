@@ -1,6 +1,6 @@
 import { isCancelledError, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, type MouseEvent } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { useEffect, useRef, useSyncExternalStore, type MouseEvent } from 'react'
+import { matchPath, useLocation, useNavigate } from 'react-router'
 
 import { MANAGEMENT_NAV } from '@/features/app/nav'
 import { useAccount } from '@/features/auth/queries'
@@ -21,9 +21,19 @@ async function fetchManagementMe(): Promise<ManagementMe> {
   return response.data.data
 }
 
-/** One key and fetcher for the page's query and the menu's check, so the check's answer lands in the page's cache. */
+/**
+ * One key and fetcher for the page's query and the menu's check, so the check's answer lands in the page's cache.
+ * No retry and no focus/reconnect refetch HERE, on every observer (final review 2026-11-26) -- why: the observer that
+ * rendered last sets the query's options, so the menu's cache reader without them made a re-check retry twice.
+ */
 function managementMeQuery(uuid: string | undefined) {
-  return queryOptions({ queryKey: ['management', 'me', uuid], queryFn: fetchManagementMe })
+  return queryOptions({
+    queryKey: ['management', 'me', uuid],
+    queryFn: fetchManagementMe,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
 }
 
 /** How long an answer counts as fresh: the menu's check just before opening the page is not asked again. */
@@ -42,10 +52,27 @@ export function useManagementMe({ enabled = true }: { enabled?: boolean } = {}) 
     ...managementMeQuery(account?.uuid),
     staleTime: FRESH_MS,
     enabled: enabled && Boolean(account?.can_manage),
-    retry: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   })
+}
+
+/**
+ * Whether the last /management/me answer this tab has says signed in: for the menu's "Kilépés a
+ * managementből" (owner, 2026-11-26). An observer that never fetches (enabled: false) -- why: every
+ * /me call slides the 30-minute grant, so the menu must not ask. An invalidated answer counts as
+ * "no" (final review 2026-11-26): the logout and a lapsed grant's hand-off invalidate it without a
+ * refetch, and the next real answer clears that. A stale "yes" after the grant ran out by itself is
+ * harmless: the logout only drops a grant.
+ */
+export function useManagementSignedIn() {
+  const account = useAccount().data
+  const client = useQueryClient()
+  const { queryKey } = managementMeQuery(account?.uuid)
+  const me = useQuery({ ...managementMeQuery(account?.uuid), enabled: false })
+  const invalidated = useSyncExternalStore(
+    (onChange) => client.getQueryCache().subscribe(onChange),
+    () => client.getQueryState(queryKey)?.isInvalidated ?? false,
+  )
+  return Boolean(account?.can_manage) && me.data?.signed_in === true && !invalidated
 }
 
 /** Drops only the management grant; the website login stays. */
@@ -81,6 +108,11 @@ export function useManagementLogout() {
  * one the browser goes straight to Google, so the management page never starts loading. A click with a
  * modifier key (new tab) keeps the link's own behaviour.
  */
+/** Whether the page is the management frame (the hub or a tool), which forwards to Google by itself. */
+function isUnderManagement(pathname: string) {
+  return matchPath({ path: MANAGEMENT_NAV.to, end: false }, pathname) !== null
+}
+
 export function useOpenManagement() {
   const client = useQueryClient()
   const navigate = useNavigate()
@@ -88,7 +120,7 @@ export function useOpenManagement() {
   // One check at a time: a second tap while the first is on its way does nothing.
   const checking = useRef(false)
   // The page the player is on: an answer that arrives after they moved on (or this menu unmounted) is dropped.
-  const { key } = useLocation()
+  const { key, pathname } = useLocation()
   const here = useRef<string | null>(key)
   useEffect(() => {
     here.current = key
@@ -107,7 +139,9 @@ export function useOpenManagement() {
       const me = await client.fetchQuery({ ...managementMeQuery(account?.uuid), staleTime: 0, retry: false })
       if (here.current !== from) return
       if (me.signed_in) navigate(MANAGEMENT_NAV.to)
-      else window.location.assign(GOOGLE_REDIRECT_URL)
+      // On a management page the frame got this answer too and forwards to Google itself (location.replace):
+      // a second navigation would race over Socialite's state (final review 2026-11-26).
+      else if (!isUnderManagement(pathname)) window.location.assign(GOOGLE_REDIRECT_URL)
     } catch (error) {
       // Cancelled by a login or logout meanwhile (setAccount cancels every query): nothing to say.
       if (isCancelledError(error)) return

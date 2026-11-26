@@ -14,6 +14,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import { AccountPage } from '@/features/account/AccountPage'
 import type { Account } from '@/features/auth/api'
+import { ManagementHome } from '@/features/management/ManagementHome'
 import { ManagementPage } from '@/features/management/ManagementPage'
 import { RequireManager } from '@/features/management/RequireManager'
 import { installFakeBackend, stubBrowserApis, type Reply } from '@/test/fakeBackend'
@@ -62,7 +63,7 @@ function renderSettings(me: Reply) {
         children: [
           { index: true, element: <h1>Főoldal</h1> },
           { path: 'beallitasok', element: <AccountPage /> },
-          { path: 'management', element: <RequireManager><ManagementPage /></RequireManager> },
+          { path: 'management', element: <RequireManager><ManagementPage /></RequireManager>, children: [{ index: true, element: <ManagementHome /> }] },
         ],
       },
     ],
