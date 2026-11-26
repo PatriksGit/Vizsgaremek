@@ -135,7 +135,7 @@ class GoogleSignInTest extends TestCase
         $session->save();
     }
 
-    public function test_redirect_with_a_live_listed_grant_goes_straight_to_management(): void
+    public function test_redirect_with_a_live_listed_grant_goes_straight_home(): void
     {
         $this->grantPermission();
         Manager::create(['email' => 'boss@example.com']);
@@ -143,7 +143,7 @@ class GoogleSignInTest extends TestCase
         $this->giveGrant();
         Socialite::shouldReceive('driver')->never();
 
-        $this->toGoogle()->assertRedirect(self::FRONTEND.'/management');
+        $this->toGoogle()->assertRedirect(self::FRONTEND.'/');
 
         $this->assertSame('boss@example.com', $this->grant()['email']);
     }
@@ -343,7 +343,7 @@ class GoogleSignInTest extends TestCase
         $this->toGoogle()->assertRedirect(self::FRONTEND.'/management?error=management.google_unavailable');
     }
 
-    public function test_callback_with_a_listed_verified_address_grants_and_goes_to_management(): void
+    public function test_callback_with_a_listed_verified_address_grants_and_goes_home(): void
     {
         $this->freezeSecond();
         $this->grantPermission();
@@ -351,7 +351,7 @@ class GoogleSignInTest extends TestCase
         $sessionId = $this->logIn();
         $this->googleAnswers($this->googleUser('boss@example.com'));
 
-        $this->backFromGoogle()->assertRedirect(self::FRONTEND.'/management');
+        $this->backFromGoogle()->assertRedirect(self::FRONTEND.'/');
 
         $this->assertSame(['account_id' => $this->account->id, 'email' => 'boss@example.com', 'expires_at' => now()->addMinutes(30)->getTimestamp()], $this->grant());
         $newSessionId = $this->lastSessionId();
@@ -371,7 +371,7 @@ class GoogleSignInTest extends TestCase
         $this->logIn();
         $this->googleAnswers($this->googleUser('Boss@Example.com'));
 
-        $this->backFromGoogle()->assertRedirect(self::FRONTEND.'/management');
+        $this->backFromGoogle()->assertRedirect(self::FRONTEND.'/');
 
         $this->assertSame('boss@example.com', $this->grant()['email']);
     }
@@ -461,7 +461,7 @@ class GoogleSignInTest extends TestCase
         $this->logIn();
         $this->googleAnswers($this->googleUser('boss@example.com'));
 
-        $this->backFromGoogle([])->assertRedirect(self::FRONTEND.'/management');
+        $this->backFromGoogle([])->assertRedirect(self::FRONTEND.'/');
 
         $this->assertSame('boss@example.com', $this->grant()['email']);
     }

@@ -32,8 +32,9 @@ class GoogleRedirectController extends Controller
         $account = $request->user();
 
         // Throws Forbidden without the permission (LuckPerms unreadable too: reported, fail closed).
+        // Already signed in: straight home like after the callback (owner, 2026-11-26), no Google.
         if ($managementAccess->liveGrant($account, $request->session()) !== null) {
-            return redirect()->away(config('management.frontend_url').'/management');
+            return redirect()->away(config('management.frontend_url').'/');
         }
 
         /** @var GoogleProvider $google */

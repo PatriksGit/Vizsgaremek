@@ -64,6 +64,7 @@ class GoogleCallbackController extends Controller
         // A new id, the old one destroyed (not invalidate: the attributes, so the website login, stay).
         $request->session()->regenerate(true);
 
-        return redirect()->away(config('management.frontend_url').'/management');
+        // Home, not the tool hub (owner, 2026-11-26): the sidebar's Management group appears there and leads on.
+        return redirect()->away(config('management.frontend_url').'/');
     }
 }
